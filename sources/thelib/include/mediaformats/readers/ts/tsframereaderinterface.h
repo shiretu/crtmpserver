@@ -38,3 +38,4 @@ public:
 
 #endif	/* _TSFRAMEREADERINTERFACE_H */
 #endif	/* HAS_MEDIA_TS */
+
