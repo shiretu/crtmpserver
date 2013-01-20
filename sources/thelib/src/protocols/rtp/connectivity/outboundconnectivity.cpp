@@ -26,6 +26,7 @@
 #include "protocols/rtp/nattraversalprotocol.h"
 #include "netio/netio.h"
 #include "protocols/udpprotocol.h"
+#include "streaming/codectypes.h"
 
 OutboundConnectivity::OutboundConnectivity(bool forceTcp, RTSPProtocol *pRTSPProtocol)
 : BaseConnectivity() {
@@ -61,6 +62,7 @@ OutboundConnectivity::OutboundConnectivity(bool forceTcp, RTSPProtocol *pRTSPPro
 	_videoRTCPPort = 0;
 	_pVideoNATData = NULL;
 	_pVideoNATRTCP = NULL;
+	_videoSampleRate = 0;
 
 	_hasAudio = false;
 	_audioDataFd = (SOCKET) (-1);
@@ -69,6 +71,7 @@ OutboundConnectivity::OutboundConnectivity(bool forceTcp, RTSPProtocol *pRTSPPro
 	_audioRTCPPort = 0;
 	_pAudioNATData = NULL;
 	_pAudioNATRTCP = NULL;
+	_audioSampleRate = 0;
 
 	_startupTime = (uint64_t) time(NULL);
 
@@ -83,18 +86,22 @@ OutboundConnectivity::~OutboundConnectivity() {
 		delete _pOutStream;
 	}
 	if (_pVideoNATData != NULL) {
+		_pVideoNATData->ResetOutboundConnectivity();
 		_pVideoNATData->EnqueueForDelete();
 		_pVideoNATData = NULL;
 	}
 	if (_pVideoNATRTCP != NULL) {
+		_pVideoNATRTCP->ResetOutboundConnectivity();
 		_pVideoNATRTCP->EnqueueForDelete();
 		_pVideoNATRTCP = NULL;
 	}
 	if (_pAudioNATData != NULL) {
+		_pAudioNATData->ResetOutboundConnectivity();
 		_pAudioNATData->EnqueueForDelete();
 		_pAudioNATData = NULL;
 	}
 	if (_pAudioNATRTCP != NULL) {
+		_pAudioNATRTCP->ResetOutboundConnectivity();
 		_pAudioNATRTCP->EnqueueForDelete();
 		_pAudioNATRTCP = NULL;
 	}
@@ -119,6 +126,11 @@ bool OutboundConnectivity::Initialize() {
 		}
 	}
 	return true;
+}
+
+void OutboundConnectivity::Enable() {
+	if (_pOutStream != NULL)
+		_pOutStream->Enable();
 }
 
 void OutboundConnectivity::SetOutStream(BaseOutNetRTPUDPStream *pOutStream) {
@@ -176,8 +188,8 @@ void OutboundConnectivity::HasVideo(bool value) {
 bool OutboundConnectivity::RegisterUDPVideoClient(uint32_t rtspProtocolId,
 		sockaddr_in &data, sockaddr_in &rtcp) {
 	if (_rtpClient.hasVideo) {
-		FATAL("Client already registered for video feed");
-		return false;
+		//WARN("Client already registered for video feed");
+		return true;
 	}
 	_rtpClient.hasVideo = true;
 	_rtpClient.isUdp = true;
@@ -185,16 +197,18 @@ bool OutboundConnectivity::RegisterUDPVideoClient(uint32_t rtspProtocolId,
 	_rtpClient.videoRtcpAddress = rtcp;
 	_rtpClient.protocolId = rtspProtocolId;
 	_pVideoNATData->SetOutboundAddress(&_rtpClient.videoDataAddress);
+	_pVideoNATData->SetOutboundConnectivity(this);
 	_pVideoNATRTCP->SetOutboundAddress(&_rtpClient.videoRtcpAddress);
 	return ((UDPCarrier *) _pVideoNATData->GetIOHandler())->StartAccept()
+			&((UDPCarrier *) _pVideoNATData->GetIOHandler())->EnableWriteEvents()
 			&((UDPCarrier *) _pVideoNATRTCP->GetIOHandler())->StartAccept();
 }
 
 bool OutboundConnectivity::RegisterUDPAudioClient(uint32_t rtspProtocolId,
 		sockaddr_in &data, sockaddr_in &rtcp) {
 	if (_rtpClient.hasAudio) {
-		FATAL("Client already registered for audio feed");
-		return false;
+		//WARN("Client already registered for audio feed");
+		return true;
 	}
 	_rtpClient.hasAudio = true;
 	_rtpClient.isUdp = true;
@@ -202,16 +216,18 @@ bool OutboundConnectivity::RegisterUDPAudioClient(uint32_t rtspProtocolId,
 	_rtpClient.audioRtcpAddress = rtcp;
 	_rtpClient.protocolId = rtspProtocolId;
 	_pAudioNATData->SetOutboundAddress(&_rtpClient.audioDataAddress);
+	_pAudioNATData->SetOutboundConnectivity(this);
 	_pAudioNATRTCP->SetOutboundAddress(&_rtpClient.audioRtcpAddress);
 	return ((UDPCarrier *) _pAudioNATData->GetIOHandler())->StartAccept()
+			&((UDPCarrier *) _pAudioNATData->GetIOHandler())->EnableWriteEvents()
 			&((UDPCarrier *) _pAudioNATRTCP->GetIOHandler())->StartAccept();
 }
 
 bool OutboundConnectivity::RegisterTCPVideoClient(uint32_t rtspProtocolId,
 		uint8_t data, uint8_t rtcp) {
 	if (_rtpClient.hasVideo) {
-		FATAL("Client already registered for video feed");
-		return false;
+		//WARN("Client already registered for video feed");
+		return true;
 	}
 	_rtpClient.hasVideo = true;
 	_rtpClient.isUdp = false;
@@ -224,8 +240,8 @@ bool OutboundConnectivity::RegisterTCPVideoClient(uint32_t rtspProtocolId,
 bool OutboundConnectivity::RegisterTCPAudioClient(uint32_t rtspProtocolId,
 		uint8_t data, uint8_t rtcp) {
 	if (_rtpClient.hasAudio) {
-		FATAL("Client already registered for audio feed");
-		return false;
+		//WARN("Client already registered for audio feed");
+		return true;
 	}
 	_rtpClient.hasAudio = true;
 	_rtpClient.isUdp = false;
@@ -244,8 +260,8 @@ void OutboundConnectivity::SignalDetachedFromInStream() {
 }
 
 bool OutboundConnectivity::FeedVideoData(MSGHDR &message,
-		double absoluteTimestamp) {
-	if (!FeedData(message, absoluteTimestamp, false)) {
+		double pts, double dts) {
+	if (!FeedData(message, pts, dts, false)) {
 		FATAL("Unable to feed video UDP clients");
 		return false;
 	}
@@ -253,12 +269,17 @@ bool OutboundConnectivity::FeedVideoData(MSGHDR &message,
 }
 
 bool OutboundConnectivity::FeedAudioData(MSGHDR &message,
-		double absoluteTimestamp) {
-	if (!FeedData(message, absoluteTimestamp, true)) {
+		double pts, double dts) {
+	if (!FeedData(message, pts, dts, true)) {
 		FATAL("Unable to feed audio UDP clients");
 		return false;
 	}
 	return true;
+}
+
+void OutboundConnectivity::ReadyForSend() {
+	if (_pRTSPProtocol != NULL)
+		_pRTSPProtocol->ReadyForSend();
 }
 
 bool OutboundConnectivity::InitializePorts(SOCKET &dataFd, uint16_t &dataPort,
@@ -276,7 +297,7 @@ bool OutboundConnectivity::InitializePorts(SOCKET &dataFd, uint16_t &dataPort,
 			pCarrier2 = NULL;
 		}
 
-		pCarrier1 = UDPCarrier::Create("0.0.0.0", 0);
+		pCarrier1 = UDPCarrier::Create("0.0.0.0", 0, 256, 256, "");
 		if (pCarrier1 == NULL) {
 			WARN("Unable to create UDP carrier for RTP");
 			continue;
@@ -284,10 +305,10 @@ bool OutboundConnectivity::InitializePorts(SOCKET &dataFd, uint16_t &dataPort,
 
 		if ((pCarrier1->GetNearEndpointPort() % 2) == 0) {
 			pCarrier2 = UDPCarrier::Create("0.0.0.0",
-					pCarrier1->GetNearEndpointPort() + 1);
+					pCarrier1->GetNearEndpointPort() + 1, 256, 256, "");
 		} else {
 			pCarrier2 = UDPCarrier::Create("0.0.0.0",
-					pCarrier1->GetNearEndpointPort() - 1);
+					pCarrier1->GetNearEndpointPort() - 1, 256, 256, "");
 		}
 
 		if (pCarrier2 == NULL) {
@@ -346,12 +367,35 @@ bool OutboundConnectivity::InitializePorts(SOCKET &dataFd, uint16_t &dataPort,
 	return false;
 }
 
-bool OutboundConnectivity::FeedData(MSGHDR &message, double absoluteTimestamp,
+bool OutboundConnectivity::FeedData(MSGHDR &message, double pts, double dts,
 		bool isAudio) {
-	if (absoluteTimestamp == 0)
+	if (pts < 0 || dts < 0)
 		return true;
 
-	double rate = isAudio ? _pOutStream->GetCapabilities()->aac._sampleRate : 90000.0;
+	double &rate = isAudio ? _audioSampleRate : _videoSampleRate;
+	if (rate == 0) {
+		if (isAudio) {
+			StreamCapabilities *pCapabilities = _pOutStream->GetCapabilities();
+			AudioCodecInfo *pInfo = NULL;
+			if ((pCapabilities != NULL)
+					&& (pCapabilities->GetAudioCodecType() == CODEC_AUDIO_AAC)
+					&& ((pInfo = pCapabilities->GetAudioCodec<AudioCodecInfo > ()) != NULL)) {
+				rate = pInfo->_samplingRate;
+			} else {
+				rate = 1;
+			}
+		} else {
+			StreamCapabilities *pCapabilities = _pOutStream->GetCapabilities();
+			VideoCodecInfo *pInfo = NULL;
+			if ((pCapabilities != NULL)
+					&& (pCapabilities->GetVideoCodecType() == CODEC_VIDEO_H264)
+					&& ((pInfo = pCapabilities->GetVideoCodec<VideoCodecInfo > ()) != NULL)) {
+				rate = pInfo->_samplingRate;
+			} else {
+				rate = 1;
+			}
+		}
+	}
 	uint32_t ssrc = isAudio ? _pOutStream->AudioSSRC() : _pOutStream->VideoSSRC();
 	uint16_t messageLength = 0;
 	for (uint32_t i = 0; i < (uint32_t) message.MSGHDR_MSG_IOVLEN; i++) {
@@ -361,15 +405,8 @@ bool OutboundConnectivity::FeedData(MSGHDR &message, double absoluteTimestamp,
 	bool &hasTrack = isAudio ? _rtpClient.hasAudio : _rtpClient.hasVideo;
 	uint32_t &packetsCount = isAudio ? _rtpClient.audioPacketsCount : _rtpClient.videoPacketsCount;
 	uint32_t &bytesCount = isAudio ? _rtpClient.audioBytesCount : _rtpClient.videoBytesCount;
-	uint32_t &startRTP = isAudio ? _rtpClient.audioStartRTP : _rtpClient.videoStartRTP;
-	double &startTS = isAudio ? _rtpClient.audioStartTS : _rtpClient.videoStartTS;
 	if (!hasTrack) {
 		return true;
-	}
-
-	if (startRTP == 0xffffffff) {
-		startRTP = ENTOHLP(((uint8_t *) message.MSGHDR_MSG_IOV[0].IOVEC_IOV_BASE) + 4);
-		startTS = absoluteTimestamp;
 	}
 
 	if ((packetsCount % 500) == 0) {
@@ -378,8 +415,8 @@ bool OutboundConnectivity::FeedData(MSGHDR &message, double absoluteTimestamp,
 
 
 		//NTP
-		uint32_t integerValue = (uint32_t) (absoluteTimestamp / 1000.0);
-		double fractionValue = (absoluteTimestamp / 1000.0 - ((uint32_t) (absoluteTimestamp / 1000.0)))*4294967296.0;
+		uint32_t integerValue = (uint32_t) (pts / 1000.0);
+		double fractionValue = (pts / 1000.0 - ((uint32_t) (pts / 1000.0)))*4294967296.0;
 		uint64_t ntpVal = (_startupTime + integerValue + 2208988800ULL) << 32;
 		ntpVal |= (uint32_t) fractionValue;
 		EHTONLLP(_pRTCPNTP, ntpVal);
@@ -410,7 +447,7 @@ bool OutboundConnectivity::FeedData(MSGHDR &message, double absoluteTimestamp,
 		} else {
 			if (_pRTSPProtocol != NULL) {
 				if (!_pRTSPProtocol->SendRaw(&_rtcpMessage,
-						(uint16_t) (_rtcpMessage.MSGHDR_MSG_IOV[0].IOVEC_IOV_LEN), &_rtpClient, isAudio, false)) {
+						(uint16_t) (_rtcpMessage.MSGHDR_MSG_IOV[0].IOVEC_IOV_LEN), &_rtpClient, isAudio, false, true)) {
 					FATAL("Unable to send raw rtcp audio data");
 					return false;
 				}
@@ -433,7 +470,7 @@ bool OutboundConnectivity::FeedData(MSGHDR &message, double absoluteTimestamp,
 	} else {
 		if (_pRTSPProtocol != NULL) {
 			if (!_pRTSPProtocol->SendRaw(&message, messageLength, &_rtpClient,
-					isAudio, true)) {
+					isAudio, true, true)) {
 				FATAL("Unable to send raw rtcp audio data");
 				return false;
 			}

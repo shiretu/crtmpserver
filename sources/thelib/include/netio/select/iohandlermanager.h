@@ -126,10 +126,17 @@ public:
 
 	/*!
 		@brief  Adds a timer event to the TimersManager.
-		@param pIOHandler: The function uses this IO handler's id to set the valu of the event's id.
+		@param pIOHandler: The function uses this IO handler's id to set the value of the event's id.
 		@param seconds: The timer's period is set to seconds
 	 */
 	static bool EnableTimer(IOHandler *pIOHandler, uint32_t seconds);
+
+	/*!
+		@brief  Adds a timer event to the TimersManager.
+		@param pIOHandler: The function uses this IO handler's id to set the value of the event's id.
+		@param milliseconds: The timer's period is set to milliseconds
+	 */
+	static bool EnableHighGranularityTimer(IOHandler *pIOHandler, uint32_t milliseconds);
 
 	/*!
 		@brief  Removes the timer to the TimersManager
@@ -148,7 +155,7 @@ public:
 	static uint32_t DeleteDeadHandlers();
 private:
 	static bool UpdateFdSets(int32_t fd);
-	static void ProcessTimer(TimerEvent &event);
+	static bool ProcessTimer(TimerEvent &event);
 };
 
 #endif	/* _IOHANDLERMANAGER_H */

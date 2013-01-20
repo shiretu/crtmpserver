@@ -22,6 +22,7 @@ AS=as
 
 # Macros
 CND_PLATFORM=GNU-MacOSX
+CND_DLIB_EXT=dylib
 CND_CONF=Release
 CND_DISTDIR=dist
 CND_BUILDDIR=build
@@ -66,7 +67,7 @@ LDLIBSOPTIONS=-L../common/dist/Release/GNU-MacOSX -lcommon -L../thelib/../Releas
 
 ../${CND_CONF}/${CND_PLATFORM}/applications/admin/libadmin.dylib: ${OBJECTFILES}
 	${MKDIR} -p ../${CND_CONF}/${CND_PLATFORM}/applications/admin
-	${LINK.cc} -dynamiclib -install_name libadmin.dylib -o ../${CND_CONF}/${CND_PLATFORM}/applications/admin/libadmin.dylib -fPIC ${OBJECTFILES} ${LDLIBSOPTIONS} 
+	${LINK.cc} -o ../${CND_CONF}/${CND_PLATFORM}/applications/admin/libadmin.dylib ${OBJECTFILES} ${LDLIBSOPTIONS} -dynamiclib -install_name libadmin.dylib -fPIC
 
 ${OBJECTDIR}/_ext/2107059025/cliappprotocolhandler.o: ../../../../sources/applications/admin/src/cliappprotocolhandler.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/2107059025

@@ -121,7 +121,7 @@ void SyslogLogLocation::InitFormatters() {
 
 string SyslogLogLocation::ComputeMessage(Variant &le) {
 	Formatter *pFormatter = NULL;
-	if (MAP_HAS1(_formatters, le["operation"]))
+	if (MAP_HAS1(_formatters, (string) le["operation"]))
 		pFormatter = _formatters[(string) le["operation"]];
 	else
 		pFormatter = _pDefualtFormatter;

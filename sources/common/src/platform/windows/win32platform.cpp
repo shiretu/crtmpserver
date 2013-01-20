@@ -250,6 +250,56 @@ int inet_aton(const char *pStr, struct in_addr *pRes) {
 	return true;
 }
 
+bool setFdJoinMulticast(SOCKET sock, string bindIp, uint16_t bindPort, string ssmIp) {
+	if (ssmIp == "") {
+		struct ip_mreq group;
+		group.imr_multiaddr.s_addr = inet_addr(STR(bindIp));
+		group.imr_interface.s_addr = INADDR_ANY;
+		if (setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP,
+				(char *) &group, sizeof (group)) < 0) {
+			int err = LASTSOCKETERROR;
+			FATAL("Adding multicast failed. Error was: %d", err);
+			return false;
+		}
+		return true;
+	} else {
+		struct group_source_req multicast;
+		struct sockaddr_in *pGroup = (struct sockaddr_in*) &multicast.gsr_group;
+		struct sockaddr_in *pSource = (struct sockaddr_in*) &multicast.gsr_source;
+
+		memset(&multicast, 0, sizeof (multicast));
+
+		//Setup the group we want to join
+		pGroup->sin_family = AF_INET;
+		pGroup->sin_addr.s_addr = inet_addr(STR(bindIp));
+		pGroup->sin_port = EHTONS(bindPort);
+
+		//setup the source we want to listen
+		pSource->sin_family = AF_INET;
+		pSource->sin_addr.s_addr = inet_addr(STR(ssmIp));
+		if (pSource->sin_addr.s_addr == INADDR_NONE) {
+			FATAL("Unable to SSM on address %s", STR(ssmIp));
+			return false;
+		}
+		pSource->sin_port = 0;
+
+		INFO("Try to SSM on ip %s", STR(ssmIp));
+
+		if (setsockopt(sock, IPPROTO_IP, MCAST_JOIN_SOURCE_GROUP, (char *)&multicast,
+				sizeof (multicast)) < 0) {
+			int err = LASTSOCKETERROR;
+			FATAL("Adding multicast failed. Error was: (%d)", err);
+			return false;
+		}
+
+		return true;
+	}
+}
+
+bool setFdCloseOnExec(int fd) {
+	return true;
+}
+
 bool setFdNonBlock(SOCKET fd) {
 	u_long iMode = 1; // 0 for blocking, anything else for nonblocking
 
@@ -315,9 +365,11 @@ bool setFdTOS(SOCKET fd, uint8_t tos) {
 }
 
 bool setFdOptions(SOCKET fd, bool isUdp) {
-	if (!setFdNonBlock(fd)) {
-		FATAL("Unable to set non block");
-		return false;
+	if (!isUdp) {
+		if (!setFdNonBlock(fd)) {
+			FATAL("Unable to set non block");
+			return false;
+		}
 	}
 
 	if (!setFdNoSIGPIPE(fd)) {
@@ -377,8 +429,6 @@ void splitFileName(string fileName, string &name, string & extension, char separ
 }
 
 string normalizePath(string base, string file) {
-	//	if ((base == "") || (base[base.size() - 1] != PATH_SEPARATOR))
-	//		base += PATH_SEPARATOR;
 	char dummy1[MAX_PATH ];
 	char dummy2[MAX_PATH ];
 	if (GetFullPathName(STR(base), MAX_PATH, dummy1, NULL) == 0)
@@ -486,6 +536,13 @@ bool deleteFolder(string path, bool force) {
 	HANDLE hp;
 	fileFound = format("%s\\*.*", STR(path));
 	hp = FindFirstFile(STR(fileFound), &info);
+
+	// Check first if we have a valid handle!
+	if (hp == INVALID_HANDLE_VALUE) {
+		WARN("Files to be deleted were already removed: %s", STR(fileFound));
+		return true;
+	}
+
 	do {
 		if (!((strcmp(info.cFileName, ".") == 0) ||
 				(strcmp(info.cFileName, "..") == 0))) {
@@ -541,9 +598,17 @@ bool moveFile(string src, string dst) {
 	return true;
 }
 
+bool isAbsolutePath(string &path) {
+	if (path.size() < 4)
+		return false;
+	return (((path[0] >= 'A')&&(path[0] <= 'Z')) || ((path[0] >= 'a')&&(path[0] <= 'z')))
+			&&(path[1] == ':')
+			&&(path[2] == '\\');
+}
+
 static time_t _gUTCOffset = -1;
 
-void computeGMTTimeOffset() {
+void computeUTCOffset() {
 	//time_t now = time(NULL);
 	//struct tm *pTemp = localtime(&now);
 	//_gUTCOffset = pTemp->tm_gmtoff;
@@ -552,13 +617,13 @@ void computeGMTTimeOffset() {
 
 time_t getlocaltime() {
 	if (_gUTCOffset == -1)
-		computeGMTTimeOffset();
+		computeUTCOffset();
 	return getutctime() + _gUTCOffset;
 }
 
 time_t gettimeoffset() {
 	if (_gUTCOffset == -1)
-		computeGMTTimeOffset();
+		computeUTCOffset();
 	return _gUTCOffset;
 }
 #endif /* WIN32 */

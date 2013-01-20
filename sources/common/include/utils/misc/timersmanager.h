@@ -23,61 +23,32 @@
 
 #include "platform/platform.h"
 
-typedef struct _TimerEvent {
+struct TimerEvent {
 	uint32_t period;
+	uint64_t triggerTime;
 	uint32_t id;
 	void *pUserData;
-} TimerEvent;
+	operator string();
+};
 
-typedef struct _Slot {
-	map<uint32_t, TimerEvent> timers;
-} Slot;
+typedef bool (*ProcessTimerEvent)(TimerEvent &event);
 
-typedef void (*ProcessTimerEvent)(TimerEvent &event);
-
-/*!
-	@class TimersManager
- */
 class DLLEXP TimersManager {
 private:
-	uint32_t _currentSlotIndex;
-	uint64_t _lastTime;
-	Slot *_pSlots;
-	uint32_t _slotsCount;
 	ProcessTimerEvent _processTimerEvent;
-	vector<uint32_t> _periodsVector;
-	map<uint32_t, uint32_t> _periodsMap;
-	bool _inExecution;
-	vector<uint32_t> _pendingForRemoval;
+	map<uint64_t, map<uint32_t, TimerEvent *> > _timers;
+	uint64_t _lastTime;
+	uint64_t _currentTime;
+	bool _processResult;
+	bool _processing;
 public:
 	TimersManager(ProcessTimerEvent processTimerEvent);
 	virtual ~TimersManager();
-
-	/*!
-		@brief Erases the timer designated by its ID
-		@param eventTimerId - Id of the timer to be erased
-	 */
-	void RemoveTimer(uint32_t eventTimerId);
-
-	/*!
-		@brief Adds a timer event
-		@param timerEvent
-
-	 */
 	void AddTimer(TimerEvent &timerEvent);
-
-	/*!
-		@brief Updates the timer event based on the time elapsed
-		@param currentTime - Value of the time in the timer at the time the function is called. This value is used to calculate the elapsed time.
-	 */
-	void TimeElapsed(uint64_t currentTime);
+	void RemoveTimer(uint32_t eventTimerId);
+	int32_t TimeElapsed();
 private:
-	void UpdatePeriods(uint32_t period);
-
-	uint32_t GCD(uint32_t a, uint32_t b);
-	uint32_t LCM(uint32_t a, uint32_t b);
-	uint32_t GCD(vector<uint32_t> numbers, uint32_t startIndex);
-	uint32_t LCM(vector<uint32_t> numbers, uint32_t startIndex);
+	string DumpTimers();
 };
 
 #endif	/* _TIMERSMANAGER_H */

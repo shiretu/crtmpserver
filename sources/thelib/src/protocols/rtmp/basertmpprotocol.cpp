@@ -31,7 +31,6 @@
 #include "protocols/rtmp/streaming/infilertmpstream.h"
 #include "protocols/rtmp/streaming/rtmpstream.h"
 #include "streaming/streamstypes.h"
-#include "protocols/rtmp/monitorrtmpprotocol.h"
 #include "protocols/rtmp/sharedobjects/so.h"
 
 #define MAX_RTMP_OUTPUT_BUFFER 1024*256
@@ -85,10 +84,6 @@ BaseRTMPProtocol::BaseRTMPProtocol(uint64_t protocolType)
 	_pSignaledRTMPOutNetStream = NULL;
 	_rxInvokes = 0;
 	_txInvokes = 0;
-
-#ifdef ENFORCE_RTMP_OUTPUT_CHECKS
-	_pMonitor = new MonitorRTMPProtocol(MAX_STREAMS_COUNT, MAX_CHANNELS_COUNT);
-#endif /* ENFORCE_RTMP_OUTPUT_CHECKS */
 }
 
 BaseRTMPProtocol::~BaseRTMPProtocol() {
@@ -200,6 +195,10 @@ bool BaseRTMPProtocol::ClientSOSetProperty(string &soName, string &propName,
 	return true;
 }
 
+void BaseRTMPProtocol::SignalOutBufferFull(uint32_t outstanding, uint32_t maxValue) {
+	_pProtocolHandler->SignalOutBufferFull(this, outstanding, maxValue);
+}
+
 bool BaseRTMPProtocol::HandleSOPrimitive(string &name, Variant &primitive) {
 	ClientSO *pSO = NULL;
 	if (!MAP_HAS1(_sos, name)) {
@@ -266,6 +265,7 @@ bool BaseRTMPProtocol::AllowFarProtocol(uint64_t type) {
 	if (type == PT_TCP
 			|| type == PT_RTMPE
 			|| type == PT_INBOUND_SSL
+			|| type == PT_OUTBOUND_SSL
 			|| type == PT_INBOUND_HTTP_FOR_RTMP)
 		return true;
 	return false;
@@ -372,6 +372,9 @@ bool BaseRTMPProtocol::ResetChannel(uint32_t channelId) {
 }
 
 bool BaseRTMPProtocol::SendMessage(Variant & message) {
+	if (IsEnqueueForDelete()) {
+		return true;
+	}
 #ifdef ENFORCE_RTMP_OUTPUT_CHECKS
 	_intermediateBuffer.IgnoreAll();
 	if (!_rtmpProtocolSerializer.Serialize(_channels[(uint32_t) VH_CI(message)],
@@ -453,10 +456,6 @@ uint32_t BaseRTMPProtocol::GetOutboundChunkSize() {
 	return _outboundChunkSize;
 }
 
-uint32_t BaseRTMPProtocol::GetInboundChunkSize() {
-	return _inboundChunkSize;
-}
-
 bool BaseRTMPProtocol::SetInboundChunkSize(uint32_t chunkSize) {
 	/*WARN("Chunk size changed for RTMP connection %p: %u->%u", this,
 			_inboundChunkSize, chunkSize);*/
@@ -501,8 +500,8 @@ bool BaseRTMPProtocol::CloseStream(uint32_t streamId, bool createNeutralStream) 
 	}
 
 	if (_streams[streamId] == NULL) {
-		WARN("Try to close a NULL stream");
-		return true;
+		FATAL("Try to close a NULL stream");
+		return false;
 	}
 
 	uint32_t clientSideBuffer = 0;
@@ -523,7 +522,7 @@ bool BaseRTMPProtocol::CloseStream(uint32_t streamId, bool createNeutralStream) 
 		//is a file, close that as well
 		BaseOutNetRTMPStream *pBaseOutNetRTMPStream = (BaseOutNetRTMPStream *) _streams[streamId];
 		if (pBaseOutNetRTMPStream->GetInStream() != NULL) {
-			if (TAG_KIND_OF(pBaseOutNetRTMPStream->GetInStream()->GetType(), ST_IN_FILE_RTMP)) {
+			if (TAG_KIND_OF(pBaseOutNetRTMPStream->GetInStream()->GetType(), ST_IN_FILE)) {
 				clientSideBuffer = ((InFileRTMPStream *) pBaseOutNetRTMPStream->GetInStream())->GetClientSideBuffer()*1000;
 				RemoveIFS((InFileRTMPStream *) pBaseOutNetRTMPStream->GetInStream());
 			}
@@ -536,8 +535,13 @@ bool BaseRTMPProtocol::CloseStream(uint32_t streamId, bool createNeutralStream) 
 	delete _streams[streamId];
 	_streams[streamId] = NULL;
 	if ((createNeutralStream) && (GetApplication() != NULL)) {
-		_streams[streamId] = new RTMPStream(this,
-				GetApplication()->GetStreamsManager(), streamId);
+		_streams[streamId] = new RTMPStream(this, streamId);
+		if (!_streams[streamId]->SetStreamsManager(GetApplication()->GetStreamsManager())) {
+			FATAL("Unable to set the streams manager");
+			delete _streams[streamId];
+			_streams[streamId] = NULL;
+			return false;
+		}
 		((RTMPStream *) _streams[streamId])->SetClientSideBuffer(clientSideBuffer);
 	}
 
@@ -568,8 +572,13 @@ RTMPStream * BaseRTMPProtocol::CreateNeutralStream(uint32_t & streamId) {
 		}
 	}
 
-	RTMPStream *pStream = new RTMPStream(this,
-			GetApplication()->GetStreamsManager(), streamId);
+	RTMPStream *pStream = new RTMPStream(this, streamId);
+	if (!pStream->SetStreamsManager(GetApplication()->GetStreamsManager())) {
+		FATAL("Unable to set the streams manager");
+		delete pStream;
+		pStream = NULL;
+		return NULL;
+	}
 	_streams[streamId] = pStream;
 
 	return pStream;
@@ -595,8 +604,15 @@ InNetRTMPStream * BaseRTMPProtocol::CreateINS(uint32_t channelId,
 	delete _streams[streamId];
 	_streams[streamId] = NULL;
 
-	InNetRTMPStream *pStream = _pProtocolHandler->CreateInNetStream(this,
-			channelId, streamId, streamName);
+	InNetRTMPStream *pStream = new InNetRTMPStream(this, streamName, streamId,
+			_inboundChunkSize, channelId);
+	if (!pStream->SetStreamsManager(GetApplication()->GetStreamsManager())) {
+		FATAL("Unable to set the streams manager");
+		delete pStream;
+		pStream = NULL;
+		return NULL;
+	}
+
 	_streams[streamId] = pStream;
 
 	return pStream;
@@ -612,19 +628,19 @@ BaseOutNetRTMPStream * BaseRTMPProtocol::CreateONS(uint32_t streamId,
 	}
 
 	if (_streams[streamId] == NULL) {
-		WARN("Try to play a stream on a NULL placeholder");
-	} else {
-
-		if (_streams[streamId]->GetType() != ST_NEUTRAL_RTMP) {
-			FATAL("Try to play a stream over a non neutral stream: id: %u; type: %"PRIu64,
-					streamId, _streams[streamId]->GetType());
-			return NULL;
-		}
-
-		clientSideBuffer = ((RTMPStream *) _streams[streamId])->GetClientSideBuffer();
-		delete _streams[streamId];
-		_streams[streamId] = NULL;
+		FATAL("Try to play a stream on a NULL placeholder");
+		return NULL;
 	}
+
+	if (_streams[streamId]->GetType() != ST_NEUTRAL_RTMP) {
+		FATAL("Try to play a stream over a non neutral stream: id: %u; type: %"PRIu64,
+				streamId, _streams[streamId]->GetType());
+		return NULL;
+	}
+
+	clientSideBuffer = ((RTMPStream *) _streams[streamId])->GetClientSideBuffer();
+	delete _streams[streamId];
+	_streams[streamId] = NULL;
 
 	BaseOutNetRTMPStream *pBaseOutNetRTMPStream = BaseOutNetRTMPStream::GetInstance(
 			this, GetApplication()->GetStreamsManager(), streamName, streamId,
@@ -652,32 +668,24 @@ void BaseRTMPProtocol::SignalONS(BaseOutNetRTMPStream *pONS) {
 			_pSignaledRTMPOutNetStream, pONS, true);
 }
 
-InFileRTMPStream * BaseRTMPProtocol::CreateIFS(Variant &metadata) {
+InFileRTMPStream * BaseRTMPProtocol::CreateIFS(Metadata &metadata, bool hasTimer) {
 	InFileRTMPStream *pRTMPInFileStream = InFileRTMPStream::GetInstance(
 			this, GetApplication()->GetStreamsManager(), metadata);
 	if (pRTMPInFileStream == NULL) {
 		FATAL("Unable to get file stream. Metadata:\n%s", STR(metadata.ToString()));
 		return NULL;
 	}
-	bool hasTimer = true;
-	if (metadata.HasKeyChain(V_BOOL, true, 1, "hasTimer"))
-		hasTimer = (bool)metadata["hasTimer"];
-#ifdef HAS_VOD_MANAGER
+	if ((GetFarProtocol() == NULL) || (GetFarProtocol()->GetType() == PT_INBOUND_HTTP_FOR_RTMP))
+		pRTMPInFileStream->KeepClientBufferFull(true);
+	//	bool hasTimer = true;
+	//	if (metadata.HasKeyChain(V_BOOL, true, 1, "hasTimer"))
+	//		hasTimer = (bool)metadata["hasTimer"];
 	if (!pRTMPInFileStream->Initialize(metadata,
-			(int32_t) metadata[CONF_APPLICATION_CLIENTSIDEBUFFER],
-			hasTimer)) {
+			hasTimer ? TIMER_TYPE_LOW_GRANULARITY : TIMER_TYPE_NONE, 0)) {
 		FATAL("Unable to initialize file inbound stream");
 		delete pRTMPInFileStream;
 		return NULL;
 	}
-#else /* HAS_VOD_MANAGER */
-	if (!pRTMPInFileStream->Initialize(
-			(int32_t) metadata[CONF_APPLICATION_CLIENTSIDEBUFFER], hasTimer)) {
-		FATAL("Unable to initialize file inbound stream");
-		delete pRTMPInFileStream;
-		return NULL;
-	}
-#endif /* HAS_VOD_MANAGER */
 	_inFileStreams[pRTMPInFileStream] = pRTMPInFileStream;
 	return pRTMPInFileStream;
 }
@@ -897,7 +905,21 @@ bool BaseRTMPProtocol::ProcessBytes(IOBuffer &buffer) {
 								tempSize, //dataLength,
 								channel.lastInProcBytes, //processedLength,
 								H_ML(header), //totalLength,
-								channel.lastInAbsTs, //absoluteTimestamp,
+								channel.lastInAbsTs, //pts,
+								channel.lastInAbsTs, //dts,
+								false //isAudio
+								)) {
+							FATAL("Unable to feed video");
+							return false;
+						}
+					} else {
+						if (!_pProtocolHandler->FeedAVData(this,
+								GETIBPOINTER(buffer), //pData,
+								tempSize, //dataLength,
+								channel.lastInProcBytes, //processedLength,
+								H_ML(header), //totalLength,
+								channel.lastInAbsTs, //pts,
+								channel.lastInAbsTs, //dts,
 								false //isAudio
 								)) {
 							FATAL("Unable to feed video");
@@ -929,10 +951,71 @@ bool BaseRTMPProtocol::ProcessBytes(IOBuffer &buffer) {
 								tempSize, //dataLength,
 								channel.lastInProcBytes, //processedLength,
 								H_ML(header), //totalLength,
-								channel.lastInAbsTs, //absoluteTimestamp,
+								channel.lastInAbsTs, //pts,
+								channel.lastInAbsTs, //dts,
 								true //isAudio
 								)) {
 							FATAL("Unable to feed audio");
+							return false;
+						}
+					} else {
+						if (!_pProtocolHandler->FeedAVData(this,
+								GETIBPOINTER(buffer), //pData,
+								tempSize, //dataLength,
+								channel.lastInProcBytes, //processedLength,
+								H_ML(header), //totalLength,
+								channel.lastInAbsTs, //pts,
+								channel.lastInAbsTs, //dts,
+								true //isAudio
+								)) {
+							FATAL("Unable to feed audio");
+							return false;
+						}
+					}
+
+
+					channel.lastInProcBytes += tempSize;
+					if (H_ML(header) == channel.lastInProcBytes) {
+						channel.lastInProcBytes = 0;
+					}
+					if (!buffer.Ignore(tempSize)) {
+						FATAL("A: Unable to ignore %u bytes", tempSize);
+						return false;
+					}
+					break;
+				}
+				case RM_HEADER_MESSAGETYPE_AGGREGATE:
+				{
+					if (H_SI(header) >= MAX_STREAMS_COUNT) {
+						FATAL("The server doesn't support stream ids bigger than %"PRIu32,
+								(uint32_t) MAX_STREAMS_COUNT);
+						return false;
+					}
+					if ((_streams[H_SI(header)] != NULL)
+							&& (_streams[H_SI(header)]->GetType() == ST_IN_NET_RTMP)) {
+						if (!((InNetRTMPStream *) _streams[H_SI(header)])->FeedDataAggregate(
+								GETIBPOINTER(buffer), //pData,
+								tempSize, //dataLength,
+								channel.lastInProcBytes, //processedLength,
+								H_ML(header), //totalLength,
+								channel.lastInAbsTs, //pts,
+								channel.lastInAbsTs, //dts,
+								true //isAudio
+								)) {
+							FATAL("Unable to feed aggregate A/V");
+							return false;
+						}
+					} else {
+						if (!_pProtocolHandler->FeedAVDataAggregate(this,
+								GETIBPOINTER(buffer), //pData,
+								tempSize, //dataLength,
+								channel.lastInProcBytes, //processedLength,
+								H_ML(header), //totalLength,
+								channel.lastInAbsTs, //pts,
+								channel.lastInAbsTs, //dts,
+								true //isAudio
+								)) {
+							FATAL("Unable to feed aggregate A/V");
 							return false;
 						}
 					}

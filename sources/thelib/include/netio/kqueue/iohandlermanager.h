@@ -45,7 +45,7 @@ private:
 	static struct timespec _timeout;
 	static TimersManager *_pTimersManager;
 	static struct kevent _dummy;
-#endif
+#endif /* HAS_KQUEUE_TIMERS */
 private:
 	static void SetupToken(IOHandler *pIOHandler);
 	static void FreeToken(IOHandler *pIOHandler);
@@ -78,14 +78,15 @@ public:
 	static bool EnableAcceptConnections(IOHandler *pIOHandler);
 	static bool DisableAcceptConnections(IOHandler *pIOHandler, bool ignoreError = false);
 	static bool EnableTimer(IOHandler *pIOHandler, uint32_t seconds);
+	static bool EnableHighGranularityTimer(IOHandler *pIOHandler, uint32_t milliseconds);
 	static bool DisableTimer(IOHandler *pIOHandler, bool ignoreError = false);
 	static bool Pulse();
 	static void EnqueueForDelete(IOHandler *pIOHandler);
 	static uint32_t DeleteDeadHandlers();
 private:
 #ifndef HAS_KQUEUE_TIMERS
-	static void ProcessTimer(TimerEvent &event);
-#endif
+	static bool ProcessTimer(TimerEvent &event);
+#endif /* HAS_KQUEUE_TIMERS */
 	static inline void ResizeEvents();
 };
 

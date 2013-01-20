@@ -296,8 +296,7 @@ bool PushVariant(lua_State *pLuaState,
 
 			FOR_MAP(variant, string, Variant, i) {
 				const char *pKey = MAP_KEY(i).c_str();
-				if ((MAP_KEY(i).length() == 10)
-						&& (pKey[0] == '0')
+				if ((MAP_KEY(i).length() == 10) && (pKey[0] == '0')
 						&& (pKey[1] == 'x')) {
 					uint32_t index = (uint32_t) strtol(pKey, NULL, 16);
 					lua_pushnumber(pLuaState, index);

@@ -188,7 +188,6 @@ bool InboundHTTP4RTMP::ProcessOpen(vector<string> &parts) {
 }
 
 bool InboundHTTP4RTMP::ProcessIdle(vector<string> &parts) {
-
 	BaseProtocol *pProtocol = Bind(parts[2]);
 	if (pProtocol == NULL) {
 		FATAL("Unable to bind protocol");

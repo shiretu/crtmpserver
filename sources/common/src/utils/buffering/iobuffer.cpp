@@ -40,7 +40,6 @@ IOBuffer::IOBuffer() {
 	_consumed = 0;
 	_minChunkSize = 4096;
 	_dummy = sizeof (sockaddr_in);
-	_sendLimit = 0xffffffff;
 	SANITY_INPUT_BUFFER;
 }
 
@@ -285,9 +284,8 @@ void IOBuffer::ReadFromRepeat(uint8_t byte, uint32_t size) {
 bool IOBuffer::WriteToTCPFd(int32_t fd, uint32_t size, int32_t &sentAmount) {
 	SANITY_INPUT_BUFFER;
 	bool result = true;
-	if (_sendLimit != 0xffffffff) {
-		size = size > _sendLimit ? _sendLimit : size;
-	}
+	if (size == 0)
+		return true;
 	sentAmount = send(fd, (char *) (_pBuffer + _consumed),
 			//_published - _consumed,
 			size > _published - _consumed ? _published - _consumed : size,
@@ -302,7 +300,6 @@ bool IOBuffer::WriteToTCPFd(int32_t fd, uint32_t size, int32_t &sentAmount) {
 		}
 	} else {
 		_consumed += sentAmount;
-		_sendLimit -= sentAmount;
 	}
 	if (result)
 		Recycle();
@@ -334,12 +331,10 @@ bool IOBuffer::WriteToStdio(int32_t fd, uint32_t size, int32_t &sentAmount) {
 }
 
 uint32_t IOBuffer::GetMinChunkSize() {
-
 	return _minChunkSize;
 }
 
 void IOBuffer::SetMinChunkSize(uint32_t minChunkSize) {
-
 	o_assert(minChunkSize > 0 && minChunkSize < 16 * 1024 * 1024);
 	_minChunkSize = minChunkSize;
 }
@@ -434,6 +429,15 @@ string IOBuffer::DumpBuffer(const uint8_t *pBuffer, uint32_t length) {
 	return temp.ToString();
 }
 
+string IOBuffer::DumpBuffer(MSGHDR &message, uint32_t limit) {
+	IOBuffer temp;
+	for (MSGHDR_MSG_IOVLEN_TYPE i = 0; i < message.MSGHDR_MSG_IOVLEN; i++) {
+		temp.ReadFromBuffer((uint8_t *) message.MSGHDR_MSG_IOV[i].IOVEC_IOV_BASE,
+				message.MSGHDR_MSG_IOV[i].IOVEC_IOV_LEN);
+	}
+	return temp.ToString(0, limit);
+}
+
 string IOBuffer::ToString(uint32_t startIndex, uint32_t limit) {
 	SANITY_INPUT_BUFFER;
 	string allowedCharacters = " 1234567890-=qwertyuiop[]asdfghjkl;'\\`zxcvbnm";
@@ -442,10 +446,6 @@ string IOBuffer::ToString(uint32_t startIndex, uint32_t limit) {
 	ss << "Size: " << _size << endl;
 	ss << "Published: " << _published << endl;
 	ss << "Consumed: " << _consumed << endl;
-	if (_sendLimit == 0xffffffff)
-		ss << "Send limit: unlimited" << endl;
-	else
-		ss << "Send limit: " << _sendLimit << endl;
 	ss << format("Address: %p", _pBuffer) << endl;
 	if (limit != 0) {
 		ss << format("Limited to %u bytes", limit) << endl;
@@ -496,7 +496,6 @@ IOBuffer::operator string() {
 
 void IOBuffer::Cleanup() {
 	if (_pBuffer != NULL) {
-
 		delete[] _pBuffer;
 		_pBuffer = NULL;
 	}

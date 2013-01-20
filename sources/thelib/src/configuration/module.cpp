@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -144,7 +144,7 @@ bool Module::BindAcceptor(Variant &node) {
 
 		//5. Create the carrier and bind it
 		UDPCarrier *pUDPCarrier = UDPCarrier::Create(node[CONF_IP], node[CONF_PORT],
-				pProtocol);
+				pProtocol, 256, 256, "");
 		if (pUDPCarrier == NULL) {
 			FATAL("Unable to instantiate UDP carrier on %s:%hu",
 					STR(node[CONF_IP]), (uint16_t) node[CONF_PORT]);

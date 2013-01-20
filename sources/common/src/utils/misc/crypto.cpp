@@ -240,6 +240,21 @@ string md5(uint8_t *pBuffer, uint32_t length, bool textResult) {
 	}
 }
 
+string sha256(string source) {
+	unsigned char hash[SHA256_DIGEST_LENGTH];
+	SHA256_CTX sha256;
+	SHA256_Init(&sha256);
+	SHA256_Update(&sha256, source.c_str(), source.size());
+	SHA256_Final(hash, &sha256);
+	int i = 0;
+	char outputBuffer[65];
+	for (i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+		sprintf(outputBuffer + (i * 2), "%02x", hash[i]);
+	}
+	outputBuffer[64] = 0;
+	return format("%s", outputBuffer);
+}
+
 void HMACsha256(const void *pData, uint32_t dataLength,
 		const void *pKey, uint32_t keyLength, void *pResult) {
 	unsigned int digestLen;
@@ -306,6 +321,22 @@ string unb64(uint8_t *pBuffer, uint32_t length) {
 	return result;
 }
 
+string hex(string source) {
+	if (source == "")
+		return "";
+	return hex((uint8_t *) source.data(), (uint32_t) source.length());
+}
+
+string hex(const uint8_t *pBuffer, uint32_t length) {
+	if ((pBuffer == NULL) || (length == 0))
+		return "";
+	string result = "";
+	for (uint32_t i = 0; i < length; i++) {
+		result += format("%02"PRIx8, pBuffer[i]);
+	}
+	return result;
+}
+
 string unhex(string source) {
 	if (source == "")
 		return "";
@@ -313,24 +344,35 @@ string unhex(string source) {
 		FATAL("Invalid hex string: %s", STR(source));
 		return "";
 	}
-	source = lowerCase(source);
+	return unhex((uint8_t *) source.data(), (uint32_t) source.length());
+}
+
+string unhex(const uint8_t *pBuffer, uint32_t length) {
+	if ((pBuffer == NULL) || (length == 0) || ((length % 2) != 0))
+		return "";
 	string result = "";
-	for (uint32_t i = 0; i < (source.length() / 2); i++) {
+	uint32_t index = 0;
+	for (uint32_t i = 0; i < (length / 2); i++) {
 		uint8_t val = 0;
-		if ((source[i * 2] >= '0') && (source[i * 2] <= '9')) {
-			val = (source[i * 2] - '0') << 4;
-		} else if ((source[i * 2] >= 'a') && (source[i * 2] <= 'f')) {
-			val = (source[i * 2] - 'a' + 10) << 4;
+		index = i * 2;
+		if ((pBuffer[index] >= '0') && (pBuffer[index] <= '9')) {
+			val = (pBuffer[index] - '0') << 4;
+		} else if ((pBuffer[index] >= 'a') && (pBuffer[index] <= 'f')) {
+			val = (pBuffer[index] - 'a' + 10) << 4;
+		} else if ((pBuffer[index] >= 'A') && (pBuffer[index] <= 'F')) {
+			val = (pBuffer[index] - 'A' + 10) << 4;
 		} else {
-			FATAL("Invalid hex string: %s", STR(source));
+			FATAL("Invalid hex string");
 			return "";
 		}
-		if ((source[i * 2 + 1] >= '0') && (source[i * 2 + 1] <= '9')) {
-			val |= (source[i * 2 + 1] - '0');
-		} else if ((source[i * 2 + 1] >= 'a') && (source[i * 2 + 1] <= 'f')) {
-			val |= (source[i * 2 + 1] - 'a' + 10);
+		if ((pBuffer[index + 1] >= '0') && (pBuffer[index + 1] <= '9')) {
+			val |= (pBuffer[index + 1] - '0');
+		} else if ((pBuffer[index + 1] >= 'a') && (pBuffer[index + 1] <= 'f')) {
+			val |= (pBuffer[index + 1] - 'a' + 10);
+		} else if ((pBuffer[index + 1] >= 'A') && (pBuffer[index + 1] <= 'F')) {
+			val |= (pBuffer[index + 1] - 'A' + 10);
 		} else {
-			FATAL("Invalid hex string: %s", STR(source));
+			FATAL("Invalid hex string");
 			return "";
 		}
 		result += (char) val;
@@ -339,10 +381,12 @@ string unhex(string source) {
 }
 
 void CleanupSSL() {
+#ifndef NO_SSL_ENGINE_CLEANUP
 	ERR_remove_state(0);
 	ENGINE_cleanup();
 	CONF_modules_unload(1);
 	ERR_free_strings();
 	EVP_cleanup();
 	CRYPTO_cleanup_all_ex_data();
+#endif /* NO_SSL_ENGINE_CLEANUP */
 }

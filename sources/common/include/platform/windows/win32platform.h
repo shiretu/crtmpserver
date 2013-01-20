@@ -101,6 +101,7 @@
 
 #include <string>
 #include <vector>
+#include <queue>
 #include <map>
 #include <fcntl.h>
 #include <sstream>
@@ -163,17 +164,24 @@ typedef long long int int64_t;*/
 #define Timestamp struct tm
 #define Timestamp_init {0, 0, 0, 0, 0, 0, 0, 0, 0}
 #define snprintf sprintf_s
-#define pid_t int32_t
+#define pid_t DWORD
 #define PIOFFT __int64
 
 #define gmtime_r(_p_time_t, _p_struct_tm) *(_p_struct_tm) = *gmtime(_p_time_t);
 
 #define CLOCKS_PER_SECOND 1000000L
-#define GETCLOCKS(result) \
+#define GETCLOCKS(result,type) \
 do { \
     struct timeval ___timer___; \
     gettimeofday(&___timer___,NULL); \
-    result=(double)___timer___.tv_sec*(double)CLOCKS_PER_SECOND+(double) ___timer___.tv_usec; \
+    result=(type)___timer___.tv_sec*(type)CLOCKS_PER_SECOND+(type) ___timer___.tv_usec; \
+}while(0);
+
+#define GETMILLISECONDS(result) \
+do { \
+    struct timeval ___timer___; \
+    gettimeofday(&___timer___,NULL); \
+    result=(uint64_t)___timer___.tv_sec*1000+___timer___.tv_usec/1000; \
 }while(0);
 
 #define GETNTP(result) \
@@ -203,6 +211,7 @@ typedef struct _select_event {
 #define IOVEC WSABUF
 #define MSGHDR_MSG_IOV lpBuffers
 #define MSGHDR_MSG_IOVLEN dwBufferCount
+#define MSGHDR_MSG_IOVLEN_TYPE DWORD
 #define MSGHDR_MSG_NAME name
 #define MSGHDR_MSG_NAMELEN namelen
 #define IOVEC_IOV_BASE buf
@@ -221,6 +230,8 @@ DLLEXP string lowerCase(string value);
 DLLEXP string upperCase(string value);
 DLLEXP string changeCase(string &value, bool lowerCase);
 DLLEXP string tagToString(uint64_t tag);
+DLLEXP bool setFdJoinMulticast(SOCKET sock, string bindIp, uint16_t bindPort, string ssmIp);
+DLLEXP bool setFdCloseOnExec(int fd);
 DLLEXP bool setFdNonBlock(SOCKET fd);
 DLLEXP bool setFdNoSIGPIPE(SOCKET fd);
 DLLEXP bool setFdKeepAlive(SOCKET fd, bool isUdp);
@@ -250,6 +261,7 @@ DLLEXP bool listFolder(string path, vector<string> &result,
 		bool normalizeAllPaths = true, bool includeFolders = false,
 		bool recursive = true);
 DLLEXP bool moveFile(string src, string dst);
+DLLEXP bool isAbsolutePath(string &path);
 DLLEXP void installSignal(int sig, SignalFnc pSignalFnc);
 DLLEXP void installQuitSignal(SignalFnc pQuitSignalFnc);
 DLLEXP void installConfRereadSignal(SignalFnc pConfRereadSignalFnc);

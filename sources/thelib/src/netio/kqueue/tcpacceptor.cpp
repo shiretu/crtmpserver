@@ -51,7 +51,7 @@ TCPAcceptor::~TCPAcceptor() {
 }
 
 bool TCPAcceptor::Bind() {
-	_inboundFd = _outboundFd = (int) socket(PF_INET, SOCK_STREAM, 0);
+	_inboundFd = _outboundFd = (int) socket(PF_INET, SOCK_STREAM, 0); //NOINHERIT
 	if (_inboundFd < 0) {
 		int err = errno;
 		FATAL("Unable to create socket: (%d) %s", err, strerror(err));
@@ -126,7 +126,7 @@ bool TCPAcceptor::Accept() {
 
 	//1. Accept the connection
 	fd = accept(_inboundFd, &address, &len);
-	if (fd < 0) {
+	if ((fd < 0) || (!setFdCloseOnExec(fd))) {
 		int err = errno;
 		FATAL("Unable to accept client connection: (%d) %s", err, strerror(err));
 		return false;
@@ -141,11 +141,6 @@ bool TCPAcceptor::Accept() {
 				_port);
 		return true;
 	}
-	INFO("Client connected: %s:%"PRIu16" -> %s:%"PRIu16,
-			inet_ntoa(((sockaddr_in *) & address)->sin_addr),
-			ENTOHS(((sockaddr_in *) & address)->sin_port),
-			STR(_ipAddress),
-			_port);
 
 	if (!setFdOptions(fd, false)) {
 		FATAL("Unable to set socket options");
@@ -178,6 +173,12 @@ bool TCPAcceptor::Accept() {
 
 	_acceptedCount++;
 
+	INFO("Client connected: %s:%"PRIu16" -> %s:%"PRIu16,
+			inet_ntoa(((sockaddr_in *) & address)->sin_addr),
+			ENTOHS(((sockaddr_in *) & address)->sin_port),
+			STR(pTCPCarrier->GetNearEndpointAddressIp()),
+			pTCPCarrier->GetNearEndpointPort());
+
 	//7. Done
 	return true;
 }
@@ -190,7 +191,7 @@ bool TCPAcceptor::Drop() {
 
 	//1. Accept the connection
 	int32_t fd = accept(_inboundFd, &address, &len);
-	if (fd < 0) {
+	if ((fd < 0) || (!setFdCloseOnExec(fd))) {
 		int err = errno;
 		if (err != EWOULDBLOCK)
 			WARN("Accept failed. Error code was: (%d) %s", err, strerror(err));

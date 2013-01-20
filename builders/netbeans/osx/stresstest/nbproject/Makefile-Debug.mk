@@ -22,6 +22,7 @@ AS=as
 
 # Macros
 CND_PLATFORM=GNU-MacOSX
+CND_DLIB_EXT=dylib
 CND_CONF=Debug
 CND_DISTDIR=dist
 CND_BUILDDIR=build
@@ -65,7 +66,7 @@ LDLIBSOPTIONS=-L../thelib/../Debug/GNU-MacOSX -lthelib -L../common/dist/Debug/GN
 
 ../${CND_CONF}/${CND_PLATFORM}/applications/stresstest/libstresstest.dylib: ${OBJECTFILES}
 	${MKDIR} -p ../${CND_CONF}/${CND_PLATFORM}/applications/stresstest
-	${LINK.cc} -dynamiclib -install_name libstresstest.dylib -o ../${CND_CONF}/${CND_PLATFORM}/applications/stresstest/libstresstest.dylib -fPIC ${OBJECTFILES} ${LDLIBSOPTIONS} 
+	${LINK.cc} -o ../${CND_CONF}/${CND_PLATFORM}/applications/stresstest/libstresstest.dylib ${OBJECTFILES} ${LDLIBSOPTIONS} -dynamiclib -install_name libstresstest.dylib -fPIC
 
 ${OBJECTDIR}/_ext/1256058352/stresstestapplication.o: ../../../../sources/applications/stresstest/src/stresstestapplication.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/1256058352

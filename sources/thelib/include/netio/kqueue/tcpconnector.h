@@ -105,7 +105,7 @@ public:
 			vector<uint64_t>& protocolChain, Variant customParameters) {
 
 		int32_t fd = (int32_t) socket(PF_INET, SOCK_STREAM, 0);
-		if (fd < 0) {
+		if ((fd < 0) || (!setFdCloseOnExec(fd))) {
 			T::SignalProtocolCreated(NULL, customParameters);
 			int err = errno;
 			FATAL("Unable to create fd: (%d) %s", err, strerror(err));

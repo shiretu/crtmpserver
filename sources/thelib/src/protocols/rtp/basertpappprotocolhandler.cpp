@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -19,7 +19,13 @@
 
 
 #ifdef HAS_PROTOCOL_RTP
+#include "application/clientapplicationmanager.h"
 #include "protocols/rtp/basertpappprotocolhandler.h"
+#include "protocols/rtp/inboundrtpprotocol.h"
+#include "protocols/protocolfactorymanager.h"
+#include "netio/netio.h"
+#include "protocols/rtp/streaming/innetrtpstream.h"
+#include "protocols/rtp/sdp.h"
 
 BaseRTPAppProtocolHandler::BaseRTPAppProtocolHandler(Variant &configuration)
 : BaseAppProtocolHandler(configuration) {

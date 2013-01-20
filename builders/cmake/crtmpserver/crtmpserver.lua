@@ -105,7 +105,7 @@ configuration=
 			description="FLV Playback Sample",
 			name="flvplayback",
 			protocol="dynamiclinklibrary",
-			mediaFolder="/Volumes/Storage/media/mp4",
+			mediaFolder="/Volumes/Storage/media",
 			aliases=
 			{
 				"simpleLive",

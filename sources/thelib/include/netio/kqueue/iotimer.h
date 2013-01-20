@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -34,6 +34,7 @@ public:
 	virtual bool SignalOutputData();
 	virtual bool OnEvent(struct kevent &event);
 	bool EnqueueForTimeEvent(uint32_t seconds);
+	bool EnqueueForHighGranularityTimeEvent(uint32_t milliseconds);
 	virtual operator string();
 	virtual void GetStats(Variant &info, uint32_t namespaceId = 0);
 };

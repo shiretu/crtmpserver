@@ -22,6 +22,7 @@ AS=as
 
 # Macros
 CND_PLATFORM=GNU-MacOSX
+CND_DLIB_EXT=dylib
 CND_CONF=Debug
 CND_DISTDIR=dist
 CND_BUILDDIR=build
@@ -65,7 +66,7 @@ ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/vmtests: ../vm/dist/Debug/GNU-MacOSX/
 
 ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/vmtests: ${OBJECTFILES}
 	${MKDIR} -p ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}
-	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/vmtests ${OBJECTFILES} ${LDLIBSOPTIONS} 
+	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/vmtests ${OBJECTFILES} ${LDLIBSOPTIONS}
 
 ${OBJECTDIR}/_ext/1218434808/main.o: ../../../../sources/vmtests/src/main.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/1218434808

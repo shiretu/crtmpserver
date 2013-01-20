@@ -49,7 +49,6 @@ public:
 	uint32_t _consumed;
 	uint32_t _minChunkSize;
 	socklen_t _dummy;
-	uint32_t _sendLimit;
 public:
 	//constructor/destructor and initialization
 	IOBuffer();
@@ -216,6 +215,7 @@ public:
 	 */
 
 	static string DumpBuffer(const uint8_t *pBuffer, uint32_t length);
+	static string DumpBuffer(MSGHDR &message, uint32_t limit = 0);
 	string ToString(uint32_t startIndex = 0, uint32_t limit = 0);
 	operator string();
 

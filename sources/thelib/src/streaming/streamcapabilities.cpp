@@ -17,23 +17,11 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include "streaming/streamcapabilities.h"
+#include "streaming/codectypes.h"
+#include "streaming/baseinstream.h"
 
-_VIDEO_AVC::_VIDEO_AVC() {
-	_pSPS = NULL;
-	_spsLength = 0;
-	_pPPS = NULL;
-	_ppsLength = 0;
-	_width = 0;
-	_height = 0;
-	_widthOverride = 0;
-	_heightOverride = 0;
-}
-
-_VIDEO_AVC::~_VIDEO_AVC() {
-	Clear();
-}
+#define STREAM_CAPABILITIES_VERSION MAKE_TAG2('V','9')
 
 //#define DUMP_VAL(name,type,length) if(length!=0) FINEST("%8s %50s: %4.0f; l: %2u; ba: %4u",#type,name,(double)v[name],length,ba.AvailableBits()); else WARN("%8s %50s: %4.0f; l: %2u; ba: %4u",#type,name,(double)v[name],length,ba.AvailableBits());
 #define DUMP_VAL(name,type,length)
@@ -327,29 +315,346 @@ bool ReadPPS(BitArray &ba, Variant &v) {
 	return true;
 }
 
-bool _VIDEO_AVC::Init(const uint8_t *pSPS, uint32_t spsLength, const uint8_t *pPPS,
-		uint32_t ppsLength) {
-	Clear();
-	if ((spsLength <= 0)
+CodecInfo::CodecInfo() {
+	_type = CODEC_UNKNOWN;
+	_samplingRate = 0;
+	_transferRate = -1;
+}
+
+CodecInfo::~CodecInfo() {
+	_type = CODEC_UNKNOWN;
+	_samplingRate = 0;
+	_transferRate = -1;
+}
+
+bool CodecInfo::Serialize(IOBuffer & buffer) {
+	uint64_t temp64 = EHTONLL(_type);
+	buffer.ReadFromBuffer((uint8_t *) & temp64, sizeof (temp64));
+
+	uint32_t temp32 = EHTONL(_samplingRate);
+	buffer.ReadFromBuffer((uint8_t *) & temp32, sizeof (temp32));
+
+	uint8_t tempBuff[sizeof (_transferRate) ];
+	EHTONDP(_transferRate, tempBuff);
+	buffer.ReadFromBuffer(tempBuff, sizeof (_transferRate));
+
+	return true;
+}
+
+bool CodecInfo::Deserialize(IOBuffer & buffer) {
+	uint8_t *pBuffer = GETIBPOINTER(buffer);
+	uint32_t length = GETAVAILABLEBYTESCOUNT(buffer);
+	if (length < (sizeof (_type) + sizeof (_samplingRate) + sizeof (_transferRate))) {
+		FATAL("Not enough data to deserialize CodecInfo");
+		return false;
+	}
+	_type = ENTOHLLP(pBuffer);
+	_samplingRate = ENTOHLP(pBuffer + sizeof (_type));
+	ENTOHDP(pBuffer + sizeof (_type) + sizeof (_samplingRate), _transferRate);
+	return buffer.Ignore(sizeof (_type) + sizeof (_samplingRate) + sizeof (_transferRate));
+}
+
+void CodecInfo::GetRTMPMetadata(Variant &destination) {
+	switch (_type) {
+		case CODEC_AUDIO_AAC:
+		{
+			destination["audiocodecid"] = "mp4a";
+			if (_transferRate > 1)
+				destination["audiodatarate"] = _transferRate / 1024.0;
+			if (_samplingRate > 1)
+				destination["audiosamplerate"] = _samplingRate;
+			break;
+		}
+		case CODEC_VIDEO_H264:
+		{
+			destination["videocodecid"] = "avc1";
+			if (_transferRate > 1)
+				destination["videodatarate"] = _transferRate / 1024.0;
+			break;
+		}
+		case CODEC_AUDIO_MP3:
+		{
+			destination["audiocodecid"] = ".mp3";
+			if (_transferRate > 1)
+				destination["audiodatarate"] = _transferRate / 1024.0;
+			if (_samplingRate > 1)
+				destination["audiosamplerate"] = _samplingRate;
+			break;
+		}
+		case CODEC_AUDIO_NELLYMOSER:
+		{
+			destination["audiocodecid"] = "nmos";
+			if (_transferRate > 1)
+				destination["audiodatarate"] = _transferRate / 1024.0;
+			if (_samplingRate > 1)
+				destination["audiosamplerate"] = _samplingRate;
+			break;
+		}
+		case CODEC_VIDEO_VP6:
+		case CODEC_VIDEO_VP6ALPHA:
+		{
+			destination["videocodecid"] = "VP62";
+			if (_transferRate > 1)
+				destination["videodatarate"] = _transferRate / 1024.0;
+			break;
+		}
+		case CODEC_VIDEO_SORENSONH263:
+		case CODEC_VIDEO_SCREENVIDEO:
+		case CODEC_VIDEO_SCREENVIDEO2:
+		case CODEC_AUDIO_PCMLE:
+		case CODEC_AUDIO_PCMBE:
+		case CODEC_AUDIO_G711A:
+		case CODEC_AUDIO_G711U:
+		case CODEC_AUDIO_SPEEX:
+		default:
+		{
+			//WARN("RTMP metadata for codec %s not yet implemented", STR(tagToString(_type)));
+			break;
+		}
+	}
+}
+
+CodecInfo::operator string() {
+	return format("%s %.3fKHz %.2fKb/s",
+			STR(tagToString(_type).substr(1)),
+			(double) _samplingRate / 1000.0,
+			_transferRate >= 0 ? ((double) _transferRate / 1024.0) : 0.0
+			);
+}
+
+VideoCodecInfo::VideoCodecInfo()
+: CodecInfo() {
+	_width = 0;
+	_height = 0;
+	_frameRateNominator = 0;
+	_frameRateDenominator = 0;
+}
+
+VideoCodecInfo::~VideoCodecInfo() {
+	_width = 0;
+	_height = 0;
+	_frameRateNominator = 0;
+	_frameRateDenominator = 0;
+}
+
+double VideoCodecInfo::GetFPS() {
+	if ((_frameRateNominator != 0) && (_frameRateDenominator != 0))
+		return (double) _frameRateNominator / ((double) _frameRateDenominator * 2.0);
+	return 0;
+}
+
+bool VideoCodecInfo::Serialize(IOBuffer & buffer) {
+	if (!CodecInfo::Serialize(buffer)) {
+		FATAL("Unable to serialize CodecInfo");
+		return false;
+	}
+	uint32_t temp32 = EHTONL(_frameRateNominator);
+	buffer.ReadFromBuffer((uint8_t *) & temp32, sizeof (temp32));
+
+	temp32 = EHTONL(_frameRateDenominator);
+	buffer.ReadFromBuffer((uint8_t *) & temp32, sizeof (temp32));
+
+	temp32 = EHTONL(_width);
+	buffer.ReadFromBuffer((uint8_t *) & temp32, sizeof (temp32));
+
+	temp32 = EHTONL(_height);
+	buffer.ReadFromBuffer((uint8_t *) & temp32, sizeof (temp32));
+
+	return true;
+}
+
+bool VideoCodecInfo::Deserialize(IOBuffer & buffer) {
+	if (!CodecInfo::Deserialize(buffer)) {
+		FATAL("Unable to deserialize CodecInfo");
+		return false;
+	}
+	uint8_t *pBuffer = GETIBPOINTER(buffer);
+	uint32_t length = GETAVAILABLEBYTESCOUNT(buffer);
+	if (length < (sizeof (_width) + sizeof (_width) + sizeof (_frameRateNominator) + sizeof (_frameRateDenominator))) {
+		FATAL("Not enough data to deserialize VideoCodecInfo");
+		return false;
+	}
+	_frameRateNominator = ENTOHLP(pBuffer);
+	_frameRateDenominator = ENTOHLP(pBuffer + sizeof (_frameRateNominator));
+	_width = ENTOHLP(pBuffer + sizeof (_frameRateNominator) + sizeof (_frameRateDenominator));
+	_height = ENTOHLP(pBuffer + sizeof (_frameRateNominator) + sizeof (_frameRateDenominator) + sizeof (_width));
+	return buffer.Ignore(sizeof (_frameRateNominator) + sizeof (_frameRateDenominator) + sizeof (_width) + sizeof (_height));
+}
+
+void VideoCodecInfo::GetRTMPMetadata(Variant &destination) {
+	CodecInfo::GetRTMPMetadata(destination);
+	if (_width > 0)
+		destination["width"] = _width;
+	if (_height > 0)
+		destination["height"] = _height;
+	double fps = 0;
+	if ((fps = GetFPS()) != 0) {
+		destination["framerate"] = fps;
+	}
+}
+
+VideoCodecInfo::operator string() {
+	return format("%s %"PRIu32"x%"PRIu32" %.2f fps",
+			STR(CodecInfo::operator string()),
+			_width,
+			_height,
+			GetFPS());
+}
+
+VideoCodecInfoPassThrough::VideoCodecInfoPassThrough()
+: VideoCodecInfo() {
+	_type = CODEC_VIDEO_PASS_THROUGH;
+}
+
+VideoCodecInfoPassThrough::~VideoCodecInfoPassThrough() {
+}
+
+bool VideoCodecInfoPassThrough::Init() {
+	return true;
+}
+
+void VideoCodecInfoPassThrough::GetRTMPMetadata(Variant &destination) {
+	//NYI;
+}
+
+VideoCodecInfoH264::VideoCodecInfoH264()
+: VideoCodecInfo() {
+	_level = 0;
+	_profile = 0;
+	_pSPS = NULL;
+	_spsLength = 0;
+	_pPPS = NULL;
+	_ppsLength = 0;
+	_type = CODEC_VIDEO_H264;
+}
+
+VideoCodecInfoH264::~VideoCodecInfoH264() {
+	_level = 0;
+	_profile = 0;
+	if (_pSPS != NULL)
+		delete[] _pSPS;
+	_pSPS = NULL;
+	_spsLength = 0;
+
+	if (_pPPS != NULL)
+		delete[] _pPPS;
+	_pPPS = NULL;
+	_ppsLength = 0;
+}
+
+bool VideoCodecInfoH264::Serialize(IOBuffer & buffer) {
+	if (!VideoCodecInfo::Serialize(buffer)) {
+		FATAL("Unable to serialize VideoCodecInfo");
+		return false;
+	}
+
+	buffer.ReadFromByte(_level);
+
+	buffer.ReadFromByte(_profile);
+
+	uint32_t temp32 = EHTONL(_spsLength);
+	buffer.ReadFromBuffer((uint8_t *) & temp32, sizeof (temp32));
+
+	temp32 = EHTONL(_ppsLength);
+	buffer.ReadFromBuffer((uint8_t *) & temp32, sizeof (temp32));
+
+	buffer.ReadFromBuffer(_pSPS, _spsLength);
+	buffer.ReadFromBuffer(_pPPS, _ppsLength);
+
+	return true;
+}
+
+bool VideoCodecInfoH264::Deserialize(IOBuffer & buffer) {
+	if (!VideoCodecInfo::Deserialize(buffer)) {
+		FATAL("Unable to deserialize VideoCodecInfo");
+		return false;
+	}
+	uint8_t *pBuffer = GETIBPOINTER(buffer);
+	uint32_t length = GETAVAILABLEBYTESCOUNT(buffer);
+
+	if (length < (sizeof (_level) + sizeof (_profile))) {
+		FATAL("Not enough data to deserialize VideoCodecInfoH264");
+		return false;
+	}
+	_level = pBuffer[0];
+	_profile = pBuffer[1];
+	buffer.Ignore(sizeof (_level) + sizeof (_profile));
+	pBuffer = GETIBPOINTER(buffer);
+	length = GETAVAILABLEBYTESCOUNT(buffer);
+
+	if (length < (sizeof (_spsLength) + sizeof (_ppsLength))) {
+		FATAL("Not enough data to deserialize VideoCodecInfoH264");
+		return false;
+	}
+	_spsLength = ENTOHLP(pBuffer);
+	_ppsLength = ENTOHLP(pBuffer + sizeof (_spsLength));
+	if (!buffer.Ignore(sizeof (_spsLength) + sizeof (_ppsLength))) {
+		FATAL("Unable to deserialize VideoCodecInfoH264");
+		return false;
+	}
+	pBuffer = GETIBPOINTER(buffer);
+	length = GETAVAILABLEBYTESCOUNT(buffer);
+	if (length < (_spsLength + _ppsLength)) {
+		FATAL("Not enough data to deserialize VideoCodecInfoH264");
+		return false;
+	}
+	if (_pSPS != NULL) {
+		delete[] _pSPS;
+	}
+	_pSPS = new uint8_t[_spsLength];
+	memcpy(_pSPS, pBuffer, _spsLength);
+	if (_pPPS != NULL) {
+		delete[] _pPPS;
+	}
+	_pPPS = new uint8_t[_ppsLength];
+	memcpy(_pPPS, pBuffer + _spsLength, _ppsLength);
+	return buffer.Ignore(_spsLength + _ppsLength);
+}
+
+VideoCodecInfoH264::operator string() {
+	return format("%s SPS/PPS: %"PRIu32"/%"PRIu32" L/P: %"PRIu8"/%"PRIu8,
+			STR(VideoCodecInfo::operator string()),
+			_spsLength,
+			_ppsLength,
+			_level,
+			_profile
+			);
+}
+
+bool VideoCodecInfoH264::Init(uint8_t *pSPS, uint32_t spsLength, uint8_t *pPPS,
+		uint32_t ppsLength, uint32_t samplingRate) {
+	if ((spsLength < 8)
 			|| (spsLength > 65535)
-			|| (ppsLength <= 0)
+			|| (ppsLength == 0)
 			|| (ppsLength > 65535)) {
 		FATAL("Invalid SPS/PPS lengths");
 		return false;
 	}
-	_spsLength = (uint16_t) spsLength;
+
+	_spsLength = spsLength;
+	if (_pSPS != NULL) {
+		delete[] _pSPS;
+	}
 	_pSPS = new uint8_t[_spsLength];
 	memcpy(_pSPS, pSPS, _spsLength);
 
 	_ppsLength = (uint16_t) ppsLength;
+	if (_pPPS != NULL) {
+		delete[] _pPPS;
+	}
 	_pPPS = new uint8_t[_ppsLength];
 	memcpy(_pPPS, pPPS, _ppsLength);
-
-	_rate = 90000;
+	_width = 0;
+	_height = 0;
+	_transferRate = 0;
+	_samplingRate = samplingRate;
+	if (_samplingRate == 0)
+		_samplingRate = 90000;
+	_type = CODEC_VIDEO_H264;
 
 	BitArray spsBa;
 	//remove emulation_prevention_three_byte
-	for (uint16_t i = 1; i < _spsLength; i++) {
+	for (uint32_t i = 1; i < _spsLength; i++) {
 		if (((i + 2)<(_spsLength - 1))
 				&& (_pSPS[i + 0] == 0)
 				&& (_pSPS[i + 1] == 0)
@@ -361,20 +666,27 @@ bool _VIDEO_AVC::Init(const uint8_t *pSPS, uint32_t spsLength, const uint8_t *pP
 		}
 	}
 
-	if (!ReadSPS(spsBa, _SPSInfo)) {
-		WARN("Unable to parse SPS");
+	Variant temp;
+	if (!ReadSPS(spsBa, temp)) {
+		FATAL("Unable to parse SPS");
+		return false;
 	} else {
-		_SPSInfo.Compact();
-		_width = ((uint32_t) _SPSInfo["pic_width_in_mbs_minus1"] + 1)*16;
-		_height = ((uint32_t) _SPSInfo["pic_height_in_map_units_minus1"] + 1)*16;
-		//		FINEST("_width: %u (%u); _height: %u (%u)",
-		//				_width, (uint32_t) _SPSInfo["pic_width_in_mbs_minus1"],
-		//				_height, (uint32_t) _SPSInfo["pic_height_in_map_units_minus1"]);
+		temp.Compact();
+		bool frame_mbs_only_flag = (bool)temp["frame_mbs_only_flag"];
+		_width = ((uint32_t) temp["pic_width_in_mbs_minus1"] + 1)*16;
+		_height = ((uint32_t) temp["pic_height_in_map_units_minus1"] + 1)*16 * (frame_mbs_only_flag ? 1 : 2);
+		_level = (uint8_t) temp["level_idc"];
+		_profile = (uint8_t) temp["profile_idc"];
+		if ((temp.HasKeyChain(_V_NUMERIC, true, 2, "vui_parameters", "num_units_in_tick"))
+				&& (temp.HasKeyChain(_V_NUMERIC, true, 2, "vui_parameters", "time_scale"))) {
+			_frameRateNominator = (uint32_t) temp["vui_parameters"]["time_scale"];
+			_frameRateDenominator = (uint32_t) temp["vui_parameters"]["num_units_in_tick"];
+		}
 	}
 
 	BitArray ppsBa;
 	//remove emulation_prevention_three_byte
-	for (uint16_t i = 1; i < _ppsLength; i++) {
+	for (uint32_t i = 1; i < _ppsLength; i++) {
 		if (((i + 2)<(_ppsLength - 1))
 				&& (_pPPS[i + 0] == 0)
 				&& (_pPPS[i + 1] == 0)
@@ -386,117 +698,547 @@ bool _VIDEO_AVC::Init(const uint8_t *pSPS, uint32_t spsLength, const uint8_t *pP
 		}
 	}
 
-	if (!ReadPPS(ppsBa, _PPSInfo)) {
-		WARN("Unable to read PPS info");
+
+	temp.Reset();
+	if (!ReadPPS(ppsBa, temp)) {
+		FATAL("Unable to partse PPS");
+		return false;
 	}
 
 	return true;
 }
 
-void _VIDEO_AVC::Clear() {
-	if (_pSPS != NULL) {
-		delete[] _pSPS;
-		_pSPS = NULL;
-	}
-	_spsLength = 0;
-	if (_pPPS != NULL) {
-		delete[] _pPPS;
-		_pPPS = NULL;
-	}
-	_ppsLength = 0;
-	_rate = 0;
+void VideoCodecInfoH264::GetRTMPMetadata(Variant &destination) {
+	VideoCodecInfo::GetRTMPMetadata(destination);
+	destination["avclevel"] = _level;
+	destination["avcprofile"] = _profile;
+	//<DOUBLE name="videokeyframe_frequency">5.000</DOUBLE>
 }
 
-bool _VIDEO_AVC::Serialize(IOBuffer &dest) {
-	uint8_t temp[sizeof (_spsLength) + sizeof (_ppsLength) + sizeof (uint32_t)];
-	EHTONSP(temp, _spsLength);
-	dest.ReadFromBuffer(temp, sizeof (_spsLength));
-	dest.ReadFromBuffer(_pSPS, _spsLength);
-	EHTONSP(temp, _ppsLength);
-	dest.ReadFromBuffer(temp, sizeof (_ppsLength));
-	dest.ReadFromBuffer(_pPPS, _ppsLength);
-	EHTONLP(temp, _widthOverride);
-	dest.ReadFromBuffer(temp, sizeof (uint32_t));
-	EHTONLP(temp, _heightOverride);
-	dest.ReadFromBuffer(temp, sizeof (uint32_t));
+IOBuffer & VideoCodecInfoH264::GetRTMPRepresentation() {
+	if (GETAVAILABLEBYTESCOUNT(_rtmpRepresentation) != 0)
+		return _rtmpRepresentation;
+
+	_rtmpRepresentation.ReadFromByte(0x17); //0x10 - key frame; 0x07 - H264_CODEC_ID
+	_rtmpRepresentation.ReadFromByte(0); //0: AVC sequence header; 1: AVC NALU; 2: AVC end of sequence
+	_rtmpRepresentation.ReadFromByte(0); //CompositionTime
+	_rtmpRepresentation.ReadFromByte(0); //CompositionTime
+	_rtmpRepresentation.ReadFromByte(0); //CompositionTime
+	_rtmpRepresentation.ReadFromByte(1); //version
+	_rtmpRepresentation.ReadFromBuffer(_pSPS + 1, 3); //profile,profile compat,level
+	_rtmpRepresentation.ReadFromByte(0xff); //6 bits reserved (111111) + 2 bits nal size length - 1 (11)
+	_rtmpRepresentation.ReadFromByte(0xe1); //3 bits reserved (111) + 5 bits number of sps (00001)
+	uint16_t temp16 = EHTONS((uint16_t) _spsLength);
+	_rtmpRepresentation.ReadFromBuffer((uint8_t *) & temp16, 2); //SPS length
+	_rtmpRepresentation.ReadFromBuffer(_pSPS, _spsLength);
+
+
+	_rtmpRepresentation.ReadFromByte(1);
+	temp16 = EHTONS((uint16_t) _ppsLength);
+	_rtmpRepresentation.ReadFromBuffer((uint8_t *) & temp16, 2); //PPS length
+	_rtmpRepresentation.ReadFromBuffer(_pPPS, _ppsLength);
+
+	return _rtmpRepresentation;
+}
+
+IOBuffer & VideoCodecInfoH264::GetSPSBuffer() {
+	if (GETAVAILABLEBYTESCOUNT(_sps) != 0)
+		return _sps;
+	_sps.ReadFromBuffer(_pSPS, _spsLength);
+	return _sps;
+}
+
+IOBuffer & VideoCodecInfoH264::GetPPSBuffer() {
+	if (GETAVAILABLEBYTESCOUNT(_pps) != 0)
+		return _pps;
+	_pps.ReadFromBuffer(_pPPS, _ppsLength);
+	return _pps;
+}
+
+bool VideoCodecInfoH264::Compare(uint8_t *pSPS, uint32_t spsLength, uint8_t *pPPS,
+		uint32_t ppsLength) {
+	return (_spsLength == spsLength)
+			&&(_ppsLength == ppsLength)
+			&&(pSPS != NULL)
+			&&(pPPS != NULL)
+			&&(_pSPS != NULL)
+			&&(_pPPS != NULL)
+			&&(memcmp(_pSPS, pSPS, spsLength) == 0)
+			&&(memcmp(_pPPS, pPPS, ppsLength) == 0);
+}
+
+VideoCodecInfoSorensonH263::VideoCodecInfoSorensonH263()
+: VideoCodecInfo() {
+	_pHeaders = NULL;
+	_length = 0;
+	_type = CODEC_VIDEO_SORENSONH263;
+}
+
+VideoCodecInfoSorensonH263::~VideoCodecInfoSorensonH263() {
+	if (_pHeaders != NULL)
+		delete[] _pHeaders;
+	_pHeaders = NULL;
+	_length = 0;
+}
+
+bool VideoCodecInfoSorensonH263::Serialize(IOBuffer & buffer) {
+	if (!VideoCodecInfo::Serialize(buffer)) {
+		FATAL("Unable to serialize VideoCodecInfo");
+		return false;
+	}
+	uint32_t temp32 = EHTONL(_length);
+	buffer.ReadFromBuffer((uint8_t *) & temp32, sizeof (temp32));
+	buffer.ReadFromBuffer(_pHeaders, _length);
 	return true;
 }
 
-bool _VIDEO_AVC::Deserialize(IOBuffer &src, _VIDEO_AVC &dest) {
-	dest.Clear();
-	uint8_t *pBuffer = GETIBPOINTER(src);
-	uint32_t length = GETAVAILABLEBYTESCOUNT(src);
-	if (length<sizeof (dest._spsLength)) {
-		FATAL("Not enough data");
+bool VideoCodecInfoSorensonH263::Deserialize(IOBuffer & buffer) {
+	if (!VideoCodecInfo::Deserialize(buffer)) {
+		FATAL("Unable to deserialize VideoCodecInfo");
 		return false;
 	}
-	dest._spsLength = ENTOHSP(pBuffer);
-	if (length < (
-			sizeof (dest._spsLength)
-			+ dest._spsLength
-			+ sizeof (dest._ppsLength)
-			+ 2 * sizeof (uint32_t))) {
-		FATAL("Not enough data");
+	uint8_t *pBuffer = GETIBPOINTER(buffer);
+	uint32_t length = GETAVAILABLEBYTESCOUNT(buffer);
+	if (length < sizeof (_length)) {
+		FATAL("Not enough data to deserialize VideoCodecInfoSorensonH263");
 		return false;
 	}
-	dest._ppsLength = ENTOHSP(pBuffer + sizeof (dest._spsLength) + dest._spsLength);
-	if (length < (
-			sizeof (dest._spsLength)
-			+ dest._spsLength
-			+ sizeof (dest._ppsLength)
-			+ dest._ppsLength
-			+ 2 * sizeof (uint32_t))) {
-		FATAL("Not enough data");
+	_length = ENTOHLP(pBuffer);
+	if (!buffer.Ignore(sizeof (_length))) {
+		FATAL("Unable to deserialize VideoCodecInfoSorensonH263");
 		return false;
 	}
-	if (!dest.Init(
-			pBuffer + sizeof (dest._spsLength), dest._spsLength,
-			pBuffer + sizeof (dest._spsLength) + dest._spsLength + sizeof (dest._ppsLength), dest._ppsLength)) {
-		FATAL("Unable to init AVC");
+	pBuffer = GETIBPOINTER(buffer);
+	length = GETAVAILABLEBYTESCOUNT(buffer);
+	if (length < _length) {
+		FATAL("Not enough data to deserialize VideoCodecInfoSorensonH263");
 		return false;
 	}
-	dest._widthOverride = ENTOHLP(pBuffer + sizeof (dest._spsLength) + dest._spsLength + sizeof (dest._ppsLength) + dest._ppsLength);
-	dest._heightOverride = ENTOHLP(pBuffer + sizeof (dest._spsLength) + dest._spsLength + sizeof (dest._ppsLength) + dest._ppsLength + sizeof (uint32_t));
-
-	return src.Ignore(sizeof (dest._spsLength) + dest._spsLength + sizeof (dest._ppsLength) + dest._ppsLength + sizeof (uint32_t) + sizeof (uint32_t));
+	if (_pHeaders != NULL) {
+		delete[] _pHeaders;
+	}
+	_pHeaders = new uint8_t[_length];
+	memcpy(_pHeaders, pBuffer, _length);
+	return buffer.Ignore(_length);
 }
 
-_VIDEO_AVC::operator string() {
-	string result;
-	result += format("_spsLength: %"PRIu16"\n", _spsLength);
-	result += format("_ppsLength: %"PRIu16"\n", _ppsLength);
-	result += format("_rate: %"PRIu32"\n", _rate);
-	result += format("WxH: %"PRIu32"x%"PRIu32, _width, _height);
-	return result;
+VideoCodecInfoSorensonH263::operator string() {
+	return format("%s Headers: %"PRIu32,
+			STR(VideoCodecInfo::operator string()),
+			_length);
 }
 
-_AUDIO_AAC::_AUDIO_AAC() {
-	_pAAC = NULL;
-	_aacLength = 0;
+bool VideoCodecInfoSorensonH263::Init(uint8_t *pHeaders, uint32_t length) {
+	if ((length == 0) || (length > 65535)) {
+		FATAL("Invalid headers lengths");
+		return false;
+	}
+	_length = length;
+	if (_pHeaders != NULL) {
+		delete[] _pHeaders;
+	}
+	_pHeaders = new uint8_t[_length];
+	memcpy(_pHeaders, pHeaders, _length);
+
+	_width = 0;
+	_height = 0;
+	_transferRate = 0;
+	_samplingRate = 90000;
+	_type = CODEC_VIDEO_SORENSONH263;
+
+	BitArray ba;
+	ba.ReadFromBuffer(pHeaders, length);
+
+	//17 - marker
+	//5 - format1
+	//8 - picture number/timestamp
+	//3 - format2
+	//2*8 or 2*16 - width/height depending on the format2
+
+	if (ba.AvailableBits() < 33) {
+		FATAL("Not enough bits");
+		return false;
+	}
+
+	uint32_t marker = ba.ReadBits<uint32_t > (17);
+	if (marker != 0x01) {
+		FATAL("Invalid marker: %"PRIx32, marker);
+		return false;
+	}
+
+	uint8_t format1 = ba.ReadBits<uint8_t > (5);
+	if ((format1) != 0 && (format1 != 1)) {
+		FATAL("Invalid format1: %"PRIx8, format1);
+		return false;
+	}
+
+	uint8_t pictureNumber = ba.ReadBits<uint8_t > (8);
+	if (pictureNumber != 0) {
+		WARN("This is not the first picture from a Sorenson H.263 stream: %"PRIx8, pictureNumber);
+	}
+
+	uint8_t format2 = ba.ReadBits<uint8_t > (3);
+
+	switch (format2) {
+		case 0:
+			if (ba.AvailableBits() < 16) {
+				FATAL("Not enough bits");
+				return false;
+			}
+			_width = ba.ReadBits<uint8_t > (8);
+			_height = ba.ReadBits<uint8_t > (8);
+			break;
+		case 1:
+			if (ba.AvailableBits() < 32) {
+				FATAL("Not enough bits");
+				return false;
+			}
+			_width = ba.ReadBits<uint16_t > (16);
+			_height = ba.ReadBits<uint16_t > (16);
+			break;
+		case 2:
+			_width = 352;
+			_height = 288;
+			break;
+		case 3:
+			_width = 176;
+			_height = 144;
+			break;
+		case 4:
+			_width = 128;
+			_height = 96;
+			break;
+		case 5:
+			_width = 320;
+			_height = 240;
+			break;
+		case 6:
+			_width = 160;
+			_height = 120;
+			break;
+		default:
+		{
+			FATAL("Invalid format2: %"PRIx8, format2);
+			return false;
+		}
+	}
+
+	return true;
+}
+
+void VideoCodecInfoSorensonH263::GetRTMPMetadata(Variant &destination) {
+	VideoCodecInfo::GetRTMPMetadata(destination);
+	NYI;
+}
+
+VideoCodecInfoVP6::VideoCodecInfoVP6()
+: VideoCodecInfo() {
+	_pHeaders = NULL;
+	_length = 0;
+	_type = CODEC_VIDEO_VP6;
+}
+
+VideoCodecInfoVP6::~VideoCodecInfoVP6() {
+	if (_pHeaders != NULL)
+		delete[] _pHeaders;
+	_pHeaders = NULL;
+	_length = 0;
+}
+
+bool VideoCodecInfoVP6::Serialize(IOBuffer & buffer) {
+	if (!VideoCodecInfo::Serialize(buffer)) {
+		FATAL("Unable to serialize VideoCodecInfo");
+		return false;
+	}
+	uint32_t temp32 = EHTONL(_length);
+	buffer.ReadFromBuffer((uint8_t *) & temp32, sizeof (temp32));
+	buffer.ReadFromBuffer(_pHeaders, _length);
+	return true;
+}
+
+bool VideoCodecInfoVP6::Deserialize(IOBuffer & buffer) {
+	if (!VideoCodecInfo::Deserialize(buffer)) {
+		FATAL("Unable to deserialize VideoCodecInfo");
+		return false;
+	}
+	uint8_t *pBuffer = GETIBPOINTER(buffer);
+	uint32_t length = GETAVAILABLEBYTESCOUNT(buffer);
+	if (length < sizeof (_length)) {
+		FATAL("Not enough data to deserialize VideoCodecInfoVP6");
+		return false;
+	}
+	_length = ENTOHLP(pBuffer);
+	if (!buffer.Ignore(sizeof (_length))) {
+		FATAL("Unable to deserialize VideoCodecInfoVP6");
+		return false;
+	}
+	pBuffer = GETIBPOINTER(buffer);
+	length = GETAVAILABLEBYTESCOUNT(buffer);
+	if (length < _length) {
+		FATAL("Not enough data to deserialize VideoCodecInfoVP6");
+		return false;
+	}
+	if (_pHeaders != NULL) {
+		delete[] _pHeaders;
+	}
+	_pHeaders = new uint8_t[_length];
+	memcpy(_pHeaders, pBuffer, _length);
+	return buffer.Ignore(_length);
+}
+
+VideoCodecInfoVP6::operator string() {
+	return format("%s Headers: %"PRIu32,
+			STR(VideoCodecInfo::operator string()),
+			_length);
+}
+
+bool VideoCodecInfoVP6::Init(uint8_t *pHeaders, uint32_t length) {
+	if (length != 6) {
+		FATAL("Invalid headers lengths");
+		return false;
+	}
+	_length = length;
+	if (_pHeaders != NULL) {
+		delete[] _pHeaders;
+	}
+	_pHeaders = new uint8_t[_length];
+	memcpy(_pHeaders, pHeaders, _length);
+
+	uint8_t widthAdjust = _pHeaders[0] >> 4;
+	uint8_t heightAdjust = _pHeaders[0]&0x0f;
+
+	_width = (_pHeaders[4] << 4) - widthAdjust;
+	_height = (_pHeaders[5] << 4) - heightAdjust;
+	_transferRate = 0;
+	_samplingRate = 90000;
+	_type = CODEC_VIDEO_VP6;
+
+	return true;
+}
+
+void VideoCodecInfoVP6::GetRTMPMetadata(Variant &destination) {
+	VideoCodecInfo::GetRTMPMetadata(destination);
+}
+
+AudioCodecInfo::AudioCodecInfo()
+: CodecInfo() {
+	_channelsCount = 0;
+	_bitsPerSample = 0;
+	_samplesPerPacket = 0;
+}
+
+AudioCodecInfo::~AudioCodecInfo() {
+	_channelsCount = 0;
+	_bitsPerSample = 0;
+	_samplesPerPacket = 0;
+}
+
+bool AudioCodecInfo::Serialize(IOBuffer & buffer) {
+	if (!CodecInfo::Serialize(buffer)) {
+		FATAL("Unable to serialize CodecInfo");
+		return false;
+	}
+	buffer.ReadFromBuffer((uint8_t *) & _channelsCount, sizeof (_channelsCount));
+	buffer.ReadFromBuffer((uint8_t *) & _bitsPerSample, sizeof (_bitsPerSample));
+
+	int32_t temp32 = EHTONL(_samplesPerPacket);
+	buffer.ReadFromBuffer((uint8_t *) & temp32, sizeof (temp32));
+
+	return true;
+}
+
+bool AudioCodecInfo::Deserialize(IOBuffer & buffer) {
+	if (!CodecInfo::Deserialize(buffer)) {
+		FATAL("Unable to deserialize CodecInfo");
+		return false;
+	}
+	uint8_t *pBuffer = GETIBPOINTER(buffer);
+	uint32_t length = GETAVAILABLEBYTESCOUNT(buffer);
+	if (length < (sizeof (_channelsCount) + sizeof (_bitsPerSample) + sizeof (_samplesPerPacket))) {
+		FATAL("Not enough data to deserialize AudioCodecInfo");
+		return false;
+	}
+	_channelsCount = pBuffer[0];
+	_bitsPerSample = pBuffer[1];
+	_samplesPerPacket = ENTOHLP(pBuffer + sizeof (_channelsCount) + sizeof (_bitsPerSample));
+	return buffer.Ignore(sizeof (_channelsCount) + sizeof (_bitsPerSample) + sizeof (_samplesPerPacket));
+}
+
+void AudioCodecInfo::GetRTMPMetadata(Variant &destination) {
+	CodecInfo::GetRTMPMetadata(destination);
+	if (_channelsCount > 0) {
+		destination["audiochannels"] = _channelsCount;
+		if (_channelsCount > 1) {
+			destination["stereo"] = (bool)true;
+		} else {
+			destination["stereo"] = (bool)false;
+		}
+	}
+}
+
+AudioCodecInfo::operator string() {
+	return format("%s %"PRIu8" channels, %"PRIu8" bits/sample",
+			STR(CodecInfo::operator string()),
+			_channelsCount,
+			_bitsPerSample);
+}
+
+AudioCodecInfoPassThrough::AudioCodecInfoPassThrough()
+: AudioCodecInfo() {
+	_type = CODEC_AUDIO_PASS_THROUGH;
+}
+
+AudioCodecInfoPassThrough::~AudioCodecInfoPassThrough() {
+}
+
+bool AudioCodecInfoPassThrough::Init() {
+	return true;
+}
+
+void AudioCodecInfoPassThrough::GetRTMPMetadata(Variant &destination) {
+	AudioCodecInfo::GetRTMPMetadata(destination);
+	//NYI;
+}
+
+AudioCodecInfoAAC::AudioCodecInfoAAC()
+: AudioCodecInfo() {
 	_audioObjectType = 0;
 	_sampleRateIndex = 0;
-	_sampleRate = 0;
-	_channelConfigurationIndex = 0;
+	_pCodecBytes = NULL;
+	_codecBytesLength = 0;
+	_type = CODEC_AUDIO_AAC;
 }
 
-_AUDIO_AAC::~_AUDIO_AAC() {
-	Clear();
+AudioCodecInfoAAC::~AudioCodecInfoAAC() {
+	_audioObjectType = 0;
+	_sampleRateIndex = 0;
+	if (_pCodecBytes != NULL)
+		delete[] _pCodecBytes;
+	_pCodecBytes = NULL;
+	_codecBytesLength = 0;
 }
 
-bool _AUDIO_AAC::Init(const uint8_t *pBuffer, uint32_t length) {
-	Clear();
+bool AudioCodecInfoAAC::Serialize(IOBuffer & buffer) {
+	if (!AudioCodecInfo::Serialize(buffer)) {
+		FATAL("Unable to serialize AudioCodecInfo");
+		return false;
+	}
+
+	buffer.ReadFromByte(_audioObjectType);
+	buffer.ReadFromByte(_sampleRateIndex);
+	buffer.ReadFromBuffer((uint8_t *) & _codecBytesLength, sizeof (_codecBytesLength));
+	buffer.ReadFromBuffer(_pCodecBytes, _codecBytesLength);
+
+	return true;
+}
+
+bool AudioCodecInfoAAC::Deserialize(IOBuffer & buffer) {
+	if (!AudioCodecInfo::Deserialize(buffer)) {
+		FATAL("Unable to deserialize AudioCodecInfo");
+		return false;
+	}
+
+	//_audioObjectType
+	uint8_t *pBuffer = GETIBPOINTER(buffer);
+	uint32_t length = GETAVAILABLEBYTESCOUNT(buffer);
+	if (length < sizeof (_audioObjectType)) {
+		FATAL("Not enough data to deserialize AudioCodecInfoAAC");
+		return false;
+	}
+	_audioObjectType = pBuffer[0];
+	if (!buffer.Ignore(sizeof (_audioObjectType))) {
+		FATAL("Unable to deserialize AudioCodecInfoAAC");
+		return false;
+	}
+
+	//_sampleRateIndex
+	pBuffer = GETIBPOINTER(buffer);
+	length = GETAVAILABLEBYTESCOUNT(buffer);
+	if (length < sizeof (_sampleRateIndex)) {
+		FATAL("Not enough data to deserialize AudioCodecInfoAAC");
+		return false;
+	}
+	_sampleRateIndex = pBuffer[0];
+	if (!buffer.Ignore(sizeof (_codecBytesLength))) {
+		FATAL("Unable to deserialize AudioCodecInfoAAC");
+		return false;
+	}
+
+	//_codecBytesLength
+	pBuffer = GETIBPOINTER(buffer);
+	length = GETAVAILABLEBYTESCOUNT(buffer);
+	if (length < sizeof (_codecBytesLength)) {
+		FATAL("Not enough data to deserialize AudioCodecInfoAAC");
+		return false;
+	}
+	_codecBytesLength = pBuffer[0];
+	if (!buffer.Ignore(sizeof (_codecBytesLength))) {
+		FATAL("Unable to deserialize AudioCodecInfoAAC");
+		return false;
+	}
+
+	//_pCodecBytes
+	pBuffer = GETIBPOINTER(buffer);
+	length = GETAVAILABLEBYTESCOUNT(buffer);
+	if (length < _codecBytesLength) {
+		FATAL("Not enough data to deserialize AudioCodecInfoAAC");
+		return false;
+	}
+	if (_pCodecBytes != NULL) {
+		delete[] _pCodecBytes;
+	}
+	_pCodecBytes = new uint8_t[_codecBytesLength];
+	memcpy(_pCodecBytes, pBuffer, _codecBytesLength);
+	return buffer.Ignore(_codecBytesLength);
+}
+
+AudioCodecInfoAAC::operator string() {
+	return format("%s codec length: %"PRIu8,
+			STR(AudioCodecInfo::operator string()),
+			_codecBytesLength);
+}
+
+bool AudioCodecInfoAAC::Init(uint8_t *pCodecBytes, uint8_t codecBytesLength,
+		bool simple) {
 	//http://wiki.multimedia.cx/index.php?title=MP4A#Audio_Specific_Config
 
-	if (length < 2) {
-		FATAL("Invalid length: %u", length);
+	if (codecBytesLength < 2) {
+		FATAL("Invalid length: %"PRIu8, codecBytesLength);
 		return false;
 	}
 
 	//1. Prepare the bit array
 	BitArray ba;
-	ba.ReadFromBuffer(pBuffer, length);
+	ba.ReadFromBuffer(pCodecBytes, codecBytesLength);
+
+	if (!simple) {
+		if (ba.AvailableBits() < 1) {
+			FATAL("Not enough bits available for reading AAC config");
+			return false;
+		}
+		if (ba.ReadBits<bool>(1)) {
+			if (ba.AvailableBits() < 1) {
+				FATAL("Not enough bits available for reading AAC config");
+				return false;
+			}
+			ba.ReadBits<bool>(1);
+		}
+		if (ba.AvailableBits() < 14) {
+			FATAL("Not enough bits available for reading AAC config");
+			return false;
+		}
+		ba.ReadBits<uint16_t > (14);
+
+		_pCodecBytes = new uint8_t[2];
+		EHTONSP(_pCodecBytes, ba.PeekBits<uint16_t > (16));
+		_codecBytesLength = 2;
+	}
 
 	//2. Read the audio object type
+	if (ba.AvailableBits() < 5) {
+		FATAL("Not enough bits available for reading AAC config");
+		return false;
+	}
 	_audioObjectType = ba.ReadBits<uint8_t > (5);
 	if ((_audioObjectType != 1)
 			&& (_audioObjectType != 2)
@@ -508,309 +1250,656 @@ bool _AUDIO_AAC::Init(const uint8_t *pBuffer, uint32_t length) {
 			&& (_audioObjectType != 20)
 			&& (_audioObjectType != 23)
 			&& (_audioObjectType != 39)) {
-		FATAL("Invalid _audioObjectType: %hhu", _audioObjectType);
+		FATAL("Invalid _audioObjectType: %"PRIu8, _audioObjectType);
 		return false;
 	}
 
 	//3. Read the sample rate index
+	if (ba.AvailableBits() < 4) {
+		FATAL("Not enough bits available for reading AAC config");
+		return false;
+	}
 	_sampleRateIndex = ba.ReadBits<uint8_t > (4);
 	if ((_sampleRateIndex == 13)
 			|| (_sampleRateIndex == 14)) {
-		FATAL("Invalid sample rate: %hhu", _sampleRateIndex);
+		FATAL("Invalid sample rate: %"PRIu8, _sampleRateIndex);
 		return false;
 	}
 	if (_sampleRateIndex == 15) {
-		if (length < 5) {
-			FATAL("Invalid length: %u", length);
+		if (codecBytesLength < 5) {
+			FATAL("Invalid length: %"PRIu32, codecBytesLength);
 			return false;
 		}
-		_sampleRate = ba.ReadBits<uint32_t > (24);
+		if (ba.AvailableBits() < 24) {
+			FATAL("Not enough bits available for reading AAC config");
+			return false;
+		}
+		_samplingRate = ba.ReadBits<uint32_t > (24);
 	} else {
 		uint32_t rates[] = {
 			96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000,
 			12000, 11025, 8000, 7350
 		};
-		_sampleRate = rates[_sampleRateIndex];
+		_samplingRate = rates[_sampleRateIndex];
 	}
 
 	//4. read the channel configuration index
-	_channelConfigurationIndex = ba.ReadBits<uint8_t > (4);
-	if ((_channelConfigurationIndex == 0)
-			|| (_channelConfigurationIndex >= 8)) {
-		FATAL("Invalid _channelConfigurationIndex: %hhu", _channelConfigurationIndex);
+	if (ba.AvailableBits() < 4) {
+		FATAL("Not enough bits available for reading AAC config");
+		return false;
+	}
+	_channelsCount = ba.ReadBits<uint8_t > (4);
+	if ((_channelsCount == 0) || (_channelsCount >= 8)) {
+		FATAL("Invalid _channelConfigurationIndex: %"PRIu8, _channelsCount);
 		return false;
 	}
 
-	_pAAC = new uint8_t[length];
-	memcpy(_pAAC, pBuffer, length);
-	_aacLength = length;
+	if (simple) {
+		_pCodecBytes = new uint8_t[codecBytesLength];
+		memcpy(_pCodecBytes, pCodecBytes, codecBytesLength);
+		_codecBytesLength = codecBytesLength;
+	}
 
+	//FINEST("%s", STR(IOBuffer::DumpBuffer(_pAAC, _aacLength)));
 
 	return true;
 }
 
-void _AUDIO_AAC::Clear() {
-	if (_pAAC != NULL) {
-		delete[] _pAAC;
-		_pAAC = NULL;
-	}
-	_aacLength = 0;
-	_audioObjectType = 0;
-	_sampleRateIndex = 0;
-	_sampleRate = 0;
-	_channelConfigurationIndex = 0;
+AudioCodecInfoNellymoser::AudioCodecInfoNellymoser()
+: AudioCodecInfo() {
+
 }
 
-string _AUDIO_AAC::GetRTSPFmtpConfig() {
-	string result;
-	for (uint32_t i = 0; i < _aacLength; i++) {
-		result += format("%02hhx", _pAAC[i]);
-	}
-	return "config=" + result;
+AudioCodecInfoNellymoser::~AudioCodecInfoNellymoser() {
+
 }
 
-bool _AUDIO_AAC::Serialize(IOBuffer &dest) {
-	uint8_t temp[sizeof (_aacLength)];
-	EHTONLP(temp, _aacLength);
-	dest.ReadFromBuffer(temp, sizeof (_aacLength));
-	dest.ReadFromBuffer(_pAAC, _aacLength);
+bool AudioCodecInfoNellymoser::Init(uint32_t samplingRate, uint8_t channelsCount, uint8_t bitsPerSample) {
+	_samplingRate = samplingRate;
+	_channelsCount = channelsCount;
+	_bitsPerSample = bitsPerSample;
+	_type = CODEC_AUDIO_NELLYMOSER;
 	return true;
 }
 
-bool _AUDIO_AAC::Deserialize(IOBuffer &src, _AUDIO_AAC &dest) {
-	dest.Clear();
-	uint8_t *pBuffer = GETIBPOINTER(src);
-	uint32_t length = GETAVAILABLEBYTESCOUNT(src);
-	if (length<sizeof (dest._aacLength)) {
-		FATAL("Not enough data");
-		return false;
-	}
-	dest._aacLength = ENTOHLP(pBuffer);
-	if (length<sizeof (dest._aacLength) + dest._aacLength) {
-		FATAL("Not enough data");
-		return false;
-	}
-	if (!dest.Init(pBuffer + sizeof (dest._aacLength), dest._aacLength)) {
-		FATAL("Unable to init AAC");
-		return false;
-	}
-	return src.Ignore(sizeof (dest._aacLength) + dest._aacLength);
+void AudioCodecInfoNellymoser::GetRTMPMetadata(Variant &destination) {
+	AudioCodecInfo::GetRTMPMetadata(destination);
 }
 
-_AUDIO_AAC::operator string() {
-	string result;
-	result += format("_aacLength: %u\n", _aacLength);
-	result += format("_audioObjectType: %hhu\n", _audioObjectType);
-	result += format("_sampleRateIndex: %hhu\n", _sampleRateIndex);
-	result += format("_sampleRate: %u\n", _sampleRate);
-	result += format("_channelConfigurationIndex: %hhu", _channelConfigurationIndex);
-	return result;
+AudioCodecInfoMP3::AudioCodecInfoMP3()
+: AudioCodecInfo() {
+
+}
+
+AudioCodecInfoMP3::~AudioCodecInfoMP3() {
+
+}
+
+bool AudioCodecInfoMP3::Init(uint32_t samplingRate, uint8_t channelsCount, uint8_t bitsPerSample) {
+	_samplingRate = samplingRate;
+	_channelsCount = channelsCount;
+	_bitsPerSample = bitsPerSample;
+	_type = CODEC_AUDIO_MP3;
+	return true;
+}
+
+void AudioCodecInfoMP3::GetRTMPMetadata(Variant &destination) {
+	AudioCodecInfo::GetRTMPMetadata(destination);
+}
+
+IOBuffer & AudioCodecInfoAAC::GetRTMPRepresentation() {
+	if (GETAVAILABLEBYTESCOUNT(_rtmpRepresentation) != 0)
+		return _rtmpRepresentation;
+	_rtmpRepresentation.ReadFromByte(0xaf);
+	_rtmpRepresentation.ReadFromByte(0x00);
+	_rtmpRepresentation.ReadFromBuffer(_pCodecBytes, _codecBytesLength);
+	return _rtmpRepresentation;
+}
+
+void AudioCodecInfoAAC::GetRTMPMetadata(Variant &destination) {
+	AudioCodecInfo::GetRTMPMetadata(destination);
+}
+
+void AudioCodecInfoAAC::GetADTSRepresentation(uint8_t *pDest, uint32_t length) {
+	BitArray adts;
+	adts.PutBits<uint16_t > (0xFFF, 12); // syncword
+	adts.PutBits<uint8_t > (0, 1); // id
+	adts.PutBits<uint8_t > (0, 2); // layer
+	adts.PutBits<uint8_t > (1, 1); // protection_absent
+	adts.PutBits<uint8_t > (_audioObjectType - 1, 2); // profile
+	adts.PutBits<uint8_t > (_sampleRateIndex, 4); // sampling_frequency_index
+	adts.PutBits<uint8_t > (0, 1); // private
+	adts.PutBits<uint8_t > (_channelsCount, 3); // channel_configuration
+	adts.PutBits<uint8_t > (0, 1); // original
+	adts.PutBits<uint8_t > (0, 1); // home
+	adts.PutBits<uint8_t > (0, 1); // copyright_id
+	adts.PutBits<uint8_t > (0, 1); // copyright_id_start
+	adts.PutBits<uint16_t > ((uint16_t) (length + 7), 13); // aac_frame_length = datalength + 7 byte header
+	adts.PutBits<uint16_t > (0x7FF, 11); // adts_buffer_fullness
+	adts.PutBits<uint8_t > (0, 2); // num_raw_data_blocks
+	memcpy(pDest, GETIBPOINTER(adts), 7);
+}
+
+void AudioCodecInfoAAC::UpdateADTSRepresentation(uint8_t *pDest, uint32_t length) {
+	//00000000 11111111 22222222 33333333 44444444 55555555 66666666
+	//xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxYY YYYYYYYY YYYxxxxx xxxxxxxx
+	//                              ---** ******** ***
+	uint16_t adtsLength = (uint16_t) ((length + 7)&0x1fff);
+	pDest[3] = ((pDest[3]&0xfc) | ((uint8_t) (adtsLength >> 11)));
+	pDest[4] = ((uint8_t) ((adtsLength >> 3)&0x00ff));
+	pDest[5] = ((pDest[5]&0x1f) | ((uint8_t) ((adtsLength & 0x0007) << 5)));
+}
+
+bool AudioCodecInfoAAC::Compare(uint8_t *pCodecBytes, uint8_t codecBytesLength, bool simple) {
+	return (simple)
+			&&(codecBytesLength == _codecBytesLength)
+			&&(pCodecBytes != NULL)
+			&&(_pCodecBytes != NULL)
+			&&(memcpy(_pCodecBytes, pCodecBytes, codecBytesLength) == 0);
 }
 
 StreamCapabilities::StreamCapabilities() {
-	videoCodecId = CODEC_VIDEO_UNKNOWN;
-	audioCodecId = CODEC_AUDIO_UNKNOWN;
-	bandwidthHint = 0;
+	_transferRate = -1;
+	_pVideoTrack = NULL;
+	_pAudioTrack = NULL;
 }
 
 StreamCapabilities::~StreamCapabilities() {
 	Clear();
-}
-
-bool StreamCapabilities::InitAudioAAC(const uint8_t *pBuffer, uint32_t length) {
-	ClearAudio();
-	if (!aac.Init(pBuffer, length)) {
-		ClearAudio();
-		return false;
-	}
-	audioCodecId = CODEC_AUDIO_AAC;
-	return true;
-}
-
-bool StreamCapabilities::InitAudioADTS() {
-	ClearAudio();
-	audioCodecId = CODEC_AUDIO_ADTS;
-	return true;
-}
-
-bool StreamCapabilities::InitAudioMP3() {
-	ClearAudio();
-	audioCodecId = CODEC_AUDIO_MP3;
-	return true;
-}
-
-bool StreamCapabilities::InitAudioG711() {
-	ClearAudio();
-	audioCodecId = CODEC_AUDIO_G711;
-	return true;
-}
-
-bool StreamCapabilities::InitVideoH264(const uint8_t *pSPS, uint32_t spsLength,
-		const uint8_t *pPPS, uint32_t ppsLength) {
 	ClearVideo();
-	if (!avc.Init(pSPS, spsLength, pPPS, ppsLength)) {
-		ClearVideo();
-		return false;
-	}
-	videoCodecId = CODEC_VIDEO_AVC;
-	return true;
-}
-
-void StreamCapabilities::ClearVideo() {
-	switch (videoCodecId) {
-		case CODEC_VIDEO_AVC:
-		{
-			avc.Clear();
-			break;
-		}
-		default:
-		{
-			break;
-		}
-	}
-	videoCodecId = 0;
-}
-
-void StreamCapabilities::ClearAudio() {
-	switch (audioCodecId) {
-		case CODEC_AUDIO_AAC:
-		{
-			aac.Clear();
-			break;
-		}
-		default:
-		{
-			break;
-		}
-	}
-	audioCodecId = 0;
+	ClearAudio();
 }
 
 void StreamCapabilities::Clear() {
-	ClearVideo();
-	ClearAudio();
-	bandwidthHint = 0;
+	_transferRate = -1;
 }
 
-#define __STREAM_CAPABILITIES_VERSION MAKE_TAG4('V','E','R','3')
+void StreamCapabilities::ClearVideo() {
+	if (_pVideoTrack != NULL) {
+		delete _pVideoTrack;
+		_pVideoTrack = NULL;
+	}
+}
 
-bool StreamCapabilities::Serialize(IOBuffer &dest) {
-	uint8_t temp[28];
-	EHTONLLP(temp, __STREAM_CAPABILITIES_VERSION);
-	EHTONLLP(temp + 8, videoCodecId);
-	EHTONLLP(temp + 16, audioCodecId);
-	EHTONLP(temp + 24, bandwidthHint);
-	dest.ReadFromBuffer(temp, 28);
-	switch (videoCodecId) {
-		case CODEC_VIDEO_AVC:
-		{
-			if (!avc.Serialize(dest)) {
-				FATAL("Unable to serialize avc");
-				return false;
-			}
-			break;
-		}
-		default:
-		{
-			break;
+void StreamCapabilities::ClearAudio() {
+	if (_pAudioTrack != NULL) {
+		delete _pAudioTrack;
+		_pAudioTrack = NULL;
+	}
+}
+
+bool StreamCapabilities::Serialize(IOBuffer & buffer) {
+	uint64_t temp64 = EHTONLL(STREAM_CAPABILITIES_VERSION);
+	buffer.ReadFromBuffer((uint8_t *) & temp64, sizeof (temp64));
+
+	uint8_t tempBuff[sizeof (_transferRate) ];
+	EHTONDP(_transferRate, tempBuff);
+	buffer.ReadFromBuffer(tempBuff, sizeof (_transferRate));
+
+	temp64 = (_pVideoTrack != NULL) ? (EHTONLL(1)) : (0);
+	buffer.ReadFromBuffer((uint8_t *) & temp64, sizeof (temp64));
+	if (_pVideoTrack != NULL) {
+		if (!_pVideoTrack->Serialize(buffer)) {
+			FATAL("Unable to serialize video info");
+			buffer.IgnoreAll();
+			return false;
 		}
 	}
-	switch (audioCodecId) {
-		case CODEC_AUDIO_AAC:
-		{
-			if (!aac.Serialize(dest)) {
-				FATAL("Unable to serialize aac");
-				return false;
-			}
-			break;
-		}
-		default:
-		{
-			break;
+
+	temp64 = (_pAudioTrack != NULL) ? (EHTONLL(1)) : (0);
+	buffer.ReadFromBuffer((uint8_t *) & temp64, sizeof (temp64));
+	if (_pAudioTrack != NULL) {
+		if (!_pAudioTrack->Serialize(buffer)) {
+			FATAL("Unable to serialize audio info");
+			buffer.IgnoreAll();
+			return false;
 		}
 	}
 	return true;
 }
 
-bool StreamCapabilities::Deserialize(string seekFilePath, StreamCapabilities &capabilities) {
+bool StreamCapabilities::Deserialize(string &filePath, BaseInStream *pInStream) {
+	return Deserialize(filePath.c_str(), pInStream);
+}
+
+bool StreamCapabilities::Deserialize(const char *pFilePath, BaseInStream *pInStream) {
 	File file;
-	if (!file.Initialize(seekFilePath, FILE_OPEN_MODE_READ)) {
-		FATAL("Unable to open seek file %s", STR(seekFilePath));
+	if (!file.Initialize(pFilePath, FILE_OPEN_MODE_READ)) {
+		FATAL("Unable to open file %s", pFilePath);
+		return false;
+	}
+	uint32_t capabilitiesSize = 0;
+	if (!file.ReadUI32(&capabilitiesSize)) {
+		FATAL("Unable to read the size capabilities");
 		return false;
 	}
 
-	uint32_t length = 0;
-	if (!file.ReadUI32(&length, false)) {
-		FATAL("Unable to read stream capabilities length from file %s", STR(seekFilePath));
-		return false;
-	}
-	if (length > 1024 * 1024) {
-		FATAL("Invalid stream capabilities length in file %s: %"PRIu32, STR(seekFilePath), length);
+	// check if larger than 16 MB
+	if (capabilitiesSize > 0x01000000) {
+		FATAL("Size capabilities too large");
 		return false;
 	}
 
 	IOBuffer buffer;
-	buffer.ReadFromRepeat(0, length);
-	if (!file.ReadBuffer(GETIBPOINTER(buffer), length)) {
-		FATAL("Unable to read stream capabilities payload from file %s", STR(seekFilePath));
+	if (!buffer.ReadFromFs(file, capabilitiesSize)) {
+		FATAL("Unable to read data from file");
 		return false;
 	}
 
-	file.Close();
+	return Deserialize(buffer, pInStream);
+}
 
-	if (!Deserialize(buffer, capabilities)) {
-		FATAL("Unable to deserialize stream capabilities from file %s", STR(seekFilePath));
+bool StreamCapabilities::Deserialize(IOBuffer & buffer, BaseInStream *pInStream) {
+	Clear();
+	uint8_t *pBuffer = GETIBPOINTER(buffer);
+	uint32_t length = GETAVAILABLEBYTESCOUNT(buffer);
+
+	uint64_t version = 0;
+	if (length<sizeof (version)) {
+		FATAL("Not enough data to deserialize StreamCapabilities");
 		return false;
 	}
+	version = ENTOHLLP(pBuffer);
+	if (version != STREAM_CAPABILITIES_VERSION) {
+		FATAL("Invalid stream capabilities version");
+		return false;
+	}
+	buffer.Ignore(sizeof (version));
+	pBuffer = GETIBPOINTER(buffer);
+	length = GETAVAILABLEBYTESCOUNT(buffer);
 
+
+	if (length<sizeof (_transferRate)) {
+		FATAL("Not enough data to deserialize StreamCapabilities");
+		return false;
+	}
+	ENTOHDP(pBuffer, _transferRate);
+	buffer.Ignore(sizeof (_transferRate));
+	pBuffer = GETIBPOINTER(buffer);
+	length = GETAVAILABLEBYTESCOUNT(buffer);
+
+	uint64_t count = 0;
+	if (length<sizeof (count)) {
+		FATAL("Not enough data to deserialize StreamCapabilities");
+		return false;
+	}
+	count = ENTOHLLP(pBuffer);
+	if ((count != 0) && (count != 1)) {
+		FATAL("Invalid tracks count");
+		return false;
+	}
+	buffer.Ignore(sizeof (count));
+	pBuffer = GETIBPOINTER(buffer);
+	length = GETAVAILABLEBYTESCOUNT(buffer);
+
+	if (count == 1) {
+		do {
+			pBuffer = GETIBPOINTER(buffer);
+			length = GETAVAILABLEBYTESCOUNT(buffer);
+			if (length<sizeof (uint64_t)) {
+				FATAL("Not enough data to deserialize StreamCapabilities");
+				return false;
+			}
+			uint64_t type = ENTOHLLP(pBuffer);
+			VideoCodecInfo *pTemp = NULL;
+			switch (type) {
+				case CODEC_VIDEO_PASS_THROUGH:
+				{
+					pTemp = new VideoCodecInfoPassThrough();
+					break;
+				}
+				case CODEC_VIDEO_SORENSONH263:
+				{
+					pTemp = new VideoCodecInfoSorensonH263();
+					break;
+				}
+				case CODEC_VIDEO_VP6:
+				case CODEC_VIDEO_VP6ALPHA:
+				{
+					pTemp = new VideoCodecInfoVP6();
+					break;
+				}
+				case CODEC_VIDEO_H264:
+				{
+					pTemp = new VideoCodecInfoH264();
+					break;
+				}
+				case CODEC_VIDEO_JPEG:
+				case CODEC_VIDEO_SCREENVIDEO:
+				case CODEC_VIDEO_SCREENVIDEO2:
+				default:
+				{
+					FATAL("Invalid codec type: %016"PRIx64, type);
+					return false;
+				}
+			}
+			if (pTemp == NULL) {
+				FATAL("Unable to deserialize video codec");
+				return false;
+			}
+			if (!pTemp->Deserialize(buffer)) {
+				FATAL("Unable to deserialize VideoCodecInfo");
+				delete pTemp;
+				return false;
+			}
+			_pVideoTrack = pTemp;
+			if (count != 1) {
+				WARN("Multiple video tracks not supported");
+				return false;
+			}
+			//break; commented out because do/while (0)
+		} while (0);
+	}
+
+	pBuffer = GETIBPOINTER(buffer);
+	length = GETAVAILABLEBYTESCOUNT(buffer);
+	if (length<sizeof (count)) {
+		FATAL("Not enough data to deserialize StreamCapabilities");
+		return false;
+	}
+	count = ENTOHLLP(pBuffer);
+	if ((count != 0) && (count != 1)) {
+		FATAL("Invalid tracks count");
+		return false;
+	}
+	buffer.Ignore(sizeof (count));
+	if (count == 1) {
+		do {
+			pBuffer = GETIBPOINTER(buffer);
+			length = GETAVAILABLEBYTESCOUNT(buffer);
+			if (length<sizeof (uint64_t)) {
+				FATAL("Not enough data to deserialize StreamCapabilities");
+				return false;
+			}
+			uint64_t type = ENTOHLLP(pBuffer);
+			AudioCodecInfo *pTemp = NULL;
+			switch (type) {
+				case CODEC_AUDIO_PASS_THROUGH:
+				{
+					pTemp = new AudioCodecInfoPassThrough();
+					break;
+				}
+				case CODEC_AUDIO_NELLYMOSER:
+				{
+					pTemp = new AudioCodecInfoNellymoser();
+					break;
+				}
+				case CODEC_AUDIO_MP3:
+				{
+					pTemp = new AudioCodecInfoMP3();
+					break;
+				}
+				case CODEC_AUDIO_AAC:
+				{
+					pTemp = new AudioCodecInfoAAC();
+					break;
+				}
+				case CODEC_AUDIO_PCMLE:
+				case CODEC_AUDIO_PCMBE:
+				case CODEC_AUDIO_G711A:
+				case CODEC_AUDIO_G711U:
+				case CODEC_AUDIO_SPEEX:
+				default:
+				{
+					FATAL("Invalid codec type: %016"PRIx64, type);
+					return false;
+				}
+			}
+			if (pTemp == NULL) {
+				FATAL("Unable to deserialize audio codec");
+				return false;
+			}
+			if (!pTemp->Deserialize(buffer)) {
+				FATAL("Unable to deserialize AudioCodecInfo");
+				delete pTemp;
+				return false;
+			}
+			_pAudioTrack = pTemp;
+			if (count != 1) {
+				WARN("Multiple audio tracks not supported");
+				return false;
+			}
+			//break; commented out because do/while(0)
+		} while (0);
+	}
+	if (pInStream != NULL) {
+		pInStream->AudioStreamCapabilitiesChanged(this, NULL, _pAudioTrack);
+		if (!pInStream->IsEnqueueForDelete())
+			pInStream->VideoStreamCapabilitiesChanged(this, NULL, _pVideoTrack);
+	}
 	return true;
 }
 
-bool StreamCapabilities::Deserialize(IOBuffer &src, StreamCapabilities &capabilities) {
-	uint8_t *pBuffer = GETIBPOINTER(src);
-	uint32_t length = GETAVAILABLEBYTESCOUNT(src);
-	if (length < 28) {
-		FATAL("Not enough data");
-		return false;
+StreamCapabilities::operator string() {
+	string result = "VIDEO:\n";
+	if (_pVideoTrack != NULL) {
+		result += "\t" + _pVideoTrack->operator string() + "\n";
 	}
-	uint64_t ver = ENTOHLLP(pBuffer);
-	if (ver != __STREAM_CAPABILITIES_VERSION) {
-		FATAL("Invalid stream capabilities version. Wanted: %"PRIu64"; Got: %"PRIu64,
-				__STREAM_CAPABILITIES_VERSION, ver);
-		return false;
+	result += "AUDIO:\n";
+	if (_pAudioTrack != NULL) {
+		result += "\t" + _pAudioTrack->operator string() + "\n";
 	}
-	capabilities.Clear();
-	capabilities.videoCodecId = ENTOHLLP(pBuffer + 8);
-	capabilities.audioCodecId = ENTOHLLP(pBuffer + 16);
-	capabilities.bandwidthHint = ENTOHLP(pBuffer + 24);
-	src.Ignore(28);
-	switch (capabilities.videoCodecId) {
-		case CODEC_VIDEO_AVC:
-		{
-			if (!_VIDEO_AVC::Deserialize(src, capabilities.avc)) {
-				FATAL("Unable to deserialize avc");
-				return false;
-			}
-			break;
-		}
-		default:
-		{
-			break;
-		}
+	result += format("Transfer rate: %.2fKb/s", GetTransferRate() / 1024.0);
+	return result;
+}
+
+double StreamCapabilities::GetTransferRate() {
+	if (_transferRate >= 0)
+		return _transferRate;
+	double result = 0;
+	if (_pVideoTrack != NULL) {
+		if (_pVideoTrack->_transferRate > 0)
+			result += _pVideoTrack->_transferRate;
 	}
-	switch (capabilities.audioCodecId) {
-		case CODEC_AUDIO_AAC:
-		{
-			if (!_AUDIO_AAC::Deserialize(src, capabilities.aac)) {
-				FATAL("Unable to deserialize aac");
-				return false;
-			}
-			break;
-		}
-		default:
-		{
-			break;
-		}
+	if (_pAudioTrack != NULL) {
+		if (_pAudioTrack->_transferRate > 0)
+			result += _pAudioTrack->_transferRate;
 	}
-	return true;
+	return result;
+}
+
+void StreamCapabilities::SetTransferRate(double value) {
+	_transferRate = value;
+}
+
+uint64_t StreamCapabilities::GetVideoCodecType() {
+	if (_pVideoTrack != NULL)
+		return _pVideoTrack->_type;
+	return CODEC_VIDEO_UNKNOWN;
+}
+
+uint64_t StreamCapabilities::GetAudioCodecType() {
+	if (_pAudioTrack != NULL)
+		return _pAudioTrack->_type;
+	return CODEC_AUDIO_UNKNOWN;
+}
+
+VideoCodecInfo *StreamCapabilities::GetVideoCodec() {
+	return _pVideoTrack;
+}
+
+AudioCodecInfo *StreamCapabilities::GetAudioCodec() {
+	return _pAudioTrack;
+}
+
+void StreamCapabilities::GetRTMPMetadata(Variant &destination) {
+	destination[HTTP_HEADERS_SERVER] = BRANDING_BANNER;
+	if (_pAudioTrack != NULL) {
+		_pAudioTrack->GetRTMPMetadata(destination);
+	}
+	if (_pVideoTrack != NULL) {
+		_pVideoTrack->GetRTMPMetadata(destination);
+	}
+	destination["bandwidth"] = (uint32_t) (GetTransferRate() / 1024.0);
+}
+
+VideoCodecInfoPassThrough * StreamCapabilities::AddTrackVideoPassThrough(
+		BaseInStream *pInStream) {
+	if ((_pVideoTrack != NULL)
+			&&(_pVideoTrack->_type == CODEC_VIDEO_PASS_THROUGH)) {
+		return (VideoCodecInfoPassThrough*) _pVideoTrack;
+	}
+	VideoCodecInfoPassThrough *pCodecInfo = new VideoCodecInfoPassThrough();
+	if (!pCodecInfo->Init()) {
+		FATAL("Unable to initialize VideoCodecInfoPassThrough");
+		delete pCodecInfo;
+		return NULL;
+	}
+	VideoCodecInfo *pOld = _pVideoTrack;
+	_pVideoTrack = pCodecInfo;
+	if (pInStream != NULL)
+		pInStream->VideoStreamCapabilitiesChanged(this, pOld, pCodecInfo);
+	if (pOld != NULL)
+		delete pOld;
+	return pCodecInfo;
+}
+
+VideoCodecInfoH264* StreamCapabilities::AddTrackVideoH264(uint8_t *pSPS,
+		uint32_t spsLength, uint8_t *pPPS, uint32_t ppsLength,
+		uint32_t samplingRate, BaseInStream *pInStream) {
+	if ((_pVideoTrack != NULL)
+			&&(_pVideoTrack->_type == CODEC_VIDEO_H264)
+			&&(((VideoCodecInfoH264*) _pVideoTrack)->Compare(pSPS, spsLength, pPPS, ppsLength))) {
+		return (VideoCodecInfoH264*) _pVideoTrack;
+	}
+	VideoCodecInfoH264 *pCodecInfo = new VideoCodecInfoH264();
+	if (!pCodecInfo->Init(pSPS, spsLength, pPPS, ppsLength, samplingRate)) {
+		FATAL("Unable to initialize VideoCodecInfoH264");
+		delete pCodecInfo;
+		return NULL;
+	}
+	VideoCodecInfo *pOld = _pVideoTrack;
+	_pVideoTrack = pCodecInfo;
+	if (pInStream != NULL)
+		pInStream->VideoStreamCapabilitiesChanged(this, pOld, pCodecInfo);
+	if (pOld != NULL)
+		delete pOld;
+	return pCodecInfo;
+}
+
+VideoCodecInfoSorensonH263 * StreamCapabilities::AddTrackVideoSorensonH263(
+		uint8_t *pData, uint32_t length, BaseInStream *pInStream) {
+	if ((_pVideoTrack != NULL)
+			&&(_pVideoTrack->_type == CODEC_VIDEO_SORENSONH263)) {
+		return (VideoCodecInfoSorensonH263*) _pVideoTrack;
+	}
+	VideoCodecInfoSorensonH263 *pCodecInfo = new VideoCodecInfoSorensonH263();
+	if (!pCodecInfo->Init(pData, length)) {
+		FATAL("Unable to initialize VideoCodecInfoSorensonH263");
+		delete pCodecInfo;
+		return NULL;
+	}
+	VideoCodecInfo *pOld = _pVideoTrack;
+	_pVideoTrack = pCodecInfo;
+	if (pInStream != NULL)
+		pInStream->VideoStreamCapabilitiesChanged(this, pOld, pCodecInfo);
+	if (pOld != NULL)
+		delete pOld;
+	return pCodecInfo;
+}
+
+VideoCodecInfoVP6 * StreamCapabilities::AddTrackVideoVP6(uint8_t *pData,
+		uint32_t length, BaseInStream *pInStream) {
+	if ((_pVideoTrack != NULL)
+			&&(_pVideoTrack->_type == CODEC_VIDEO_VP6)) {
+		return (VideoCodecInfoVP6*) _pVideoTrack;
+	}
+	VideoCodecInfoVP6 *pCodecInfo = new VideoCodecInfoVP6();
+	if (!pCodecInfo->Init(pData, length)) {
+		FATAL("Unable to initialize VideoCodecInfoVP6");
+		delete pCodecInfo;
+		return NULL;
+	}
+	VideoCodecInfo *pOld = _pVideoTrack;
+	_pVideoTrack = pCodecInfo;
+	if (pInStream != NULL)
+		pInStream->VideoStreamCapabilitiesChanged(this, pOld, pCodecInfo);
+	if (pOld != NULL)
+		delete pOld;
+	return pCodecInfo;
+}
+
+AudioCodecInfoPassThrough * StreamCapabilities::AddTrackAudioPassThrough(
+		BaseInStream *pInStream) {
+	if ((_pAudioTrack != NULL)
+			&&(_pAudioTrack->_type == CODEC_AUDIO_PASS_THROUGH)) {
+		return (AudioCodecInfoPassThrough*) _pAudioTrack;
+	}
+	AudioCodecInfoPassThrough *pCodecInfo = new AudioCodecInfoPassThrough();
+	if (!pCodecInfo->Init()) {
+		FATAL("Unable to initialize AudioCodecInfoPassThrough");
+		delete pCodecInfo;
+		return NULL;
+	}
+	AudioCodecInfo *pOld = _pAudioTrack;
+	_pAudioTrack = pCodecInfo;
+	if (pInStream != NULL)
+		pInStream->AudioStreamCapabilitiesChanged(this, pOld, pCodecInfo);
+	if (pOld != NULL)
+		delete pOld;
+	return pCodecInfo;
+}
+
+AudioCodecInfoAAC* StreamCapabilities::AddTrackAudioAAC(uint8_t *pCodecBytes,
+		uint8_t codecBytesLength, bool simple, BaseInStream *pInStream) {
+	if ((_pAudioTrack != NULL)
+			&&(_pAudioTrack->_type == CODEC_AUDIO_AAC)
+			&&(((AudioCodecInfoAAC*) _pAudioTrack)->Compare(pCodecBytes, codecBytesLength, simple))) {
+		return (AudioCodecInfoAAC*) _pAudioTrack;
+	}
+	AudioCodecInfoAAC *pCodecInfo = new AudioCodecInfoAAC();
+	if (!pCodecInfo->Init(pCodecBytes, codecBytesLength, simple)) {
+		FATAL("Unable to initialize AudioCodecInfoAAC");
+		delete pCodecInfo;
+		return NULL;
+	}
+	AudioCodecInfo *pOld = _pAudioTrack;
+	_pAudioTrack = pCodecInfo;
+	if (pInStream != NULL)
+		pInStream->AudioStreamCapabilitiesChanged(this, pOld, pCodecInfo);
+	if (pOld != NULL)
+		delete pOld;
+	return pCodecInfo;
+}
+
+AudioCodecInfoNellymoser * StreamCapabilities::AddTrackAudioNellymoser(uint32_t samplingRate,
+		uint8_t channelsCount, uint8_t bitsPerSample, BaseInStream *pInStream) {
+	if ((_pAudioTrack != NULL)
+			&&(_pAudioTrack->_type == CODEC_AUDIO_NELLYMOSER)) {
+		return (AudioCodecInfoNellymoser*) _pAudioTrack;
+	}
+	AudioCodecInfoNellymoser *pCodecInfo = new AudioCodecInfoNellymoser();
+	if (!pCodecInfo->Init(samplingRate, channelsCount, bitsPerSample)) {
+		FATAL("Unable to initialize AudioCodecInfoNellymoser");
+		delete pCodecInfo;
+		return NULL;
+	}
+	AudioCodecInfo *pOld = _pAudioTrack;
+	_pAudioTrack = pCodecInfo;
+	if (pInStream != NULL)
+		pInStream->AudioStreamCapabilitiesChanged(this, pOld, pCodecInfo);
+	if (pOld != NULL)
+		delete pOld;
+	return pCodecInfo;
+}
+
+AudioCodecInfoMP3 * StreamCapabilities::AddTrackAudioMP3(uint32_t samplingRate,
+		uint8_t channelsCount, uint8_t bitsPerSample, BaseInStream *pInStream) {
+	if ((_pAudioTrack != NULL)
+			&&(_pAudioTrack->_type == CODEC_AUDIO_MP3)) {
+		return (AudioCodecInfoMP3*) _pAudioTrack;
+	}
+	AudioCodecInfoMP3 *pCodecInfo = new AudioCodecInfoMP3();
+	if (!pCodecInfo->Init(samplingRate, channelsCount, bitsPerSample)) {
+		FATAL("Unable to initialize AudioCodecInfoNellymoser");
+		delete pCodecInfo;
+		return NULL;
+	}
+	AudioCodecInfo *pOld = _pAudioTrack;
+	_pAudioTrack = pCodecInfo;
+	if (pInStream != NULL)
+		pInStream->AudioStreamCapabilitiesChanged(this, pOld, pCodecInfo);
+	if (pOld != NULL)
+		delete pOld;
+	return pCodecInfo;
 }

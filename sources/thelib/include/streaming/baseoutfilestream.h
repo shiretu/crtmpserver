@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -26,8 +26,7 @@
 class DLLEXP BaseOutFileStream
 : public BaseOutStream {
 public:
-	BaseOutFileStream(BaseProtocol *pProtocol, StreamsManager *pStreamsManager,
-			uint64_t type, string name);
+	BaseOutFileStream(BaseProtocol *pProtocol, uint64_t type, string name);
 	virtual ~BaseOutFileStream();
 };
 

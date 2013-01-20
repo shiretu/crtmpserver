@@ -22,6 +22,7 @@ AS=as
 
 # Macros
 CND_PLATFORM=GNU-MacOSX
+CND_DLIB_EXT=dylib
 CND_CONF=Release
 CND_DISTDIR=dist
 CND_BUILDDIR=build
@@ -66,7 +67,7 @@ LDLIBSOPTIONS=-L../common/dist/Release/GNU-MacOSX -lcommon -L../thelib/../Releas
 
 ../${CND_CONF}/${CND_PLATFORM}/applications/appselector/libappselector.dylib: ${OBJECTFILES}
 	${MKDIR} -p ../${CND_CONF}/${CND_PLATFORM}/applications/appselector
-	${LINK.cc} -dynamiclib -install_name libappselector.dylib -o ../${CND_CONF}/${CND_PLATFORM}/applications/appselector/libappselector.dylib -fPIC ${OBJECTFILES} ${LDLIBSOPTIONS} 
+	${LINK.cc} -o ../${CND_CONF}/${CND_PLATFORM}/applications/appselector/libappselector.dylib ${OBJECTFILES} ${LDLIBSOPTIONS} -dynamiclib -install_name libappselector.dylib -fPIC
 
 ${OBJECTDIR}/_ext/1538082400/rtmpappprotocolhandler.o: ../../../../sources/applications/appselector/src/rtmpappprotocolhandler.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/1538082400

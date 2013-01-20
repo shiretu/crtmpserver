@@ -36,7 +36,7 @@ InboundNamedPipeCarrier::~InboundNamedPipeCarrier() {
 InboundNamedPipeCarrier *InboundNamedPipeCarrier::Create(string path,
 		uint16_t mode) {
 	int32_t fd = open(STR(path), O_RDONLY/* | O_NONBLOCK*/);
-	if (fd < 0) {
+	if ((fd < 0) || (!setFdCloseOnExec(fd))) {
 		int err = errno;
 		FATAL("Unable to open named pipe %s: (%d) %s",
 				STR(path), err, strerror(err));

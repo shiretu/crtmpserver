@@ -19,10 +19,10 @@
 
 #ifdef HAS_PROTOCOL_RTMP
 #include "protocols/rtmp/streaming/infilertmpstream.h"
-#include "mediaformats/basemediadocument.h"
-#include "mediaformats/flv/flvdocument.h"
-#include "mediaformats/mp3/mp3document.h"
-#include "mediaformats/mp4/mp4document.h"
+#include "mediaformats/readers/basemediadocument.h"
+#include "mediaformats/readers/flv/flvdocument.h"
+#include "mediaformats/readers/mp3/mp3document.h"
+#include "mediaformats/readers/mp4/mp4document.h"
 #include "protocols/rtmp/basertmpprotocol.h"
 #include "streaming/baseoutstream.h"
 #include "protocols/baseprotocol.h"
@@ -31,6 +31,7 @@
 #include "protocols/rtmp/messagefactories/messagefactories.h"
 #include "protocols/rtmp/basertmpprotocol.h"
 #include "protocols/rtmp/streaming/baseoutnetrtmpstream.h"
+#include "streaming/codectypes.h"
 
 InFileRTMPStream::BaseBuilder::BaseBuilder() {
 
@@ -58,7 +59,7 @@ InFileRTMPStream::AVCBuilder::~AVCBuilder() {
 
 }
 
-bool InFileRTMPStream::AVCBuilder::BuildFrame(FileClass* pFile, MediaFrame& mediaFrame, IOBuffer& buffer) {
+bool InFileRTMPStream::AVCBuilder::BuildFrame(MediaFile* pFile, MediaFrame& mediaFrame, IOBuffer& buffer) {
 	if (mediaFrame.isBinaryHeader) {
 		buffer.ReadFromBuffer(_videoCodecHeaderInit, sizeof (_videoCodecHeaderInit));
 	} else {
@@ -69,8 +70,8 @@ bool InFileRTMPStream::AVCBuilder::BuildFrame(FileClass* pFile, MediaFrame& medi
 			//video normal frame
 			buffer.ReadFromBuffer(_videoCodecHeader, sizeof (_videoCodecHeader));
 		}
-		mediaFrame.compositionOffset = (EHTONL(mediaFrame.compositionOffset & 0x00ffffff)) >> 8;
-		buffer.ReadFromBuffer((uint8_t *) & mediaFrame.compositionOffset, 3);
+		uint32_t cts = (EHTONL(((uint32_t) mediaFrame.cts) & 0x00ffffff)) >> 8;
+		buffer.ReadFromBuffer((uint8_t *) & cts, 3);
 	}
 
 	if (!pFile->SeekTo(mediaFrame.start)) {
@@ -97,7 +98,7 @@ InFileRTMPStream::AACBuilder::~AACBuilder() {
 
 }
 
-bool InFileRTMPStream::AACBuilder::BuildFrame(FileClass* pFile, MediaFrame& mediaFrame, IOBuffer& buffer) {
+bool InFileRTMPStream::AACBuilder::BuildFrame(MediaFile* pFile, MediaFrame& mediaFrame, IOBuffer& buffer) {
 	//1. add the binary header
 	if (mediaFrame.isBinaryHeader) {
 		buffer.ReadFromBuffer(_audioCodecHeaderInit, sizeof (_audioCodecHeaderInit));
@@ -128,7 +129,7 @@ InFileRTMPStream::MP3Builder::~MP3Builder() {
 
 }
 
-bool InFileRTMPStream::MP3Builder::BuildFrame(FileClass *pFile,
+bool InFileRTMPStream::MP3Builder::BuildFrame(MediaFile *pFile,
 		MediaFrame &mediaFrame, IOBuffer &buffer) {
 	buffer.ReadFromRepeat(0x2f, 1);
 
@@ -155,7 +156,7 @@ InFileRTMPStream::PassThroughBuilder::~PassThroughBuilder() {
 
 }
 
-bool InFileRTMPStream::PassThroughBuilder::BuildFrame(FileClass *pFile,
+bool InFileRTMPStream::PassThroughBuilder::BuildFrame(MediaFile *pFile,
 		MediaFrame &mediaFrame, IOBuffer &buffer) {
 	//1. Seek into the data file at the correct position
 	if (!pFile->SeekTo(mediaFrame.start)) {
@@ -173,9 +174,8 @@ bool InFileRTMPStream::PassThroughBuilder::BuildFrame(FileClass *pFile,
 	return true;
 }
 
-InFileRTMPStream::InFileRTMPStream(BaseRTMPProtocol *pProtocol,
-		StreamsManager *pStreamsManager, string name)
-: BaseInFileStream(pProtocol, pStreamsManager, ST_IN_FILE_RTMP, name) {
+InFileRTMPStream::InFileRTMPStream(BaseProtocol *pProtocol, uint64_t type, string name)
+: BaseInFileStream(pProtocol, type, name) {
 	_chunkSize = 4 * 1024 * 1024;
 	_pAudioBuilder = NULL;
 	_pVideoBuilder = NULL;
@@ -192,12 +192,10 @@ InFileRTMPStream::~InFileRTMPStream() {
 	}
 }
 
-#ifdef HAS_VOD_MANAGER
-
-bool InFileRTMPStream::Initialize(Variant &medatada,
-		int32_t clientSideBufferLength, bool hasTimer) {
+bool InFileRTMPStream::Initialize(Metadata &metadata, TimerType timerType,
+		uint32_t granularity) {
 	//1. Base init
-	if (!BaseInFileStream::Initialize(medatada, clientSideBufferLength, hasTimer)) {
+	if (!BaseInFileStream::Initialize(metadata, timerType, granularity)) {
 		FATAL("Unable to initialize stream");
 		return false;
 	}
@@ -210,178 +208,90 @@ bool InFileRTMPStream::Initialize(Variant &medatada,
 	}
 
 	//3. Create the video builder
-	if ((pCapabilities->videoCodecId != 0)
-			&& (pCapabilities->videoCodecId != CODEC_VIDEO_UNKNOWN)
-			&& (pCapabilities->videoCodecId != CODEC_VIDEO_AVC)
-			&& (pCapabilities->videoCodecId != CODEC_VIDEO_PASS_THROUGH)) {
-		FATAL("Invalid video stream capabilities: %s", STR(tagToString(pCapabilities->videoCodecId)));
+	uint64_t videoCodec = pCapabilities->GetVideoCodecType();
+	if ((videoCodec != 0)
+			&& (videoCodec != CODEC_VIDEO_UNKNOWN)
+			&& (videoCodec != CODEC_VIDEO_H264)
+			&& (videoCodec != CODEC_VIDEO_PASS_THROUGH)) {
+		FATAL("Invalid video stream capabilities: %s", STR(tagToString(videoCodec)));
 		return false;
 	}
-	if (pCapabilities->videoCodecId == CODEC_VIDEO_AVC) {
+	if (videoCodec == CODEC_VIDEO_H264) {
 		_pVideoBuilder = new AVCBuilder();
-	} else if (pCapabilities->videoCodecId == CODEC_VIDEO_PASS_THROUGH) {
+	} else if (videoCodec == CODEC_VIDEO_PASS_THROUGH) {
 		_pVideoBuilder = new PassThroughBuilder();
 	}
 
 	//4. Create the audio builder
-	if ((pCapabilities->audioCodecId != 0)
-			&& (pCapabilities->audioCodecId != CODEC_AUDIO_UNKNOWN)
-			&& (pCapabilities->audioCodecId != CODEC_AUDIO_AAC)
-			&& (pCapabilities->audioCodecId != CODEC_AUDIO_MP3)
-			&& (pCapabilities->audioCodecId != CODEC_AUDIO_PASS_THROUGH)) {
-		FATAL("Invalid audio stream capabilities: %s", STR(tagToString(pCapabilities->audioCodecId)));
+	uint64_t audioCodec = pCapabilities->GetAudioCodecType();
+	if ((audioCodec != 0)
+			&& (audioCodec != CODEC_AUDIO_UNKNOWN)
+			&& (audioCodec != CODEC_AUDIO_AAC)
+			&& (audioCodec != CODEC_AUDIO_MP3)
+			&& (audioCodec != CODEC_AUDIO_PASS_THROUGH)) {
+		FATAL("Invalid audio stream capabilities: %s", STR(tagToString(audioCodec)));
 		return false;
 	}
-	if (pCapabilities->audioCodecId == CODEC_AUDIO_AAC) {
+	if (audioCodec == CODEC_AUDIO_AAC) {
 		_pAudioBuilder = new AACBuilder();
-	} else if (pCapabilities->audioCodecId == CODEC_AUDIO_MP3) {
+	} else if (audioCodec == CODEC_AUDIO_MP3) {
 		_pAudioBuilder = new MP3Builder();
-	} else if (pCapabilities->audioCodecId == CODEC_AUDIO_PASS_THROUGH) {
+	} else if (audioCodec == CODEC_AUDIO_PASS_THROUGH) {
 		_pAudioBuilder = new PassThroughBuilder();
 	}
-
 	return true;
 }
-#else /* HAS_VOD_MANAGER */
-
-bool InFileRTMPStream::Initialize(int32_t clientSideBufferLength, bool hasTimer) {
-	//1. Base init
-	if (!BaseInFileStream::Initialize(clientSideBufferLength, hasTimer)) {
-		FATAL("Unable to initialize stream");
-		return false;
-	}
-
-	//2. Get stream capabilities
-	StreamCapabilities *pCapabilities = GetCapabilities();
-	if (pCapabilities == NULL) {
-		FATAL("Invalid stream capabilities");
-		return false;
-	}
-
-	//3. Create the video builder
-	if ((pCapabilities->videoCodecId != 0)
-			&& (pCapabilities->videoCodecId != CODEC_VIDEO_UNKNOWN)
-			&& (pCapabilities->videoCodecId != CODEC_VIDEO_AVC)
-			&& (pCapabilities->videoCodecId != CODEC_VIDEO_PASS_THROUGH)) {
-		FATAL("Invalid video stream capabilities: %s", STR(tagToString(pCapabilities->videoCodecId)));
-		return false;
-	}
-	if (pCapabilities->videoCodecId == CODEC_VIDEO_AVC) {
-		_pVideoBuilder = new AVCBuilder();
-	} else if (pCapabilities->videoCodecId == CODEC_VIDEO_PASS_THROUGH) {
-		_pVideoBuilder = new PassThroughBuilder();
-	}
-
-	//4. Create the audio builder
-	if ((pCapabilities->audioCodecId != 0)
-			&& (pCapabilities->audioCodecId != CODEC_AUDIO_UNKNOWN)
-			&& (pCapabilities->audioCodecId != CODEC_AUDIO_AAC)
-			&& (pCapabilities->audioCodecId != CODEC_AUDIO_MP3)
-			&& (pCapabilities->audioCodecId != CODEC_AUDIO_PASS_THROUGH)) {
-		FATAL("Invalid audio stream capabilities: %s", STR(tagToString(pCapabilities->audioCodecId)));
-		return false;
-	}
-	if (pCapabilities->audioCodecId == CODEC_AUDIO_AAC) {
-		_pAudioBuilder = new AACBuilder();
-	} else if (pCapabilities->audioCodecId == CODEC_AUDIO_MP3) {
-		_pAudioBuilder = new MP3Builder();
-	} else if (pCapabilities->audioCodecId == CODEC_AUDIO_PASS_THROUGH) {
-		_pAudioBuilder = new PassThroughBuilder();
-	}
-
-	return true;
-}
-#endif /* HAS_VOD_MANAGER */
 
 bool InFileRTMPStream::FeedData(uint8_t *pData, uint32_t dataLength,
 		uint32_t processedLength, uint32_t totalLength,
-		double absoluteTimestamp, bool isAudio) {
+		double pts, double dts, bool isAudio) {
 	ASSERT("Operation not supported");
 	return false;
 }
 
 bool InFileRTMPStream::IsCompatibleWithType(uint64_t type) {
 	return TAG_KIND_OF(type, ST_OUT_NET_RTMP)
-			|| TAG_KIND_OF(type, ST_OUT_FILE_HLS)
-			|| TAG_KIND_OF(type, ST_OUT_FILE_HDS)
-			|| TAG_KIND_OF(type, ST_OUT_FILE_RTMP_FLV)
-			|| TAG_KIND_OF(type, ST_OUT_FILE_TS);
+			|| TAG_KIND_OF(type, ST_OUT_NET_RTP)
+			|| TAG_KIND_OF(type, ST_OUT_FILE_RTMP_FLV);
 }
 
 uint32_t InFileRTMPStream::GetChunkSize() {
 	return _chunkSize;
 }
 
-#ifdef HAS_VOD_MANAGER
-
 InFileRTMPStream *InFileRTMPStream::GetInstance(BaseRTMPProtocol *pRTMPProtocol,
-		StreamsManager *pStreamsManager, Variant &metadata) {
-	metadata[META_RTMP_META][HTTP_HEADERS_SERVER] = HTTP_HEADERS_SERVER_US;
-
+		StreamsManager *pStreamsManager, Metadata &metadata) {
 	InFileRTMPStream *pResult = NULL;
 
-	if (metadata[META_MEDIA_TYPE] == MEDIA_TYPE_FLV
-			|| metadata[META_MEDIA_TYPE] == MEDIA_TYPE_LIVE_OR_FLV
-			|| metadata[META_MEDIA_TYPE] == MEDIA_TYPE_MP3
-			|| metadata[META_MEDIA_TYPE] == MEDIA_TYPE_MP4
-			|| metadata[META_MEDIA_TYPE] == MEDIA_TYPE_M4A
-			|| metadata[META_MEDIA_TYPE] == MEDIA_TYPE_M4V
-			|| metadata[META_MEDIA_TYPE] == MEDIA_TYPE_MOV
-			) {
+	string type = metadata.type();
+	if (type == MEDIA_TYPE_FLV
+			|| type == MEDIA_TYPE_MP3
+			|| type == MEDIA_TYPE_MP4) {
 		pResult = new InFileRTMPStream((BaseProtocol *) pRTMPProtocol,
-				pStreamsManager, metadata[META_MEDIA_FILE_PATHS][META_MEDIA_ORIGIN]);
+				ST_IN_FILE_RTMP, metadata.mediaFullPath());
 	} else {
 		FATAL("File type not supported yet. Metadata:\n%s",
 				STR(metadata.ToString()));
 	}
 
 	if (pResult != NULL) {
+		if (!pResult->SetStreamsManager(pStreamsManager)) {
+			FATAL("Unable to set the streams manager");
+			delete pResult;
+			pResult = NULL;
+			return NULL;
+		}
 		pResult->SetCompleteMetadata(metadata);
 	}
 
 	return pResult;
 }
-#else /* HAS_VOD_MANAGER */
 
-InFileRTMPStream *InFileRTMPStream::GetInstance(BaseRTMPProtocol *pRTMPProtocol,
-		StreamsManager *pStreamsManager, Variant &metadata) {
-	metadata[META_RTMP_META][HTTP_HEADERS_SERVER] = HTTP_HEADERS_SERVER_US;
-	if (!fileExists(metadata[META_SERVER_FULL_PATH])) {
-		FATAL("File not found. fullPath: `%s`", STR(metadata[META_SERVER_FULL_PATH]));
-		return NULL;
-	}
-
-	InFileRTMPStream *pResult = NULL;
-
-	if (metadata[META_MEDIA_TYPE] == MEDIA_TYPE_FLV
-			|| metadata[META_MEDIA_TYPE] == MEDIA_TYPE_LIVE_OR_FLV
-			|| metadata[META_MEDIA_TYPE] == MEDIA_TYPE_MP3
-			|| metadata[META_MEDIA_TYPE] == MEDIA_TYPE_MP4
-			|| metadata[META_MEDIA_TYPE] == MEDIA_TYPE_M4A
-			|| metadata[META_MEDIA_TYPE] == MEDIA_TYPE_M4V
-			|| metadata[META_MEDIA_TYPE] == MEDIA_TYPE_MOV
-			//||metadata[META_MEDIA_TYPE] == MEDIA_TYPE_NSV
-			) {
-		pResult = new InFileRTMPStream(pRTMPProtocol,
-				pStreamsManager, metadata[META_SERVER_FULL_PATH]);
-	} else {
-		FATAL("File type not supported yet. Metadata:\n%s",
-				STR(metadata.ToString()));
-	}
-
-	if (pResult != NULL) {
-		pResult->SetCompleteMetadata(metadata);
-	}
-
-	return pResult;
-}
-#endif /* HAS_VOD_MANAGER */
-
-void InFileRTMPStream::SetCompleteMetadata(Variant &completeMetadata) {
+void InFileRTMPStream::SetCompleteMetadata(Metadata &completeMetadata) {
 	_completeMetadata = completeMetadata;
 }
 
-Variant InFileRTMPStream::GetCompleteMetadata() {
+Metadata &InFileRTMPStream::GetCompleteMetadata() {
 	return _completeMetadata;
 }
 
@@ -399,7 +309,7 @@ void InFileRTMPStream::SignalOutStreamDetached(BaseOutStream *pOutStream) {
 			pOutStream->GetUniqueId(), GetUniqueId());
 }
 
-bool InFileRTMPStream::BuildFrame(FileClass *pFile, MediaFrame &mediaFrame,
+bool InFileRTMPStream::BuildFrame(MediaFile *pFile, MediaFrame &mediaFrame,
 		IOBuffer &buffer) {
 	switch (mediaFrame.type) {
 		case MEDIAFRAME_TYPE_AUDIO:
@@ -415,7 +325,11 @@ bool InFileRTMPStream::BuildFrame(FileClass *pFile, MediaFrame &mediaFrame,
 	}
 }
 
-bool InFileRTMPStream::FeedMetaData(FileClass *pFile, MediaFrame &mediaFrame) {
+bool InFileRTMPStream::FeedMetaData(MediaFile *pFile, MediaFrame &mediaFrame) {
+	if ((_pProtocol == NULL)
+			|| ((_pProtocol->GetType() != PT_INBOUND_RTMP)
+			&&(_pProtocol->GetType() != PT_OUTBOUND_RTMP)))
+		return true;
 	//1. Seek into the data file at the correct position
 	if (!pFile->SeekTo(mediaFrame.start)) {
 		FATAL("Unable to seek to position %"PRIu64, mediaFrame.start);
@@ -456,7 +370,7 @@ bool InFileRTMPStream::FeedMetaData(FileClass *pFile, MediaFrame &mediaFrame) {
 	Variant message = GenericMessageFactory::GetNotify(
 			((BaseOutNetRTMPStream *) _pOutStreams->info)->GetCommandsChannelId(),
 			((BaseOutNetRTMPStream *) _pOutStreams->info)->GetRTMPStreamId(),
-			mediaFrame.absoluteTime,
+			mediaFrame.dts,
 			true,
 			_metadataName,
 			_metadataParameters);

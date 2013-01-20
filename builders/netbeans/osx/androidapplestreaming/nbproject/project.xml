@@ -10,7 +10,10 @@
             <header-extensions>h</header-extensions>
             <sourceEncoding>UTF-8</sourceEncoding>
             <make-dep-projects/>
-            <sourceRootList/>
+            <sourceRootList>
+                <sourceRootElem>../../../../sources/androidapplestreaming/include</sourceRootElem>
+                <sourceRootElem>../../../../sources/androidapplestreaming/src</sourceRootElem>
+            </sourceRootList>
             <confList>
                 <confElem>
                     <name>Debug</name>

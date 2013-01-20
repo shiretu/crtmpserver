@@ -21,10 +21,9 @@
 #include "protocols/rtmp/streaming/outnetrtmp4rtmpstream.h"
 #include "streaming/streamstypes.h"
 
-OutNetRTMP4RTMPStream::OutNetRTMP4RTMPStream(BaseRTMPProtocol *pProtocol,
-		StreamsManager *pStreamsManager, string name, uint32_t rtmpStreamId,
-		uint32_t chunkSize)
-: BaseOutNetRTMPStream(pProtocol, pStreamsManager, ST_OUT_NET_RTMP_4_RTMP,
+OutNetRTMP4RTMPStream::OutNetRTMP4RTMPStream(BaseProtocol *pProtocol, string name,
+		uint32_t rtmpStreamId, uint32_t chunkSize)
+: BaseOutNetRTMPStream(pProtocol, ST_OUT_NET_RTMP_4_RTMP,
 name, rtmpStreamId, chunkSize) {
 
 }
@@ -35,8 +34,30 @@ OutNetRTMP4RTMPStream::~OutNetRTMP4RTMPStream() {
 bool OutNetRTMP4RTMPStream::IsCompatibleWithType(uint64_t type) {
 	return TAG_KIND_OF(type, ST_IN_NET_RTMP)
 			|| TAG_KIND_OF(type, ST_IN_NET_LIVEFLV)
-			|| TAG_KIND_OF(type, ST_IN_FILE_RTMP)
-			|| TAG_KIND_OF(type, ST_IN_NET_MP3);
+			|| TAG_KIND_OF(type, ST_IN_FILE_RTMP);
+}
+
+bool OutNetRTMP4RTMPStream::FeedData(uint8_t *pData, uint32_t dataLength,
+		uint32_t processedLength, uint32_t totalLength,
+		double pts, double dts, bool isAudio) {
+	return BaseOutNetRTMPStream::InternalFeedData(pData, dataLength, processedLength,
+			totalLength, dts, isAudio);
+}
+
+bool OutNetRTMP4RTMPStream::PushVideoData(IOBuffer &buffer, double pts, double dts,
+		bool isKeyFrame) {
+	ASSERT("Operation not supported");
+	return false;
+}
+
+bool OutNetRTMP4RTMPStream::PushAudioData(IOBuffer &buffer, double pts, double dts) {
+	ASSERT("Operation not supported");
+	return false;
+}
+
+bool OutNetRTMP4RTMPStream::IsCodecSupported(uint64_t codec) {
+	ASSERT("Operation not supported");
+	return false;
 }
 #endif /* HAS_PROTOCOL_RTMP */
 

@@ -32,6 +32,8 @@ public:
 	static Variant GetUserControlStreamEof(uint32_t streamId);
 	static Variant GetUserControlStreamDry(uint32_t streamId);
 	static Variant GetUserControlStreamIsRecorded(uint32_t streamId);
+	static Variant GetUserControlStreamSetBufferlength(uint32_t streamId,
+			uint32_t value);
 
 	//management requests
 	static Variant GetInvokeCreateStream();
@@ -99,7 +101,7 @@ public:
 			bool unknown1, bool unknown2);
 	static Variant GetNotifyOnMetaData(uint32_t channelId,
 			uint32_t streamId, double timeStamp, bool isAbsolute,
-			Variant metadata);
+			Variant metadata, bool dataKeyFrame);
 	static Variant GetNotifyOnPlayStatusPlayComplete(uint32_t channelId,
 			uint32_t streamId, double timeStamp, bool isAbsolute,
 			double bytes, double duration);

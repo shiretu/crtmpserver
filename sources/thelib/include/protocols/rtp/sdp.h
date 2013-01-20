@@ -44,6 +44,7 @@
 #define SDP_TRACK_GLOBAL_INDEX(x)	((x)["globalTrackIndex"])
 #define SDP_TRACK_IS_AUDIO(x)		((x)["isAudio"])
 #define SDP_TRACK_BANDWIDTH(x)		((x)["bandwidth"])
+#define SDP_TRACK_CLOCKRATE(x)		((x)["clockRate"])
 #define SDP_VIDEO_SERVER_IP(x)		((x)["ip"])
 #define SDP_VIDEO_CONTROL_URI(x)	((x)["controlUri"])
 #define SDP_VIDEO_CODEC(x)			((x)["codec"])
@@ -53,6 +54,7 @@
 #define SDP_AUDIO_CONTROL_URI(x)	((x)["controlUri"])
 #define SDP_AUDIO_CODEC(x)			((x)["codec"])
 #define SDP_AUDIO_CODEC_SETUP(x)	((x)["codecSetup"])
+#define SDP_AUDIO_TRANSPORT(x)		((x)["encodingNameString"])
 
 class DLLEXP SDP
 : public Variant {
@@ -61,11 +63,12 @@ public:
 	virtual ~SDP();
 
 	static bool ParseSDP(SDP &sdp, string &raw);
-	Variant GetVideoTrack(uint32_t index, string uri);
-	Variant GetAudioTrack(uint32_t index, string uri);
+	Variant GetVideoTrack(uint32_t index, string contentBase);
+	Variant GetAudioTrack(uint32_t index, string contentBase);
 	string GetStreamName();
 	uint32_t GetTotalBandwidth();
 	static bool ParseTransportLine(string raw, Variant &result);
+	static bool ParseTransportLinePart(string raw, Variant &result);
 private:
 	static bool ParseSection(Variant &result, vector<string> &lines,
 			uint32_t start, uint32_t length);

@@ -26,6 +26,7 @@
 #include "protocols/rtmp/channel.h"
 #include "protocols/rtmp/rtmpprotocolserializer.h"
 #include "streaming/rtmpstream.h"
+#include "mediaformats/readers/streammetadataresolver.h"
 
 #define RECEIVED_BYTES_COUNT_REPORT_CHUNK 131072
 #define MAX_CHANNELS_COUNT (64+255)
@@ -49,9 +50,6 @@ class InFileRTMPStream;
 class InNetRTMPStream;
 class BaseRTMPAppProtocolHandler;
 class ClientSO;
-#ifdef ENFORCE_RTMP_OUTPUT_CHECKS
-class MonitorRTMPProtocol;
-#endif  /* ENFORCE_RTMP_OUTPUT_CHECKS */
 
 class DLLEXP BaseRTMPProtocol
 : public BaseProtocol {
@@ -61,10 +59,6 @@ protected:
 	bool _handshakeCompleted;
 	RTMPState _rtmpState;
 	IOBuffer _outputBuffer;
-#ifdef ENFORCE_RTMP_OUTPUT_CHECKS
-	IOBuffer _intermediateBuffer;
-	MonitorRTMPProtocol *_pMonitor;
-#endif /* ENFORCE_RTMP_OUTPUT_CHECKS */
 	uint64_t _nextReceivedBytesCountReport;
 	uint32_t _winAckSize;
 	Channel _channels[MAX_CHANNELS_COUNT];
@@ -92,6 +86,8 @@ public:
 	bool ClientSOSend(string &name, Variant &parameters);
 	bool ClientSOSetProperty(string &soName, string &propName, Variant &propValue);
 
+	void SignalOutBufferFull(uint32_t outstanding, uint32_t maxValue);
+
 	virtual bool Initialize(Variant &parameters);
 	virtual bool AllowFarProtocol(uint64_t type);
 	virtual bool AllowNearProtocol(uint64_t type);
@@ -113,7 +109,6 @@ public:
 	void SetWinAckSize(uint32_t winAckSize);
 
 	uint32_t GetOutboundChunkSize();
-	uint32_t GetInboundChunkSize();
 	bool SetInboundChunkSize(uint32_t chunkSize);
 	void TrySetOutboundChunkSize(uint32_t chunkSize);
 
@@ -124,7 +119,7 @@ public:
 	BaseOutNetRTMPStream * CreateONS(uint32_t streamId, string streamName,
 			uint64_t inStreamType, uint32_t &clientSideBuffer);
 	void SignalONS(BaseOutNetRTMPStream *pONS);
-	InFileRTMPStream * CreateIFS(Variant &metadata);
+	InFileRTMPStream * CreateIFS(Metadata &metadata, bool hasTimer);
 	void RemoveIFS(InFileRTMPStream *pIFS);
 
 	Channel *ReserveChannel();

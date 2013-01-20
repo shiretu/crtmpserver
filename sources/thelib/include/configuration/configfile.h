@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -43,6 +43,7 @@ public:
 	bool IsDaemon();
 	bool IsOrigin();
 	string GetServicesInfo();
+	Variant &GetApplicationsConfigurations();
 
 	bool LoadLuaFile(string path, bool forceDaemon);
 	bool LoadXmlFile(string path, bool forceDaemon);

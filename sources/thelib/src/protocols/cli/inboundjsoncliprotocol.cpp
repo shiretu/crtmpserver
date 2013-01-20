@@ -119,7 +119,7 @@ bool InboundJSONCLIProtocol::ParseCommand(string &command) {
 	vector<string> list;
 
 	FOR_MAP(rawMap, string, string, i) {
-		key = lowerCase(MAP_KEY(i));
+		key = MAP_KEY(i);
 		replace(key, "_#space#_", " ");
 		replace(key, "_#slash#_", "\\");
 		replace(key, "_#equal#_", "=");

@@ -67,6 +67,7 @@ Variant ConnectionMessageFactory::GetInvokeConnect(string appName, string tcUrl,
 
 	connectRequest[(uint32_t) 0][RM_INVOKE_PARAMS_CONNECT_VIDEOCODECS] = videoCodecs;
 	connectRequest[(uint32_t) 0][RM_INVOKE_PARAMS_CONNECT_VIDEOFUNCTION] = videoFunction;
+	connectRequest[(uint32_t) 0][RM_INVOKE_PARAMS_CONNECT_CAPABILITIES] = capabilities;
 	connectRequest[(uint32_t) 0]["objectEncoding"] = objectEncoding;
 
 	return GenericMessageFactory::GetInvoke(3, 0, 0, false, 1, RM_INVOKE_FUNCTION_CONNECT, connectRequest);

@@ -95,6 +95,10 @@ bool RTCPProtocol::SignalInputData(IOBuffer &buffer, sockaddr_in *pPeerAddress) 
 			uint64_t ntpMicroseconds = (uint32_t) (((double) ntpFrac / (double) (0x100000000LL))*1000000.0);
 			ntpMicroseconds += ((uint64_t) ntpSec)*1000000;
 			uint32_t rtpTimestamp = ENTOHLP(pBuffer + 16);
+			if (_pConnectivity == NULL) {
+				FATAL("No connectivity, unable to send SR");
+				return false;
+			}
 			_pConnectivity->ReportSR(ntpMicroseconds, rtpTimestamp, _isAudio);
 			break;
 		}

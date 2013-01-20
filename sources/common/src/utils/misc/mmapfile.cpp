@@ -154,7 +154,7 @@ MmapFile::~MmapFile() {
 	}
 }
 
-bool MmapFile::Initialize(string path, uint32_t windowSize, bool exclusive) {
+bool MmapFile::Initialize(string path, uint32_t windowSize) {
 	//1. Do we have this file open?
 	LOG_MMAP("Initial window size: %u", windowSize);
 	uint32_t pagesCount = windowSize / _pageSize;
@@ -167,25 +167,13 @@ bool MmapFile::Initialize(string path, uint32_t windowSize, bool exclusive) {
 		__FileInfo__ fi = {0, 0, 0};
 
 		//2. Open the file
-		if (exclusive) {
-			fi.fd = open(STR(_path), O_RDWR);
-		} else {
-			fi.fd = open(STR(_path), O_RDONLY);
-		}
+		fi.fd = open(STR(_path), O_RDONLY); //NOINHERIT
+		
 		if (fi.fd <= 0) {
 			int err = errno;
 			FATAL("Unable to open file %s: (%d) %s", STR(_path), err, strerror(err));
 			_failed = true;
 			return false;
-		}
-		if (exclusive) {
-			if (lockf(fi.fd, F_TLOCK, 0) != 0) {
-				int err = errno;
-				FATAL("Unable to lock file %s: (%d) %s", STR(_path), err, strerror(err));
-				_failed = true;
-				close(fi.fd);
-				return false;
-			}
 		}
 
 		//2. Get its size

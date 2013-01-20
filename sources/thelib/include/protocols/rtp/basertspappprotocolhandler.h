@@ -35,6 +35,7 @@ protected:
 	Variant _realms;
 	string _usersFile;
 	double _lastUsersFileUpdate;
+	map<string, uint32_t> _httpSessions;
 public:
 	BaseRTSPAppProtocolHandler(Variant &configuration);
 	virtual ~BaseRTSPAppProtocolHandler();
@@ -49,6 +50,8 @@ public:
 	static bool SignalProtocolCreated(BaseProtocol *pProtocol,
 			Variant &parameters);
 
+	virtual bool HandleHTTPRequest(RTSPProtocol *pFrom, Variant &requestHeaders,
+			string &requestContent);
 	virtual bool HandleRTSPRequest(RTSPProtocol *pFrom, Variant &requestHeaders,
 			string &requestContent);
 	virtual bool HandleRTSPResponse(RTSPProtocol *pFrom, Variant &responseHeaders,
@@ -65,15 +68,17 @@ protected:
 			Variant &requestHeaders, string &requestContent);
 	virtual bool HandleRTSPRequestSetupInbound(RTSPProtocol *pFrom,
 			Variant &requestHeaders, string &requestContent);
-	virtual bool HandleRTSPRequestPlay(RTSPProtocol *pFrom,
-			Variant &requestHeaders, string &requestContent);
 	virtual bool HandleRTSPRequestTearDown(RTSPProtocol *pFrom,
 			Variant &requestHeaders, string &requestContent);
 	virtual bool HandleRTSPRequestAnnounce(RTSPProtocol *pFrom,
 			Variant &requestHeaders, string &requestContent);
-	virtual bool HandleRTSPRequestRecord(RTSPProtocol *pFrom,
-			Variant &requestHeaders, string &requestContent);
 	virtual bool HandleRTSPRequestPause(RTSPProtocol *pFrom,
+			Variant &requestHeaders, string &requestContent);
+	virtual bool HandleRTSPRequestPlayOrRecord(RTSPProtocol *pFrom,
+			Variant &requestHeaders, string &requestContent);
+	virtual bool HandleRTSPRequestPlay(RTSPProtocol *pFrom,
+			Variant &requestHeaders, string &requestContent);
+	virtual bool HandleRTSPRequestRecord(RTSPProtocol *pFrom,
 			Variant &requestHeaders, string &requestContent);
 
 	//handle response routines
@@ -122,9 +127,18 @@ protected:
 	virtual string GetAuthenticationRealm(RTSPProtocol *pFrom,
 			Variant &requestHeaders, string &requestContent);
 private:
+	void ComputeRTPInfoHeader(RTSPProtocol *pFrom,
+			OutboundConnectivity *pOutboundConnectivity, double start);
+	void ParseRange(string raw, double &start, double &end);
+	double ParseNPT(string raw);
+	bool AnalyzeUri(RTSPProtocol *pFrom, string rawUri);
+	bool IsVod(RTSPProtocol *pFrom);
+	bool IsTs(RTSPProtocol *pFrom);
+	bool IsRawTs(RTSPProtocol *pFrom);
+	string GetStreamName(RTSPProtocol *pFrom);
 	OutboundConnectivity *GetOutboundConnectivity(RTSPProtocol *pFrom, bool forceTcp);
-	BaseInNetStream *GetInboundStream(string streamName);
-	StreamCapabilities *GetInboundStreamCapabilities(string streamName);
+	BaseInStream *GetInboundStream(string streamName, RTSPProtocol *pFrom);
+	StreamCapabilities *GetInboundStreamCapabilities(string streamName, RTSPProtocol *pFrom);
 	string GetAudioTrack(RTSPProtocol *pFrom,
 			StreamCapabilities *pCapabilities);
 	string GetVideoTrack(RTSPProtocol *pFrom,

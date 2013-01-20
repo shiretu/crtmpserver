@@ -22,6 +22,7 @@ AS=as
 
 # Macros
 CND_PLATFORM=GNU-MacOSX
+CND_DLIB_EXT=dylib
 CND_CONF=Release
 CND_DISTDIR=dist
 CND_BUILDDIR=build
@@ -68,7 +69,7 @@ LDLIBSOPTIONS=-L../common/dist/Release/GNU-MacOSX -lcommon -L../thelib/../Releas
 
 ../${CND_CONF}/${CND_PLATFORM}/applications/samplefactory/libsamplefactory.dylib: ${OBJECTFILES}
 	${MKDIR} -p ../${CND_CONF}/${CND_PLATFORM}/applications/samplefactory
-	${LINK.cc} -dynamiclib -install_name libsamplefactory.dylib -o ../${CND_CONF}/${CND_PLATFORM}/applications/samplefactory/libsamplefactory.dylib -fPIC ${OBJECTFILES} ${LDLIBSOPTIONS} 
+	${LINK.cc} -o ../${CND_CONF}/${CND_PLATFORM}/applications/samplefactory/libsamplefactory.dylib ${OBJECTFILES} ${LDLIBSOPTIONS} -dynamiclib -install_name libsamplefactory.dylib -fPIC
 
 ${OBJECTDIR}/_ext/1702679040/samplefactory.o: ../../../../sources/applications/samplefactory/src/samplefactory.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/1702679040

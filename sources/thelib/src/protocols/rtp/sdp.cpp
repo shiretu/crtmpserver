@@ -29,6 +29,7 @@ SDP::~SDP() {
 }
 
 bool SDP::ParseSDP(SDP &sdp, string &raw) {
+	//FINEST("%s", STR(raw));
 	//1. Reset
 	sdp.Reset();
 
@@ -87,7 +88,7 @@ bool SDP::ParseSDP(SDP &sdp, string &raw) {
 	return true;
 }
 
-Variant SDP::GetVideoTrack(uint32_t index, string uri) {
+Variant SDP::GetVideoTrack(uint32_t index, string contentBase) {
 	//1. Find the track
 	Variant track = GetTrack(index, "video");
 	if (track == V_NULL) {
@@ -99,12 +100,16 @@ Variant SDP::GetVideoTrack(uint32_t index, string uri) {
 	Variant result;
 	SDP_VIDEO_SERVER_IP(result) = (*this)[SDP_SESSION][SDP_O]["address"];
 	string control = track[SDP_A].GetValue("control", false);
-	if (control.find("rtsp") == 0)
+	if (control.find("rtsp") == 0) {
 		SDP_VIDEO_CONTROL_URI(result) = control;
-	else
-		SDP_VIDEO_CONTROL_URI(result) = uri + "/" + control;
+	} else {
+		if ((contentBase != "") && (contentBase[contentBase.size() - 1] != '/')) {
+			contentBase += "/";
+		}
+		SDP_VIDEO_CONTROL_URI(result) = contentBase + control;
+	}
 	SDP_VIDEO_CODEC(result) = track[SDP_A].GetValue("rtpmap", false)["encodingName"];
-	if ((uint64_t) SDP_VIDEO_CODEC(result) != CODEC_VIDEO_AVC) {
+	if ((uint64_t) SDP_VIDEO_CODEC(result) != CODEC_VIDEO_H264) {
 		FATAL("The only supported video codec is h264");
 		return Variant();
 	}
@@ -121,11 +126,12 @@ Variant SDP::GetVideoTrack(uint32_t index, string uri) {
 	else
 		SDP_TRACK_BANDWIDTH(result) = (uint32_t) 0;
 
+	SDP_TRACK_CLOCKRATE(result) = track[SDP_A].GetValue("rtpmap", false)["clockRate"];
 	//3. Done
 	return result;
 }
 
-Variant SDP::GetAudioTrack(uint32_t index, string uri) {
+Variant SDP::GetAudioTrack(uint32_t index, string contentBase) {
 	//1. Find the track
 	Variant track = GetTrack(index, "audio");
 	if (track == V_NULL) {
@@ -137,10 +143,14 @@ Variant SDP::GetAudioTrack(uint32_t index, string uri) {
 	Variant result;
 	SDP_AUDIO_SERVER_IP(result) = (*this)[SDP_SESSION][SDP_O]["address"];
 	string control = track[SDP_A].GetValue("control", false);
-	if (control.find("rtsp") == 0)
+	if (control.find("rtsp") == 0) {
 		SDP_AUDIO_CONTROL_URI(result) = control;
-	else
-		SDP_AUDIO_CONTROL_URI(result) = uri + "/" + control;
+	} else {
+		if ((contentBase != "") && (contentBase[contentBase.size() - 1] != '/')) {
+			contentBase += "/";
+		}
+		SDP_AUDIO_CONTROL_URI(result) = contentBase + control;
+	}
 	SDP_AUDIO_CODEC(result) = track[SDP_A].GetValue("rtpmap", false)["encodingName"];
 	if ((uint64_t) SDP_AUDIO_CODEC(result) != CODEC_AUDIO_AAC) {
 		FATAL("The only supported audio codec is aac");
@@ -150,6 +160,7 @@ Variant SDP::GetAudioTrack(uint32_t index, string uri) {
 	SDP_AUDIO_CODEC_SETUP(result) = track[SDP_A]
 			.GetValue("fmtp", false)
 			.GetValue("config", false);
+	SDP_AUDIO_TRANSPORT(result) = track[SDP_A].GetValue("rtpmap", false)["encodingNameString"];
 	SDP_TRACK_GLOBAL_INDEX(result) = SDP_TRACK_GLOBAL_INDEX(track);
 	SDP_TRACK_IS_AUDIO(result) = (bool)true;
 	if (track.HasKeyChain(V_UINT32, false, 1, SDP_B))
@@ -177,7 +188,29 @@ string SDP::GetStreamName() {
 }
 
 bool SDP::ParseTransportLine(string raw, Variant &result) {
+	//raw = "MP2T/H2221/UDP;unicast;destination=192.168.1.150;client_port=11112,MP2T/H2221/UDP;multicast,RAW/RAW/UDP;unicast;destination=192.168.1.150;client_port=11112,RAW/RAW/UDP;multicast";
+	//raw = "MP2T/H2221/UDP;unicast;destination=192.168.1.150;client_port=11112," + raw;
 	result.Reset();
+	result["original"] = raw;
+	result["alternatives"].IsArray(true);
+
+	vector<string> parts;
+	split(raw, ",", parts);
+	for (vector<string>::size_type i = 0; i < parts.size(); i++) {
+		Variant temp;
+		if (!ParseTransportLinePart(parts[i], temp)) {
+			WARN("Invalid transport part: %s", STR(parts[i]));
+			continue;
+		}
+		result["alternatives"].PushToArray(temp);
+	}
+	//FINEST("%s", STR(result.ToString()));
+	return result["alternatives"].MapSize() != 0;
+}
+
+bool SDP::ParseTransportLinePart(string raw, Variant &result) {
+	result.Reset();
+	result["original"] = raw;
 
 	//1. split after ';'
 	vector<string> parts;
@@ -407,9 +440,13 @@ bool SDP::ParseSDPLineA(string &attributeName, Variant &value, string line) {
 			return false;
 		value["encodingName"] = parts[0];
 		if (lowerCase((string) value["encodingName"]) == "h264") {
-			value["encodingName"] = (uint64_t) CODEC_VIDEO_AVC;
+			value["encodingName"] = (uint64_t) CODEC_VIDEO_H264;
 		} else if ((string) lowerCase(value["encodingName"]) == "mpeg4-generic") {
 			value["encodingName"] = (uint64_t) CODEC_AUDIO_AAC;
+			value["encodingNameString"] = "mpeg4-generic";
+		} else if ((string) lowerCase(value["encodingName"]) == "mp4a-latm") {
+			value["encodingName"] = (uint64_t) CODEC_AUDIO_AAC;
+			value["encodingNameString"] = "mp4a-latm";
 		} else {
 			WARN("Invalid codec: %s", STR(value["encodingName"]));
 			value.Reset();
@@ -455,7 +492,7 @@ bool SDP::ParseSDPLineB(Variant &result, string line) {
 	result["value"] = parts[1];
 
 	if (parts[0] == "AS") {
-		uint32_t val = (uint32_t) atoi(STR(parts[1]));
+		uint32_t val = (((uint32_t) atoi(STR(parts[1])))*1024);
 		result = (uint32_t) val;
 	} else {
 		WARN("Bandwidth modifier %s not implemented", STR(result["modifier"]));
@@ -694,38 +731,66 @@ Variant SDP::ParseAudioTrack(Variant &track) {
 		return Variant();
 	}
 
+	if (!track.HasKeyChain(V_STRING, true, 3, SDP_A, "rtpmap", "encodingNameString")) {
+		FATAL("Track with no encoding name");
+		return Variant();
+	}
+	string encodingName = (string) track[SDP_A]["rtpmap"]["encodingNameString"];
+
 	Variant &fmtp = result[SDP_A].GetValue("fmtp", false);
-	if (!fmtp.HasKey("config", false)) {
-		FATAL("Invalid fmtp line:\n%s", STR(fmtp.ToString()));
-		return Variant();
-	}
-	if (!fmtp.HasKey("mode", false)) {
-		FATAL("Invalid fmtp line:\n%s", STR(fmtp.ToString()));
-		return Variant();
-	}
-	if (lowerCase((string) fmtp.GetValue("mode", false)) != "aac-hbr") {
-		FATAL("Invalid fmtp line:\n%s", STR(fmtp.ToString()));
-		return Variant();
-	}
-	if (!fmtp.HasKey("SizeLength", false)) {
-		FATAL("Invalid fmtp line:\n%s", STR(fmtp.ToString()));
-		return Variant();
-	}
-	if (fmtp.GetValue("sizelength", false) != "13") {
-		FATAL("Invalid fmtp line:\n%s", STR(fmtp.ToString()));
-		return Variant();
-	}
-	if (fmtp.HasKey("IndexLength", false)) {
-		if (fmtp.GetValue("IndexLength", false) != "3") {
+
+	if (encodingName == "mpeg4-generic") {
+		if (!fmtp.HasKey("config", false)) {
 			FATAL("Invalid fmtp line:\n%s", STR(fmtp.ToString()));
 			return Variant();
 		}
-	}
-	if (fmtp.HasKey("IndexDeltaLength", false)) {
-		if (fmtp.GetValue("IndexDeltaLength", false) != "3") {
+		if (!fmtp.HasKey("mode", false)) {
 			FATAL("Invalid fmtp line:\n%s", STR(fmtp.ToString()));
 			return Variant();
 		}
+		if (lowerCase((string) fmtp.GetValue("mode", false)) != "aac-hbr") {
+			FATAL("Invalid fmtp line:\n%s", STR(fmtp.ToString()));
+			return Variant();
+		}
+		if (!fmtp.HasKey("SizeLength", false)) {
+			FATAL("Invalid fmtp line:\n%s", STR(fmtp.ToString()));
+			return Variant();
+		}
+		if (fmtp.GetValue("sizelength", false) != "13") {
+			FATAL("Invalid fmtp line:\n%s", STR(fmtp.ToString()));
+			return Variant();
+		}
+		if (fmtp.HasKey("IndexLength", false)) {
+			if (fmtp.GetValue("IndexLength", false) != "3") {
+				FATAL("Invalid fmtp line:\n%s", STR(fmtp.ToString()));
+				return Variant();
+			}
+		}
+		if (fmtp.HasKey("IndexDeltaLength", false)) {
+			if (fmtp.GetValue("IndexDeltaLength", false) != "3") {
+				FATAL("Invalid fmtp line:\n%s", STR(fmtp.ToString()));
+				return Variant();
+			}
+		}
+	} else if (encodingName == "mp4a-latm") {
+		bool cpresent = true;
+		if (fmtp.HasKey("cpresent", false)) {
+			cpresent = fmtp.GetValue("cpresent", false) == "1";
+		}
+
+		if (cpresent) {
+			FATAL("cpresent not yet implemented");
+			return Variant();
+		}
+
+		if ((!fmtp.HasKeyChain(V_STRING, false, 1, "config"))
+				|| ((string) fmtp.GetValue("config", false) == "")) {
+			FATAL("Invalid fmtp line:\n%s", STR(fmtp.ToString()));
+			return Variant();
+		}
+	} else {
+		FATAL("Track encoding not supported %s", STR(encodingName));
+		return Variant();
 	}
 
 	return result;

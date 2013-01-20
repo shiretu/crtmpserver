@@ -39,6 +39,7 @@ private:
 	static vector<IOHandlerManagerToken *> _tokensVector2;
 	static vector<IOHandlerManagerToken *> *_pAvailableTokens;
 	static vector<IOHandlerManagerToken *> *_pRecycledTokens;
+	static int32_t _nextWaitPeriod;
 #ifndef HAS_EPOLL_TIMERS
 	static TimersManager *_pTimersManager;
 #endif /* HAS_EPOLL_TIMERS */
@@ -70,6 +71,7 @@ public:
 	static bool EnableAcceptConnections(IOHandler *pIOHandler);
 	static bool DisableAcceptConnections(IOHandler *pIOHandler, bool ignoreError = false);
 	static bool EnableTimer(IOHandler *pIOHandler, uint32_t seconds);
+	static bool EnableHighGranularityTimer(IOHandler *pIOHandler, uint32_t milliseconds);
 	static bool DisableTimer(IOHandler *pIOHandler, bool ignoreError = false);
 	static void EnqueueForDelete(IOHandler *pIOHandler);
 	static uint32_t DeleteDeadHandlers();
@@ -78,7 +80,7 @@ private:
 	static void SetupToken(IOHandler *pIOHandler);
 	static void FreeToken(IOHandler *pIOHandler);
 #ifndef HAS_EPOLL_TIMERS
-	static void ProcessTimer(TimerEvent &event);
+	static bool ProcessTimer(TimerEvent &event);
 #endif /* HAS_EPOLL_TIMERS */
 };
 

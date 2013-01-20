@@ -22,13 +22,16 @@
 #include "protocols/rtmp/rtmpeprotocol.h"
 #include "protocols/rtmp/basertmpappprotocolhandler.h"
 
+//#define DEBUG_HANDSHAKE(...) do{printf("%6d - ",__LINE__);printf(__VA_ARGS__);printf("\n");} while(0)
+#define DEBUG_HANDSHAKE(...)
+
 InboundRTMPProtocol::InboundRTMPProtocol()
 : BaseRTMPProtocol(PT_INBOUND_RTMP) {
 	_pKeyIn = NULL;
 	_pKeyOut = NULL;
 	_pOutputBuffer = NULL;
 	_currentFPVersion = 0;
-	_handshakeScheme = 0;
+	_usedScheme = 0;
 }
 
 InboundRTMPProtocol::~InboundRTMPProtocol() {
@@ -99,7 +102,7 @@ bool InboundRTMPProtocol::PerformHandshake(IOBuffer &buffer) {
 					ResetFarProtocol();
 					pFarProtocol->SetNearProtocol(pRTMPE);
 					pRTMPE->SetNearProtocol(this);
-					FINEST("New protocol chain: %s", STR(*pFarProtocol));
+					//FINEST("New protocol chain: %s", STR(*pFarProtocol));
 
 					//decrypt the leftovers
 					RC4(_pKeyIn, GETAVAILABLEBYTESCOUNT(buffer),
@@ -124,11 +127,11 @@ bool InboundRTMPProtocol::ValidateClient(IOBuffer &inputBuffer) {
 		return false;
 	}
 	if (ValidateClientScheme(inputBuffer, 0)) {
-		_handshakeScheme = 0;
+		_usedScheme = 0;
 		return true;
 	}
 	if (ValidateClientScheme(inputBuffer, 1)) {
-		_handshakeScheme = 1;
+		_usedScheme = 1;
 		return true;
 	}
 	FATAL("Unable to validate client");
@@ -136,9 +139,11 @@ bool InboundRTMPProtocol::ValidateClient(IOBuffer &inputBuffer) {
 }
 
 bool InboundRTMPProtocol::ValidateClientScheme(IOBuffer &inputBuffer, uint8_t scheme) {
+	DEBUG_HANDSHAKE("SERVER: Validate: 1. _usedScheme %"PRIu8, scheme);
 	uint8_t *pBuffer = GETIBPOINTER(inputBuffer);
 
 	uint32_t clientDigestOffset = GetDigestOffset(pBuffer, scheme);
+	DEBUG_HANDSHAKE("SERVER: Validate: 2. clientDigestOffset %"PRIu32"; _usedScheme: %"PRIu8, clientDigestOffset, scheme);
 
 	uint8_t *pTempBuffer = new uint8_t[1536 - 32];
 	memcpy(pTempBuffer, pBuffer, clientDigestOffset);
@@ -147,19 +152,15 @@ bool InboundRTMPProtocol::ValidateClientScheme(IOBuffer &inputBuffer, uint8_t sc
 
 	uint8_t *pTempHash = new uint8_t[512];
 	HMACsha256(pTempBuffer, 1536 - 32, genuineFPKey, 30, pTempHash);
+	DEBUG_HANDSHAKE("SERVER: Validate: 3. computed clientDigest %s", STR(hex(pTempHash, 32)));
+	DEBUG_HANDSHAKE("SERVER: Validate: 4.    found clientDigest %s", STR(hex(pBuffer + clientDigestOffset, 32)));
 
-	bool result = true;
-	for (uint32_t i = 0; i < 32; i++) {
-		if (pBuffer[clientDigestOffset + i] != pTempHash[i]) {
-			result = false;
-			break;
-		}
-	}
+	int result = memcmp(pTempHash, pBuffer + clientDigestOffset, 32);
 
 	delete[] pTempBuffer;
 	delete[] pTempHash;
 
-	return result;
+	return result == 0;
 }
 
 bool InboundRTMPProtocol::PerformHandshake(IOBuffer &buffer, bool encrypted) {
@@ -242,8 +243,10 @@ bool InboundRTMPProtocol::PerformComplexHandshake(IOBuffer &buffer, bool encrypt
 
 	//**** FIRST 1536 bytes from server response ****//
 	//compute DH key position
-	uint32_t serverDHOffset = GetDHOffset(_pOutputBuffer, _handshakeScheme);
-	uint32_t clientDHOffset = GetDHOffset(pInputBuffer, _handshakeScheme);
+	uint32_t serverDHOffset = GetDHOffset(_pOutputBuffer, _usedScheme);
+	uint32_t clientDHOffset = GetDHOffset(pInputBuffer, _usedScheme);
+	DEBUG_HANDSHAKE("SERVER: 1. serverDHOffset: %"PRIu32"; clientDHOffset: %"PRIu32"; _usedScheme: %"PRIu8,
+			serverDHOffset, clientDHOffset, _usedScheme);
 
 	//generate DH key
 	DHWrapper dhWrapper(1024);
@@ -253,6 +256,10 @@ bool InboundRTMPProtocol::PerformComplexHandshake(IOBuffer &buffer, bool encrypt
 		return false;
 	}
 
+	DEBUG_HANDSHAKE("SERVER: 2. clientDHOffset: %"PRIu32"; _usedScheme: %"PRIu8"; clientPublicKey: %s",
+			clientDHOffset,
+			_usedScheme,
+			STR(hex(pInputBuffer + clientDHOffset, 128)));
 	if (!dhWrapper.CreateSharedKey(pInputBuffer + clientDHOffset, 128)) {
 		FATAL("Unable to create shared key");
 		return false;
@@ -262,6 +269,9 @@ bool InboundRTMPProtocol::PerformComplexHandshake(IOBuffer &buffer, bool encrypt
 		FATAL("Couldn't write public key!");
 		return false;
 	}
+	DEBUG_HANDSHAKE("SERVER: 3. serverDHOffset: %"PRIu32"; serverPublicKey: %s",
+			serverDHOffset,
+			STR(hex(_pOutputBuffer + serverDHOffset, 128)));
 
 	if (encrypted) {
 		uint8_t secretKey[128];
@@ -269,6 +279,7 @@ bool InboundRTMPProtocol::PerformComplexHandshake(IOBuffer &buffer, bool encrypt
 			FATAL("Unable to copy shared key");
 			return false;
 		}
+		DEBUG_HANDSHAKE("SERVER: 4. secretKey: %s", STR(hex(secretKey, 128)));
 
 		_pKeyIn = new RC4_KEY;
 		_pKeyOut = new RC4_KEY;
@@ -286,7 +297,7 @@ bool InboundRTMPProtocol::PerformComplexHandshake(IOBuffer &buffer, bool encrypt
 	}
 
 	//generate the digest
-	uint32_t serverDigestOffset = GetDigestOffset(_pOutputBuffer, _handshakeScheme);
+	uint32_t serverDigestOffset = GetDigestOffset(_pOutputBuffer, _usedScheme);
 
 	uint8_t *pTempBuffer = new uint8_t[1536 - 32];
 	memcpy(pTempBuffer, _pOutputBuffer, serverDigestOffset);
@@ -298,6 +309,9 @@ bool InboundRTMPProtocol::PerformComplexHandshake(IOBuffer &buffer, bool encrypt
 
 	//put the digest in place
 	memcpy(_pOutputBuffer + serverDigestOffset, pTempHash, 32);
+	DEBUG_HANDSHAKE("SERVER: 5. serverDigestOffset: %"PRIu32"; _usedScheme: %"PRIu8"; serverDigest: %s",
+			serverDigestOffset, _usedScheme,
+			STR(hex(pTempHash, 32)));
 
 	//cleanup
 	delete[] pTempBuffer;
@@ -306,11 +320,12 @@ bool InboundRTMPProtocol::PerformComplexHandshake(IOBuffer &buffer, bool encrypt
 
 	//**** SECOND 1536 bytes from server response ****//
 	//Compute the chalange index from the initial client request
-	uint32_t keyChallengeIndex = GetDigestOffset(pInputBuffer, _handshakeScheme);
+	uint32_t clientDigestOffset = GetDigestOffset(pInputBuffer, _usedScheme);
+	DEBUG_HANDSHAKE("SERVER: 6. clientDigestOffset: %"PRIu32"; _usedScheme: %"PRIu8, clientDigestOffset, _usedScheme);
 
 	//compute the key
 	pTempHash = new uint8_t[512];
-	HMACsha256(pInputBuffer + keyChallengeIndex, //pData
+	HMACsha256(pInputBuffer + clientDigestOffset, //pData
 			32, //dataLength
 			BaseRTMPProtocol::genuineFMSKey, //key
 			68, //keyLength
@@ -328,6 +343,7 @@ bool InboundRTMPProtocol::PerformComplexHandshake(IOBuffer &buffer, bool encrypt
 
 	//put the hash where it belongs
 	memcpy(_pOutputBuffer + 1536 * 2 - 32, pLastHash, 32);
+	DEBUG_HANDSHAKE("SERVER: 7. serverChallange: %s", STR(hex(pLastHash, 32)));
 
 
 	//cleanup

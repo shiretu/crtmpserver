@@ -27,10 +27,15 @@ File::File() {
 	_truncate = false;
 	_append = false;
 	_pFile = NULL;
+	_suppressLogErrorsOnInit = false;
 }
 
 File::~File() {
 	Close();
+}
+
+void File::SuppressLogErrorsOnInit() {
+	_suppressLogErrorsOnInit = true;
 }
 
 bool File::Initialize(string path) {
@@ -45,6 +50,11 @@ bool File::Initialize(string path, FILE_OPEN_MODE mode) {
 		case FILE_OPEN_MODE_READ:
 		{
 			openMode = "rb";
+			break;
+		}
+		case FILE_OPEN_MODE_WRITE:
+		{
+			openMode = "r+b";
 			break;
 		}
 		case FILE_OPEN_MODE_TRUNCATE:
@@ -64,11 +74,12 @@ bool File::Initialize(string path, FILE_OPEN_MODE mode) {
 		}
 	}
 
-	_pFile = fopen(STR(_path), STR(openMode));
+	_pFile = fopen(STR(_path), STR(openMode)); //NOINHERIT
 
 	if (_pFile == NULL) {
 		int err = errno;
-		FATAL("Unable to open file %s with mode `%s`. Error was: (%d) %s",
+		if (!_suppressLogErrorsOnInit)
+			FATAL("Unable to open file %s with mode `%s`. Error was: (%d) %s",
 				STR(_path), STR(openMode), err, strerror(err));
 		return false;
 	}
@@ -480,6 +491,7 @@ bool File::WriteBuffer(const uint8_t *pBuffer, uint64_t count) {
 		FATAL("Unable to write %"PRIu64" bytes to file", count);
 		return false;
 	}
+	_size += count;
 
 	return true;
 }

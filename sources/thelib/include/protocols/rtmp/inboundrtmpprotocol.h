@@ -31,7 +31,7 @@ private:
 	RC4_KEY*_pKeyOut;
 	uint8_t *_pOutputBuffer;
 	uint32_t _currentFPVersion;
-	uint8_t _handshakeScheme;
+	uint8_t _usedScheme;
 public:
 	InboundRTMPProtocol();
 	virtual ~InboundRTMPProtocol();

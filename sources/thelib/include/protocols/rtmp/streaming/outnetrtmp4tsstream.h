@@ -26,29 +26,22 @@
 
 class DLLEXP OutNetRTMP4TSStream
 : public BaseOutNetRTMPStream {
-private:
-	bool _audioCodecSent;
-	bool _audioIsG711;
-	bool _videoCodecSent;
-	IOBuffer _videoBuffer;
-	bool _inboundStreamIsRTP;
-	double _lastVideoTimestamp;
-	bool _isKeyFrame;
 public:
-	OutNetRTMP4TSStream(BaseRTMPProtocol *pProtocol, StreamsManager *pStreamsManager,
-			string name, uint32_t rtmpStreamId, uint32_t chunkSize);
+	OutNetRTMP4TSStream(BaseProtocol *pProtocol, string name, uint32_t rtmpStreamId,
+			uint32_t chunkSize);
 	virtual ~OutNetRTMP4TSStream();
 
 	virtual bool IsCompatibleWithType(uint64_t type);
-
 	virtual bool FeedData(uint8_t *pData, uint32_t dataLength,
 			uint32_t processedLength, uint32_t totalLength,
-			double absoluteTimestamp, bool isAudio);
-private:
-	bool FeedAudioData(uint8_t *pData, uint32_t dataLength, double absoluteTimestamp);
-	bool FeedVideoData(uint8_t *pData, uint32_t dataLength, double absoluteTimestamp);
-	bool SendVideoCodec(double absoluteTimestamp);
-	bool SendAudioCodec(double absoluteTimestamp);
+			double pts, double dts, bool isAudio);
+protected:
+	virtual bool FinishInitialization(
+			GenericProcessDataSetup *pGenericProcessDataSetup);
+	virtual bool PushVideoData(IOBuffer &buffer, double pts, double dts,
+			bool isKeyFrame);
+	virtual bool PushAudioData(IOBuffer &buffer, double pts, double dts);
+	virtual bool IsCodecSupported(uint64_t codec);
 };
 
 

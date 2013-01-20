@@ -33,16 +33,61 @@ bool OutboundSSLProtocol::InitGlobalContext(Variant &parameters) {
 	_pGlobalSSLContext = _pGlobalContexts[hash];
 	if (_pGlobalSSLContext == NULL) {
 		//2. prepare the global ssl context
-		_pGlobalSSLContext = SSL_CTX_new(SSLv23_method());
+		_pGlobalSSLContext = SSL_CTX_new(TLSv1_method());
 		if (_pGlobalSSLContext == NULL) {
 			FATAL("Unable to create global SSL context");
 			return false;
 		}
 
-		//3. Store the global context for later usage
+		//3. Set verify location for server certificate authentication, if any
+		if (parameters.HasKeyChain(V_STRING, false, 1, "serverCert")) {
+			X509_STORE * x509Ctx = SSL_CTX_get_cert_store(_pGlobalSSLContext);
+			if (x509Ctx != NULL) {
+				string serverCertData = (string) parameters.GetValue("serverCert", true);
+				BIO * bio = BIO_new(BIO_s_mem());
+				BIO_write(bio, (const void *) STR(serverCertData),
+						(int) serverCertData.length());
+				X509 * x509ServerCert = d2i_X509_bio(bio, NULL);
+				if(X509_STORE_add_cert(x509Ctx, x509ServerCert) == 0) {
+					FATAL("Unable to load Server CA. Error(s): %s", STR(GetSSLErrors()));
+					return false;
+				}
+				SSL_CTX_set_verify(_pGlobalSSLContext, SSL_VERIFY_PEER, NULL);
+			}
+		}
+
+		//4. Load client key and certificate, if any
+		if (parameters[CONF_SSL_KEY] == V_STRING
+				&& parameters[CONF_SSL_CERT] == V_STRING) {
+			string key = parameters[CONF_SSL_KEY];
+			string cert = parameters[CONF_SSL_CERT];
+
+			//5. Setup certificate from string
+			if (SSL_CTX_use_certificate_ASN1(_pGlobalSSLContext, (int) cert.size(),
+					(unsigned char *) STR(cert)) <= 0) {
+				FATAL("Unable to load certificate %s; Error(s) was: %s",
+						STR(cert),
+						STR(GetSSLErrors()));
+				SSL_CTX_free(_pGlobalSSLContext);
+				_pGlobalSSLContext = NULL;
+				return false;
+			}
+
+			//6. Setup private key
+			if (SSL_CTX_use_RSAPrivateKey_ASN1(_pGlobalSSLContext,
+					(unsigned char *) STR(key), (long) key.size()) <= 0) {
+				FATAL("Unable to load key %s; Error(s) was: %s",
+						STR(key),
+						STR(GetSSLErrors()));
+				SSL_CTX_free(_pGlobalSSLContext);
+				_pGlobalSSLContext = NULL;
+				return false;
+			}
+
+		}
+		//7. Store the global context for later usage
 		_pGlobalContexts[hash] = _pGlobalSSLContext;
 	}
-
 	return true;
 }
 

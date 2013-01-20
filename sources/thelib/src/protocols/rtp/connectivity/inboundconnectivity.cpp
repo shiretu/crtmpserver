@@ -30,15 +30,17 @@
 #include "protocols/rtp/streaming/innetrtpstream.h"
 #include "protocols/udpprotocol.h"
 #include "protocols/http/basehttpprotocol.h"
+#include "streaming/codectypes.h"
+#include "protocols/protocolmanager.h"
 
 InboundConnectivity::InboundConnectivity(RTSPProtocol *pRTSP, string streamName,
 		uint32_t bandwidthHint, uint8_t rtcpDetectionInterval)
 : BaseConnectivity() {
 	_pRTSP = pRTSP;
-	_pRTPVideo = NULL;
-	_pRTCPVideo = NULL;
-	_pRTPAudio = NULL;
-	_pRTCPAudio = NULL;
+	_rtpVideoId = 0;
+	_rtcpVideoId = 0;
+	_rtpAudioId = 0;
+	_rtcpAudioId = 0;
 	_pInStream = NULL;
 	_forceTcp = false;
 	memset(_pProtocols, 0, sizeof (_pProtocols));
@@ -103,8 +105,8 @@ void InboundConnectivity::EnqueueForDelete() {
 bool InboundConnectivity::AddTrack(Variant& track, bool isAudio) {
 	Variant &_track = isAudio ? _audioTrack : _videoTrack;
 	Variant &_oppositeTrack = isAudio ? _videoTrack : _audioTrack;
-	InboundRTPProtocol **ppRTP = isAudio ? &_pRTPAudio : &_pRTPVideo;
-	RTCPProtocol **ppRTCP = isAudio ? &_pRTCPAudio : &_pRTCPVideo;
+	uint32_t &rtpId = isAudio ? _rtpAudioId : _rtpVideoId;
+	uint32_t &rtcpId = isAudio ? _rtcpAudioId : _rtcpVideoId;
 	uint8_t *pRR = isAudio ? _audioRR : _videoRR;
 
 	if (_track != V_NULL)
@@ -124,20 +126,24 @@ bool InboundConnectivity::AddTrack(Variant& track, bool isAudio) {
 	_forceTcp = (bool)_track["isTcp"];
 
 	Variant dummy;
-	*ppRTP = (InboundRTPProtocol *) ProtocolFactoryManager::CreateProtocolChain(
+	InboundRTPProtocol *pRTP = (InboundRTPProtocol *) ProtocolFactoryManager::CreateProtocolChain(
 			CONF_PROTOCOL_INBOUND_UDP_RTP, dummy);
-	if (*ppRTP == NULL) {
+	if (pRTP == NULL) {
 		FATAL("Unable to create the protocol chain");
 		Cleanup();
 		return false;
 	}
-	*ppRTCP = (RTCPProtocol *) ProtocolFactoryManager::CreateProtocolChain(
+	rtpId = pRTP->GetId();
+
+	RTCPProtocol *pRTCP = (RTCPProtocol *) ProtocolFactoryManager::CreateProtocolChain(
 			CONF_PROTOCOL_UDP_RTCP, dummy);
-	if (*ppRTCP == NULL) {
+	if (pRTCP == NULL) {
 		FATAL("Unable to create the protocol chain");
 		Cleanup();
 		return false;
 	}
+	rtcpId = pRTCP->GetId();
+
 	if ((bool)_track["isTcp"]) {
 		uint16_t dataIdx = 0;
 		uint16_t rtcpIdx = 0;
@@ -155,25 +161,28 @@ bool InboundConnectivity::AddTrack(Variant& track, bool isAudio) {
 
 		if ((dataIdx >= 256) || (rtcpIdx >= 256)) {
 			FATAL("Invalid channel numbers");
+			Cleanup();
 			return false;
 		}
 		if ((_pProtocols[dataIdx] != NULL) || (_pProtocols[rtcpIdx] != NULL)) {
 			FATAL("Invalid channel numbers");
+			Cleanup();
 			return false;
 		}
-		_pProtocols[dataIdx] = *ppRTP;
-		_pProtocols[rtcpIdx] = *ppRTCP;
-		EHTONLP(pRR + 8, (*ppRTCP)->GetSSRC()); //SSRC of packet sender
-		EHTONLP(pRR + 40, (*ppRTCP)->GetSSRC()); //SSRC of packet sender
+		_pProtocols[dataIdx] = pRTP;
+		_pProtocols[rtcpIdx] = pRTCP;
+		EHTONLP(pRR + 8, pRTCP->GetSSRC()); //SSRC of packet sender
+		EHTONLP(pRR + 40, pRTCP->GetSSRC()); //SSRC of packet sender
 		pRR[1] = (uint8_t) rtcpIdx;
 	} else {
-		if (!CreateCarriers(*ppRTP, *ppRTCP)) {
+		if (!CreateCarriers(pRTP, pRTCP)) {
 			FATAL("Unable to create carriers");
+			Cleanup();
 			return false;
 		}
 	}
-	(*ppRTP)->SetApplication(pApplication);
-	(*ppRTCP)->SetApplication(pApplication);
+	pRTP->SetApplication(pApplication);
+	pRTCP->SetApplication(pApplication);
 	return true;
 }
 
@@ -204,23 +213,13 @@ bool InboundConnectivity::Initialize() {
 		FATAL("Stream name %s already taken", STR(_streamName));
 		return false;
 	}
-	_pInStream = new InNetRTPStream(_pRTSP, pApplication->GetStreamsManager(),
-			_streamName,
-			_videoTrack != V_NULL ? unb64((string) SDP_VIDEO_CODEC_H264_SPS(_videoTrack)) : "",
-			_videoTrack != V_NULL ? unb64((string) SDP_VIDEO_CODEC_H264_PPS(_videoTrack)) : "",
-			_audioTrack != V_NULL ? unhex(SDP_AUDIO_CODEC_SETUP(_audioTrack)) : "",
-			bandwidth,
-			_rtcpDetectionInterval);
-
-	//6. override the width/height with the values in session (if any)
-	Variant &session = _pRTSP->GetCustomParameters();
-	if ((session.HasKeyChain(_V_NUMERIC, true, 3, "customParameters", "externalStreamConfig", "width"))
-			&& (session.HasKeyChain(_V_NUMERIC, true, 3, "customParameters", "externalStreamConfig", "height"))) {
-		StreamCapabilities *pCap = _pInStream->GetCapabilities();
-		if (pCap->videoCodecId == CODEC_VIDEO_AVC) {
-			pCap->avc._widthOverride = (uint32_t) session["customParameters"]["externalStreamConfig"]["width"];
-			pCap->avc._heightOverride = (uint32_t) session["customParameters"]["externalStreamConfig"]["height"];
-		}
+	_pInStream = new InNetRTPStream(_pRTSP, _streamName, _videoTrack, _audioTrack,
+			bandwidth, _rtcpDetectionInterval);
+	if (!_pInStream->SetStreamsManager(pApplication->GetStreamsManager())) {
+		FATAL("Unable to set the streams manager");
+		delete _pInStream;
+		_pInStream = NULL;
+		return false;
 	}
 
 	//	pCap->avc._widthOverride=session["width"];
@@ -228,15 +227,22 @@ bool InboundConnectivity::Initialize() {
 
 	//6. make the stream known to inbound RTP protocols
 	//and plug in the connectivity
-	if (_pRTPVideo != NULL) {
-		_pRTPVideo->SetStream(_pInStream, false);
-		_pRTPVideo->SetInbboundConnectivity(this);
-		_pRTCPVideo->SetInbboundConnectivity(this, false);
+	InboundRTPProtocol *pTempRTP = NULL;
+	RTCPProtocol *pTempRTCP = NULL;
+
+	if ((pTempRTP = (InboundRTPProtocol *) ProtocolManager::GetProtocol(_rtpVideoId)) != NULL) {
+		pTempRTP->SetStream(_pInStream, false, false);
+		pTempRTP->SetInbboundConnectivity(this);
 	}
-	if (_pRTPAudio != NULL) {
-		_pRTPAudio->SetStream(_pInStream, true);
-		_pRTPAudio->SetInbboundConnectivity(this);
-		_pRTCPAudio->SetInbboundConnectivity(this, true);
+	if ((pTempRTCP = (RTCPProtocol *) ProtocolManager::GetProtocol(_rtcpVideoId)) != NULL) {
+		pTempRTCP->SetInbboundConnectivity(this, false);
+	}
+	if ((pTempRTP = (InboundRTPProtocol *) ProtocolManager::GetProtocol(_rtpAudioId)) != NULL) {
+		pTempRTP->SetStream(_pInStream, true, false);
+		pTempRTP->SetInbboundConnectivity(this);
+	}
+	if ((pTempRTCP = (RTCPProtocol *) ProtocolManager::GetProtocol(_rtcpAudioId)) != NULL) {
+		pTempRTCP->SetInbboundConnectivity(this, true);
 	}
 
 	//7. Pickup all outbound waiting streams
@@ -259,9 +265,9 @@ bool InboundConnectivity::Initialize() {
 
 string InboundConnectivity::GetTransportHeaderLine(bool isAudio, bool isClient) {
 	if (_forceTcp) {
-		BaseProtocol *pProtocol = isAudio ? _pRTPAudio : _pRTPVideo;
+		uint32_t &rtpId = isAudio ? _rtpAudioId : _rtpVideoId;
 		for (uint32_t i = 0; i < 255; i++) {
-			if ((_pProtocols[i] != NULL) && (_pProtocols[i]->GetId() == pProtocol->GetId())) {
+			if ((_pProtocols[i] != NULL) && (_pProtocols[i]->GetId() == rtpId)) {
 				string result = format("RTP/AVP/TCP;unicast;interleaved=%u-%u", i, i + 1);
 				return result;
 			}
@@ -269,8 +275,13 @@ string InboundConnectivity::GetTransportHeaderLine(bool isAudio, bool isClient) 
 		return "";
 	} else {
 		Variant &track = isAudio ? _audioTrack : _videoTrack;
-		InboundRTPProtocol *pRTP = isAudio ? _pRTPAudio : _pRTPVideo;
-		RTCPProtocol *pRTCP = isAudio ? _pRTCPAudio : _pRTCPVideo;
+		InboundRTPProtocol *pRTP = (InboundRTPProtocol *) ProtocolManager::GetProtocol(
+				isAudio ? _rtpAudioId : _rtpVideoId);
+		RTCPProtocol *pRTCP = (RTCPProtocol *) ProtocolManager::GetProtocol(
+				isAudio ? _rtcpAudioId : _rtcpVideoId);
+		if ((pRTP == NULL) || (pRTCP == NULL)) {
+			return "";
+		}
 		if (isClient) {
 			return format("RTP/AVP;unicast;client_port=%"PRIu16"-%"PRIu16,
 					((UDPCarrier *) pRTP->GetIOHandler())->GetNearEndpointPort(),
@@ -307,16 +318,24 @@ bool InboundConnectivity::FeedData(uint32_t channelId, uint8_t *pBuffer,
 	return pProtocol->SignalInputData(_inputBuffer, &_dummyAddress);
 }
 
+string InboundConnectivity::GetClientPorts(bool isAudio) {
+	InboundRTPProtocol *pRTP = (InboundRTPProtocol *) ProtocolManager::GetProtocol(
+			isAudio ? _rtpAudioId : _rtpVideoId);
+	RTCPProtocol *pRTCP = (RTCPProtocol *) ProtocolManager::GetProtocol(
+			isAudio ? _rtcpAudioId : _rtcpVideoId);
+	if ((pRTP == NULL) || (pRTCP == NULL))
+		return "";
+	return format("%"PRIu16"-%"PRIu16,
+			((UDPCarrier *) pRTP->GetIOHandler())->GetNearEndpointPort(),
+			((UDPCarrier *) pRTCP->GetIOHandler())->GetNearEndpointPort());
+}
+
 string InboundConnectivity::GetAudioClientPorts() {
-	return format("%hu-%hu",
-			((UDPCarrier *) _pRTPAudio->GetIOHandler())->GetNearEndpointPort(),
-			((UDPCarrier *) _pRTCPAudio->GetIOHandler())->GetNearEndpointPort());
+	return GetClientPorts(true);
 }
 
 string InboundConnectivity::GetVideoClientPorts() {
-	return format("%hu-%hu",
-			((UDPCarrier *) _pRTPVideo->GetIOHandler())->GetNearEndpointPort(),
-			((UDPCarrier *) _pRTCPVideo->GetIOHandler())->GetNearEndpointPort());
+	return GetClientPorts(false);
 }
 
 bool InboundConnectivity::SendRR(bool isAudio) {
@@ -357,8 +376,13 @@ bool InboundConnectivity::SendRR(bool isAudio) {
 		   +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
 	 */
 
-	InboundRTPProtocol *pRTP = isAudio ? _pRTPAudio : _pRTPVideo;
-	RTCPProtocol *pRTCP = isAudio ? _pRTCPAudio : _pRTCPVideo;
+	InboundRTPProtocol *pRTP = (InboundRTPProtocol *) ProtocolManager::GetProtocol(
+			isAudio ? _rtpAudioId : _rtpVideoId);
+	RTCPProtocol *pRTCP = (RTCPProtocol *) ProtocolManager::GetProtocol(
+			isAudio ? _rtcpAudioId : _rtcpVideoId);
+	if ((pRTP == NULL) || (pRTCP == NULL))
+		return true;
+
 	uint8_t *pBuffer = isAudio ? _audioRR : _videoRR;
 
 	//1. prepare the buffer
@@ -367,7 +391,7 @@ bool InboundConnectivity::SendRR(bool isAudio) {
 	EHTONLP(pBuffer + 28, pRTCP->GetLastSenderReport()); //last SR (LSR)
 
 	if (_forceTcp) {
-		return _pRTSP->SendRaw(pBuffer, 60);
+		return _pRTSP->SendRaw(pBuffer, 60, true);
 	} else {
 		if (pRTCP->GetLastAddress() != NULL) {
 			if (sendto(pRTCP->GetIOHandler()->GetOutboundFd(),
@@ -398,23 +422,27 @@ void InboundConnectivity::Cleanup() {
 		delete _pInStream;
 		_pInStream = NULL;
 	}
-	if (_pRTPVideo != NULL) {
-		_pRTPVideo->SetStream(NULL, false);
-		_pRTPVideo->EnqueueForDelete();
-		_pRTPVideo = NULL;
+
+	InboundRTPProtocol *pTempRTP = NULL;
+	RTCPProtocol *pTempRTCP = NULL;
+
+	if ((pTempRTP = (InboundRTPProtocol *) ProtocolManager::GetProtocol(_rtpVideoId)) != NULL) {
+		pTempRTP->SetStream(NULL, false, false);
+		pTempRTP->EnqueueForDelete();
+		_rtpVideoId = 0;
 	}
-	if (_pRTCPVideo != NULL) {
-		_pRTCPVideo->EnqueueForDelete();
-		_pRTCPVideo = NULL;
+	if ((pTempRTCP = (RTCPProtocol *) ProtocolManager::GetProtocol(_rtcpVideoId)) != NULL) {
+		pTempRTCP->EnqueueForDelete();
+		_rtcpVideoId = 0;
 	}
-	if (_pRTPAudio != NULL) {
-		_pRTPAudio->SetStream(NULL, true);
-		_pRTPAudio->EnqueueForDelete();
-		_pRTPAudio = NULL;
+	if ((pTempRTP = (InboundRTPProtocol *) ProtocolManager::GetProtocol(_rtpAudioId)) != NULL) {
+		pTempRTP->SetStream(NULL, true, false);
+		pTempRTP->EnqueueForDelete();
+		_rtpAudioId = 0;
 	}
-	if (_pRTCPAudio != NULL) {
-		_pRTCPAudio->EnqueueForDelete();
-		_pRTCPAudio = NULL;
+	if ((pTempRTCP = (RTCPProtocol *) ProtocolManager::GetProtocol(_rtcpAudioId)) != NULL) {
+		pTempRTCP->EnqueueForDelete();
+		_rtcpAudioId = 0;
 	}
 }
 
@@ -431,7 +459,7 @@ bool InboundConnectivity::CreateCarriers(InboundRTPProtocol *pRTP, RTCPProtocol 
 			pCarrier2 = NULL;
 		}
 
-		pCarrier1 = UDPCarrier::Create("0.0.0.0", 0);
+		pCarrier1 = UDPCarrier::Create("0.0.0.0", 0, 256, 256, "");
 		if (pCarrier1 == NULL) {
 			WARN("Unable to create UDP carrier for RTP");
 			continue;
@@ -439,10 +467,10 @@ bool InboundConnectivity::CreateCarriers(InboundRTPProtocol *pRTP, RTCPProtocol 
 
 		if ((pCarrier1->GetNearEndpointPort() % 2) == 0) {
 			pCarrier2 = UDPCarrier::Create("0.0.0.0",
-					pCarrier1->GetNearEndpointPort() + 1);
+					pCarrier1->GetNearEndpointPort() + 1, 256, 256, "");
 		} else {
 			pCarrier2 = UDPCarrier::Create("0.0.0.0",
-					pCarrier1->GetNearEndpointPort() - 1);
+					pCarrier1->GetNearEndpointPort() - 1, 256, 256, "");
 		}
 
 		if (pCarrier2 == NULL) {

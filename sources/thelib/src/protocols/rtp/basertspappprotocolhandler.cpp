@@ -31,6 +31,8 @@
 #include "application/clientapplicationmanager.h"
 #include "protocols/http/httpauthhelper.h"
 #include "protocols/rtp/connectivity/inboundconnectivity.h"
+#include "streaming/codectypes.h"
+#include "protocols/protocolmanager.h"
 
 BaseRTSPAppProtocolHandler::BaseRTSPAppProtocolHandler(Variant &configuration)
 : BaseAppProtocolHandler(configuration) {
@@ -44,7 +46,7 @@ bool BaseRTSPAppProtocolHandler::ParseAuthenticationNode(Variant &node,
 		Variant &result) {
 	//1. Users file validation
 	string usersFile = node[CONF_APPLICATION_AUTH_USERS_FILE];
-	if ((usersFile[0] != '/') && (usersFile[0] != '.')) {
+	if (!isAbsolutePath(usersFile)) {
 		usersFile = (string) _configuration[CONF_APPLICATION_DIRECTORY] + usersFile;
 	}
 	if (!fileExists(usersFile)) {
@@ -105,7 +107,13 @@ void BaseRTSPAppProtocolHandler::RegisterProtocol(BaseProtocol *pProtocol) {
 }
 
 void BaseRTSPAppProtocolHandler::UnRegisterProtocol(BaseProtocol *pProtocol) {
-
+	Variant &params = pProtocol->GetCustomParameters();
+	if ((params.HasKey("sessionCookie"))
+			&&(params.HasKey("removeSessionCookie"))
+			&&((bool)params["removeSessionCookie"])
+			) {
+		_httpSessions.erase(params["sessionCookie"]);
+	}
 }
 
 bool BaseRTSPAppProtocolHandler::PullExternalStream(URI uri, Variant streamConfig) {
@@ -230,6 +238,83 @@ bool BaseRTSPAppProtocolHandler::SignalProtocolCreated(BaseProtocol *pProtocol,
 	return true;
 }
 
+bool BaseRTSPAppProtocolHandler::HandleHTTPRequest(RTSPProtocol *pFrom, Variant &requestHeaders,
+		string &requestContent) {
+	//1. Find the session cookie
+	if (!requestHeaders.HasKeyChain(V_STRING, false, 2, RTSP_HEADERS, "x-sessioncookie")) {
+		FATAL("No session cookie found");
+		return false;
+	}
+	string sessionCookie = (string) (requestHeaders.GetValue(RTSP_HEADERS, false)
+			.GetValue("x-sessioncookie", false));
+	trim(sessionCookie);
+	if (sessionCookie == "") {
+		FATAL("No session cookie found");
+		return false;
+	}
+
+	//2. Store it for later use
+	pFrom->GetCustomParameters()["sessionCookie"] = sessionCookie;
+
+	//3. If the method is GET, than switch the channel from HTTP to RTSP
+	//by just sending HTTP 200 ok with Content-Type: application/x-rtsp-tunnelled
+	if (requestHeaders[RTSP_FIRST_LINE][RTSP_METHOD] == HTTP_METHOD_GET) {
+		if (MAP_HAS1(_httpSessions, sessionCookie)) {
+			FATAL("session cookie duplicated");
+			return false;
+		}
+		string date;
+		char tempBuff[128] = {0};
+		struct tm tm;
+		time_t t = getutctime();
+		gmtime_r(&t, &tm);
+		strftime(tempBuff, 127, "%a, %d %b %Y %H:%M:%S UTC", &tm);
+		date = tempBuff;
+
+		string rawContent = (string) requestHeaders[RTSP_FIRST_LINE][RTSP_VERSION] + " 200 OK\r\n";
+		rawContent += RTSP_HEADERS_SERVER": "RTSP_HEADERS_SERVER_US"\r\n";
+		rawContent += "Date: " + date + "\r\n";
+		rawContent += "Expires: " + date + "\r\n";
+		rawContent += HTTP_HEADERS_CONNECTION": "HTTP_HEADERS_CONNECTION_CLOSE"\r\n";
+		rawContent += "Cache-Control: no-store\r\n";
+		rawContent += "Pragma: no-cache\r\n";
+		rawContent += HTTP_HEADERS_CONTENT_TYPE": application/x-rtsp-tunnelled\r\n\r\n";
+
+		if (!pFrom->SendRaw((uint8_t *) rawContent.data(), (uint32_t) rawContent.size(), false)) {
+			FATAL("Unable to send data");
+			return false;
+		}
+		_httpSessions[sessionCookie] = pFrom->GetId();
+		pFrom->GetCustomParameters()["removeSessionCookie"] = (bool)true;
+		return true;
+	}
+
+	pFrom->GetCustomParameters()["removeSessionCookie"] = (bool)false;
+
+	//4. Ok, this is the side channel where the client is posting commands.
+	//First, we need to get our hands on the real transport connection
+	if (!MAP_HAS1(_httpSessions, sessionCookie)) {
+		FATAL("session cookie not found");
+		return false;
+	}
+	BaseProtocol *pProtocol = ProtocolManager::GetProtocol(_httpSessions[sessionCookie]);
+	if ((pProtocol == NULL) || (pProtocol->GetType() != PT_RTSP)) {
+		FATAL("session cookie pointing to a dead protocol");
+		_httpSessions.erase(sessionCookie);
+		return false;
+	}
+
+	//5. Get the data from the HTTP request but make sure we get a multiple of 4
+	uint32_t chunkSize = (uint32_t) ((double) requestContent.size() / 4.0)*(uint32_t) 4;
+	string data = unb64(requestContent);
+
+	//6. Fix the requestContent by removing parsed data;
+	requestContent = requestContent.substr(chunkSize);
+
+	//7. Feed the target protocol
+	return ((RTSPProtocol *) pProtocol)->FeedRTSPRequest(data);
+}
+
 bool BaseRTSPAppProtocolHandler::HandleRTSPRequest(RTSPProtocol *pFrom,
 		Variant &requestHeaders, string &requestContent) {
 	string method = requestHeaders[RTSP_FIRST_LINE][RTSP_METHOD];
@@ -247,7 +332,7 @@ bool BaseRTSPAppProtocolHandler::HandleRTSPRequest(RTSPProtocol *pFrom,
 		string requestSessionId = "";
 		vector<string> parts;
 		if (!requestHeaders[RTSP_HEADERS].HasKeyChain(V_STRING, false, 1, RTSP_HEADERS_SESSION)) {
-			FATAL("No session id");
+			FATAL("No session id:\n%s", STR(requestHeaders.ToString()));
 			return false;
 		}
 
@@ -337,8 +422,8 @@ bool BaseRTSPAppProtocolHandler::HandleRTSPRequest(RTSPProtocol *pFrom,
 		if (!HandleRTSPRequestSetup(pFrom, requestHeaders, requestContent)) {
 			return false;
 		}
-	} else if (method == RTSP_METHOD_PLAY) {
-		if (!HandleRTSPRequestPlay(pFrom, requestHeaders, requestContent)) {
+	} else if ((method == RTSP_METHOD_PLAY) || (method == RTSP_METHOD_RECORD)) {
+		if (!HandleRTSPRequestPlayOrRecord(pFrom, requestHeaders, requestContent)) {
 			return false;
 		}
 	} else if (method == RTSP_METHOD_TEARDOWN) {
@@ -349,15 +434,13 @@ bool BaseRTSPAppProtocolHandler::HandleRTSPRequest(RTSPProtocol *pFrom,
 		if (!HandleRTSPRequestAnnounce(pFrom, requestHeaders, requestContent)) {
 			return false;
 		}
-	} else if (method == RTSP_METHOD_RECORD) {
-		if (!HandleRTSPRequestRecord(pFrom, requestHeaders, requestContent)) {
-			return false;
-		}
 	} else if (method == RTSP_METHOD_PAUSE) {
 		if (!HandleRTSPRequestPause(pFrom, requestHeaders, requestContent)) {
 			return false;
 		}
 	} else {
+		FINEST("requestHeaders:\n%s", STR(requestHeaders.ToString()));
+		FINEST("requestContent:\n`%s`", STR(requestContent));
 		FATAL("Method not implemented yet:\n%s", STR(requestHeaders.ToString()));
 		return false;
 	}
@@ -406,20 +489,15 @@ bool BaseRTSPAppProtocolHandler::HandleRTSPRequestOptions(RTSPProtocol *pFrom,
 
 bool BaseRTSPAppProtocolHandler::HandleRTSPRequestDescribe(RTSPProtocol *pFrom,
 		Variant &requestHeaders, string &requestContent) {
-	//1. get the stream name
-	URI uri;
-	if (!URI::FromString(requestHeaders[RTSP_FIRST_LINE][RTSP_URL], true, uri)) {
-		FATAL("Invalid URI: %s", STR(requestHeaders[RTSP_FIRST_LINE][RTSP_URL]));
+	//1. Analyze the requested URI and get all the flags and the stream name
+	if (!AnalyzeUri(pFrom, (string) requestHeaders[RTSP_FIRST_LINE][RTSP_URL])) {
+		FATAL("URI analyzer failed");
 		return false;
 	}
-	string streamName = uri.documentWithFullParameters();
-	if (streamName == "") {
-		FATAL("Invalid stream name");
-		return false;
-	}
+	string streamName = GetStreamName(pFrom);
 
 	//2. Get the inbound stream capabilities
-	BaseInNetStream *pInStream = GetInboundStream(streamName);
+	BaseInStream *pInStream = GetInboundStream(streamName, pFrom);
 
 
 	//3. Prepare the body of the response
@@ -438,6 +516,12 @@ bool BaseRTSPAppProtocolHandler::HandleRTSPRequestDescribe(RTSPProtocol *pFrom,
 	//6. prepare the response
 	pFrom->PushResponseFirstLine(RTSP_VERSION_1_0, 200, "OK");
 	pFrom->PushResponseHeader(RTSP_HEADERS_CONTENT_TYPE, RTSP_HEADERS_ACCEPT_APPLICATIONSDP);
+	string contentBase = (string) requestHeaders[RTSP_FIRST_LINE][RTSP_URL];
+	if (contentBase != "") {
+		if (contentBase[contentBase.length() - 1] != '/')
+			contentBase += "/";
+		pFrom->PushResponseHeader(RTSP_HEADERS_CONTENT_BASE, contentBase);
+	}
 	pFrom->PushResponseContent(outboundContent, false);
 
 	//7. Done
@@ -467,24 +551,48 @@ bool BaseRTSPAppProtocolHandler::HandleRTSPRequestSetupOutbound(RTSPProtocol *pF
 		return false;
 	}
 
+	Variant &customParams = pFrom->GetCustomParameters();
+	if (!customParams.HasKey("nextChannel"))
+		customParams["nextChannel"] = (uint16_t) 0;
+
 	//2. get the transport header line
 	string raw = requestHeaders[RTSP_HEADERS].GetValue(RTSP_HEADERS_TRANSPORT, false);
+	Variant transports;
 	Variant transport;
-	if (!SDP::ParseTransportLine(raw, transport)) {
+	if (!SDP::ParseTransportLine(raw, transports)) {
 		FATAL("Unable to parse transport line %s", STR(raw));
 		return false;
 	}
 	bool forceTcp = false;
-	if (transport.HasKey("client_port")
-			&& (transport.HasKey("rtp/avp/udp") || transport.HasKey("rtp/avp"))) {
-		forceTcp = false;
-	} else if (transport.HasKey("interleaved") && transport.HasKey("rtp/avp/tcp")) {
-		forceTcp = true;
-	} else {
-		FATAL("Invalid transport line: %s", STR(transport.ToString()));
+
+	FOR_MAP(transports["alternatives"], string, Variant, i) {
+		Variant &temp = MAP_VAL(i);
+		if (temp.HasKey("client_port")
+				&& (temp.HasKey("rtp/avp/udp") || temp.HasKey("rtp/avp"))) {
+			forceTcp = false;
+			transport = temp;
+			break;
+		} else if (temp.HasKey("interleaved") && temp.HasKey("rtp/avp/tcp")) {
+			forceTcp = true;
+			transport = temp;
+			break;
+		} else if (temp.HasKey("rtp/avp/tcp")) {
+			forceTcp = true;
+			transport = temp;
+			uint16_t channel = (uint16_t) customParams["nextChannel"];
+			transport["interleaved"]["all"] = format("%"PRIu16"-%"PRIu16, channel, channel + 1);
+			transport["interleaved"]["data"] = (uint16_t) channel;
+			transport["interleaved"]["rtcp"] = (uint16_t) (channel + 1);
+			customParams["nextChannel"] = (uint16_t) (channel + 2);
+			break;
+		}
+	}
+	if (transport == V_NULL) {
+		FATAL("Unable to find a valid transport alternative:\n%s", STR(transports.ToString()));
 		return false;
 	}
-	pFrom->GetCustomParameters()["forceTcp"] = (bool)forceTcp;
+
+	customParams["forceTcp"] = (bool)forceTcp;
 
 	//3. Get the outbound connectivity
 	OutboundConnectivity *pOutboundConnectivity = GetOutboundConnectivity(pFrom,
@@ -497,7 +605,6 @@ bool BaseRTSPAppProtocolHandler::HandleRTSPRequestSetupOutbound(RTSPProtocol *pF
 	//5. Find out if this is audio or video
 	bool isAudioTrack = false;
 	string rawUrl = requestHeaders[RTSP_FIRST_LINE][RTSP_URL];
-	Variant &customParams = pFrom->GetCustomParameters();
 	string audioTrackId;
 	if (customParams.HasKey("audioTrackId"))
 		audioTrackId = "trackID=" + (string) customParams["audioTrackId"];
@@ -562,6 +669,12 @@ bool BaseRTSPAppProtocolHandler::HandleRTSPRequestSetupOutbound(RTSPProtocol *pF
 				: pOutboundConnectivity->GetVideoSSRC()));
 	}
 
+	if (isAudioTrack) {
+		customParams["rtpInfo"]["audio"]["url"] = requestHeaders[RTSP_FIRST_LINE][RTSP_URL];
+	} else {
+		customParams["rtpInfo"]["video"]["url"] = requestHeaders[RTSP_FIRST_LINE][RTSP_URL];
+	}
+
 	//10. Done
 	return pFrom->SendResponseMessage();
 }
@@ -574,29 +687,35 @@ bool BaseRTSPAppProtocolHandler::HandleRTSPRequestSetupInbound(RTSPProtocol *pFr
 		return false;
 	}
 	string transportLine = requestHeaders[RTSP_HEADERS].GetValue(RTSP_HEADERS_TRANSPORT, false);
+	Variant transports;
 	Variant transport;
-	if (!SDP::ParseTransportLine(transportLine, transport)) {
+	if (!SDP::ParseTransportLine(transportLine, transports)) {
 		FATAL("Unable to parse transport line");
 		return false;
 	}
 
-	//2. Check and see if it has RTP/AVP/TCP,RTP/AVP/UDP or RTP/AVP
-	if ((!transport.HasKey("rtp/avp/tcp"))
-			&& (!transport.HasKey("rtp/avp/udp"))
-			&& (!transport.HasKey("rtp/avp"))) {
-		FATAL("Invalid transport line: %s", STR(transportLine));
-		return false;
+	FOR_MAP(transports["alternatives"], string, Variant, i) {
+		Variant &temp = MAP_VAL(i);
+		//2. Check and see if it has RTP/AVP/TCP,RTP/AVP/UDP or RTP/AVP
+		if ((!temp.HasKey("rtp/avp/tcp"))
+				&& (!temp.HasKey("rtp/avp/udp"))
+				&& (!temp.HasKey("rtp/avp")))
+			continue;
+
+		//3. Check to see if it has either client_port OR interleaved
+		if ((!temp.HasKey("client_port"))
+				&& (!temp.HasKey("interleaved")))
+			continue;
+
+		if ((temp.HasKey("client_port"))
+				&& (temp.HasKey("interleaved")))
+			continue;
+		transport = temp;
+		break;
 	}
 
-	//3. Check to see if it has either client_port OR interleaved
-	if ((!transport.HasKey("client_port"))
-			&& (!transport.HasKey("interleaved"))) {
-		FATAL("Invalid transport line: %s", STR(transportLine));
-		return false;
-	}
-	if ((transport.HasKey("client_port"))
-			&& (transport.HasKey("interleaved"))) {
-		FATAL("Invalid transport line: %s", STR(transportLine));
+	if (transport == V_NULL) {
+		FATAL("Unable to find a valid transport alternative:\n%s", STR(transports.ToString()));
 		return false;
 	}
 
@@ -644,107 +763,6 @@ bool BaseRTSPAppProtocolHandler::HandleRTSPRequestSetupInbound(RTSPProtocol *pFr
 	pFrom->PushResponseHeader(RTSP_HEADERS_TRANSPORT, transportLine);
 
 	//7. Send it
-	return pFrom->SendResponseMessage();
-}
-
-bool BaseRTSPAppProtocolHandler::HandleRTSPRequestPlay(RTSPProtocol *pFrom,
-		Variant &requestHeaders, string &requestContent) {
-
-	if (pFrom->GetCustomParameters()["isInbound"] != V_BOOL) {
-		FATAL("Invalid state");
-		return false;
-	}
-
-	if ((bool)pFrom->GetCustomParameters()["isInbound"]) {
-		return HandleRTSPRequestRecord(pFrom, requestHeaders, requestContent);
-	}
-
-	//1. Get the outbound connectivity
-	bool forceTcp = (bool)pFrom->GetCustomParameters().GetValue("forceTcp", false);
-	OutboundConnectivity *pOutboundConnectivity = GetOutboundConnectivity(pFrom, true);
-	if (pOutboundConnectivity == NULL) {
-		FATAL("Unable to get the outbound connectivity");
-		return false;
-	}
-
-	if (forceTcp) {
-		//3. Get the audio/video client ports
-		uint8_t videoDataChannelNumber = 0xff;
-		uint8_t videoRtcpChannelNumber = 0xff;
-		uint8_t audioDataChannelNumber = 0xff;
-		uint8_t audioRtcpChannelNumber = 0xff;
-		if (pFrom->GetCustomParameters().HasKey("audioDataChannelNumber")) {
-			audioDataChannelNumber = (uint8_t) pFrom->GetCustomParameters()["audioDataChannelNumber"];
-			audioRtcpChannelNumber = (uint8_t) pFrom->GetCustomParameters()["audioRtcpChannelNumber"];
-		}
-		if (pFrom->GetCustomParameters().HasKey("videoDataChannelNumber")) {
-			videoDataChannelNumber = (uint8_t) pFrom->GetCustomParameters()["videoDataChannelNumber"];
-			videoRtcpChannelNumber = (uint8_t) pFrom->GetCustomParameters()["videoRtcpChannelNumber"];
-		}
-
-		//4.register the video
-		if (videoDataChannelNumber != 0xff) {
-			if (!pOutboundConnectivity->RegisterTCPVideoClient(pFrom->GetId(),
-					videoDataChannelNumber, videoRtcpChannelNumber)) {
-				FATAL("Unable to register video stream");
-				return false;
-			}
-		}
-
-		//5. Register the audio
-		if (audioDataChannelNumber != 0xff) {
-			if (!pOutboundConnectivity->RegisterTCPAudioClient(pFrom->GetId(),
-					audioDataChannelNumber, audioRtcpChannelNumber)) {
-				FATAL("Unable to register audio stream");
-				return false;
-			}
-		}
-	} else {
-		//3. Get the audio/video client ports
-		uint16_t videoDataPortNumber = 0;
-		uint16_t videoRtcpPortNumber = 0;
-		uint16_t audioDataPortNumber = 0;
-		uint16_t audioRtcpPortNumber = 0;
-		if (pFrom->GetCustomParameters().HasKey("audioDataPortNumber")) {
-			audioDataPortNumber = (uint16_t) pFrom->GetCustomParameters()["audioDataPortNumber"];
-			audioRtcpPortNumber = (uint16_t) pFrom->GetCustomParameters()["audioRtcpPortNumber"];
-		}
-		if (pFrom->GetCustomParameters().HasKey("videoDataPortNumber")) {
-			videoDataPortNumber = (uint16_t) pFrom->GetCustomParameters()["videoDataPortNumber"];
-			videoRtcpPortNumber = (uint16_t) pFrom->GetCustomParameters()["videoRtcpPortNumber"];
-		}
-
-		//4.register the video
-		if (videoDataPortNumber != 0) {
-			sockaddr_in videoDataAddress = ((TCPCarrier *) pFrom->GetIOHandler())->GetFarEndpointAddress();
-			videoDataAddress.sin_port = EHTONS(videoDataPortNumber);
-			sockaddr_in videoRtcpAddress = ((TCPCarrier *) pFrom->GetIOHandler())->GetFarEndpointAddress();
-			videoRtcpAddress.sin_port = EHTONS(videoRtcpPortNumber);
-			if (!pOutboundConnectivity->RegisterUDPVideoClient(pFrom->GetId(),
-					videoDataAddress, videoRtcpAddress)) {
-				FATAL("Unable to register video stream");
-				return false;
-			}
-		}
-
-		//5. Register the audio
-		if (audioDataPortNumber != 0) {
-			sockaddr_in audioDataAddress = ((TCPCarrier *) pFrom->GetIOHandler())->GetFarEndpointAddress();
-			audioDataAddress.sin_port = EHTONS(audioDataPortNumber);
-			sockaddr_in audioRtcpAddress = ((TCPCarrier *) pFrom->GetIOHandler())->GetFarEndpointAddress();
-			audioRtcpAddress.sin_port = EHTONS(audioRtcpPortNumber);
-			if (!pOutboundConnectivity->RegisterUDPAudioClient(pFrom->GetId(),
-					audioDataAddress, audioRtcpAddress)) {
-				FATAL("Unable to register audio stream");
-				return false;
-			}
-		}
-	}
-
-	//6. prepare the response
-	pFrom->PushResponseFirstLine(RTSP_VERSION_1_0, 200, "OK");
-
-	//7. Done
 	return pFrom->SendResponseMessage();
 }
 
@@ -818,11 +836,141 @@ bool BaseRTSPAppProtocolHandler::HandleRTSPRequestAnnounce(RTSPProtocol *pFrom,
 	return pFrom->SendResponseMessage();
 }
 
+bool BaseRTSPAppProtocolHandler::HandleRTSPRequestPause(RTSPProtocol *pFrom,
+		Variant &requestHeaders, string &requestContent) {
+	if (IsVod(pFrom)) {
+		NYIR;
+	}
+	pFrom->PushResponseFirstLine(RTSP_VERSION_1_0, 200, "OK");
+	return pFrom->SendResponseMessage();
+}
+
+bool BaseRTSPAppProtocolHandler::HandleRTSPRequestPlayOrRecord(RTSPProtocol *pFrom,
+		Variant &requestHeaders, string &requestContent) {
+	if (pFrom->GetCustomParameters()["isInbound"] != V_BOOL) {
+		FATAL("Invalid state");
+		return false;
+	}
+	if ((bool)pFrom->GetCustomParameters()["isInbound"]) {
+		return HandleRTSPRequestRecord(pFrom, requestHeaders, requestContent);
+	} else {
+		return HandleRTSPRequestPlay(pFrom, requestHeaders, requestContent);
+	}
+}
+
+bool BaseRTSPAppProtocolHandler::HandleRTSPRequestPlay(RTSPProtocol *pFrom,
+		Variant &requestHeaders, string &requestContent) {
+	Variant &params = pFrom->GetCustomParameters();
+	if (params["isInbound"] != V_BOOL) {
+		FATAL("Invalid state");
+		return false;
+	}
+
+	if ((bool)params["isInbound"]) {
+		return HandleRTSPRequestRecord(pFrom, requestHeaders, requestContent);
+	}
+
+	//1. Get the outbound connectivity
+	bool forceTcp = (bool)params.GetValue("forceTcp", false);
+	OutboundConnectivity *pOutboundConnectivity = GetOutboundConnectivity(pFrom, forceTcp);
+	if (pOutboundConnectivity == NULL) {
+		FATAL("Unable to get the outbound connectivity");
+		return false;
+	}
+
+	if (forceTcp) {
+		//3. Get the audio/video client ports
+		uint8_t videoDataChannelNumber = 0xff;
+		uint8_t videoRtcpChannelNumber = 0xff;
+		uint8_t audioDataChannelNumber = 0xff;
+		uint8_t audioRtcpChannelNumber = 0xff;
+		if (params.HasKey("audioDataChannelNumber")) {
+			audioDataChannelNumber = (uint8_t) params["audioDataChannelNumber"];
+			audioRtcpChannelNumber = (uint8_t) params["audioRtcpChannelNumber"];
+		}
+		if (params.HasKey("videoDataChannelNumber")) {
+			videoDataChannelNumber = (uint8_t) params["videoDataChannelNumber"];
+			videoRtcpChannelNumber = (uint8_t) params["videoRtcpChannelNumber"];
+		}
+
+		//4.register the video
+		if (videoDataChannelNumber != 0xff) {
+			if (!pOutboundConnectivity->RegisterTCPVideoClient(pFrom->GetId(),
+					videoDataChannelNumber, videoRtcpChannelNumber)) {
+				FATAL("Unable to register video stream");
+				return false;
+			}
+		}
+
+		//5. Register the audio
+		if (audioDataChannelNumber != 0xff) {
+			if (!pOutboundConnectivity->RegisterTCPAudioClient(pFrom->GetId(),
+					audioDataChannelNumber, audioRtcpChannelNumber)) {
+				FATAL("Unable to register audio stream");
+				return false;
+			}
+		}
+	} else {
+		//3. Get the audio/video client ports
+		uint16_t videoDataPortNumber = 0;
+		uint16_t videoRtcpPortNumber = 0;
+		uint16_t audioDataPortNumber = 0;
+		uint16_t audioRtcpPortNumber = 0;
+		if (params.HasKey("audioDataPortNumber")) {
+			audioDataPortNumber = (uint16_t) params["audioDataPortNumber"];
+			audioRtcpPortNumber = (uint16_t) params["audioRtcpPortNumber"];
+		}
+		if (params.HasKey("videoDataPortNumber")) {
+			videoDataPortNumber = (uint16_t) params["videoDataPortNumber"];
+			videoRtcpPortNumber = (uint16_t) params["videoRtcpPortNumber"];
+		}
+
+		//4.register the video
+		if (videoDataPortNumber != 0) {
+			sockaddr_in videoDataAddress = ((TCPCarrier *) pFrom->GetIOHandler())->GetFarEndpointAddress();
+			videoDataAddress.sin_port = EHTONS(videoDataPortNumber);
+			sockaddr_in videoRtcpAddress = ((TCPCarrier *) pFrom->GetIOHandler())->GetFarEndpointAddress();
+			videoRtcpAddress.sin_port = EHTONS(videoRtcpPortNumber);
+			if (!pOutboundConnectivity->RegisterUDPVideoClient(pFrom->GetId(),
+					videoDataAddress, videoRtcpAddress)) {
+				FATAL("Unable to register video stream");
+				return false;
+			}
+		}
+
+		//5. Register the audio
+		if (audioDataPortNumber != 0) {
+			sockaddr_in audioDataAddress = ((TCPCarrier *) pFrom->GetIOHandler())->GetFarEndpointAddress();
+			audioDataAddress.sin_port = EHTONS(audioDataPortNumber);
+			sockaddr_in audioRtcpAddress = ((TCPCarrier *) pFrom->GetIOHandler())->GetFarEndpointAddress();
+			audioRtcpAddress.sin_port = EHTONS(audioRtcpPortNumber);
+			if (!pOutboundConnectivity->RegisterUDPAudioClient(pFrom->GetId(),
+					audioDataAddress, audioRtcpAddress)) {
+				FATAL("Unable to register audio stream");
+				return false;
+			}
+		}
+	}
+
+	//6. prepare the response
+	pFrom->PushResponseFirstLine(RTSP_VERSION_1_0, 200, "OK");
+
+	if (IsVod(pFrom)) {
+		NYIR;
+	} else {
+		pFrom->PushResponseHeader(RTSP_HEADERS_RANGE, "npt=now-");
+	}
+
+	pOutboundConnectivity->Enable();
+
+	//7. Done
+	return pFrom->SendResponseMessage();
+}
+
 bool BaseRTSPAppProtocolHandler::HandleRTSPRequestRecord(RTSPProtocol *pFrom,
 		Variant &requestHeaders, string &requestContent) {
 	//1. Make sure we have everything and we are in the proper state
-	if ((pFrom->GetCustomParameters()["isInbound"] != V_BOOL)
-			|| ((bool)pFrom->GetCustomParameters()["isInbound"] != true)) {
+	if ((bool)pFrom->GetCustomParameters()["isInbound"] != true) {
 		FATAL("Invalid state");
 		return false;
 	}
@@ -844,12 +992,6 @@ bool BaseRTSPAppProtocolHandler::HandleRTSPRequestRecord(RTSPProtocol *pFrom,
 	}
 
 	//4. Send back the response
-	pFrom->PushResponseFirstLine(RTSP_VERSION_1_0, 200, "OK");
-	return pFrom->SendResponseMessage();
-}
-
-bool BaseRTSPAppProtocolHandler::HandleRTSPRequestPause(RTSPProtocol *pFrom,
-		Variant &requestHeaders, string &requestContent) {
 	pFrom->PushResponseFirstLine(RTSP_VERSION_1_0, 200, "OK");
 	return pFrom->SendResponseMessage();
 }
@@ -909,6 +1051,9 @@ bool BaseRTSPAppProtocolHandler::HandleRTSPResponse200(RTSPProtocol *pFrom,
 	} else if (method == RTSP_METHOD_RECORD) {
 		return HandleRTSPResponse200Record(pFrom, requestHeaders, requestContent,
 				responseHeaders, responseContent);
+	} else if (method == RTSP_METHOD_GET_PARAMETER) {
+		// This is just a fake method for now and primarily used for keepalive
+		return true;
 	} else {
 		FATAL("Response for method %s not implemented yet", STR(method));
 		return false;
@@ -992,6 +1137,13 @@ bool BaseRTSPAppProtocolHandler::HandleRTSPResponse200Options(
 	map<string, string> parts = mapping(raw, ",", ":", true);
 	string url = requestHeaders[RTSP_FIRST_LINE][RTSP_URL];
 
+
+	if (MAP_HAS1(parts, RTSP_METHOD_GET_PARAMETER)) {
+		pFrom->SetKeepAliveMethod(RTSP_METHOD_GET_PARAMETER);
+	} else {
+		pFrom->SetKeepAliveMethod(RTSP_METHOD_OPTIONS);
+	}
+
 	if (pFrom->GetCustomParameters()["connectionType"] == "pull") {
 		//4. Test the presence of the wanted methods
 		if ((!MAP_HAS1(parts, RTSP_METHOD_DESCRIBE))
@@ -1050,6 +1202,25 @@ bool BaseRTSPAppProtocolHandler::HandleRTSPResponse200Describe(
 		return false;
 	}
 
+	string baseUri = "";
+	if (responseHeaders[RTSP_HEADERS].HasKey(RTSP_HEADERS_CONTENT_BASE, false)) {
+		baseUri = (string) responseHeaders[RTSP_HEADERS].GetValue(RTSP_HEADERS_CONTENT_BASE, false);
+		trim(baseUri);
+	}
+	if (baseUri == "") {
+		WARN("DESCRIBE response without content base. default it to the base of the URI");
+		URI tempURI;
+		if (!URI::FromString(requestHeaders[RTSP_FIRST_LINE][RTSP_URL], false, tempURI)) {
+			FATAL("Unable to parse URI");
+			return false;
+		}
+		baseUri = tempURI.baseURI();
+		if (baseUri == "") {
+			FATAL("Unable to get the base URI");
+			return false;
+		}
+	}
+
 	//2. Get the SDP
 	SDP &sdp = pFrom->GetInboundSDP();
 
@@ -1060,10 +1231,8 @@ bool BaseRTSPAppProtocolHandler::HandleRTSPResponse200Describe(
 	}
 
 	//4. Get the first video track
-	Variant videoTrack = sdp.GetVideoTrack(0,
-			requestHeaders[RTSP_FIRST_LINE][RTSP_URL]);
-	Variant audioTrack = sdp.GetAudioTrack(0,
-			requestHeaders[RTSP_FIRST_LINE][RTSP_URL]);
+	Variant videoTrack = sdp.GetVideoTrack(0, baseUri);
+	Variant audioTrack = sdp.GetAudioTrack(0, baseUri);
 	if ((videoTrack == V_NULL) && (audioTrack == V_NULL)) {
 		FATAL("No compatible tracks found");
 		return false;
@@ -1144,7 +1313,7 @@ bool BaseRTSPAppProtocolHandler::HandleRTSPResponse200Setup(
 		//3. get the transport header line
 		string raw = responseHeaders[RTSP_HEADERS].GetValue(RTSP_HEADERS_TRANSPORT, false);
 		Variant transport;
-		if (!SDP::ParseTransportLine(raw, transport)) {
+		if (!SDP::ParseTransportLinePart(raw, transport)) {
 			FATAL("Unable to parse transport line %s", STR(raw));
 			return false;
 		}
@@ -1361,6 +1530,8 @@ bool BaseRTSPAppProtocolHandler::HandleRTSPResponse200Record(RTSPProtocol *pFrom
 	if (result)
 		pFrom->EnableTearDown();
 
+	pConnectivity->Enable();
+
 	return result;
 }
 
@@ -1410,6 +1581,193 @@ string BaseRTSPAppProtocolHandler::GetAuthenticationRealm(RTSPProtocol *pFrom,
 	return "";
 }
 
+void BaseRTSPAppProtocolHandler::ComputeRTPInfoHeader(RTSPProtocol *pFrom,
+		OutboundConnectivity *pOutboundConnectivity, double start) {
+	Variant &params = pFrom->GetCustomParameters();
+	string rtpInfo;
+
+	FOR_MAP(params["rtpInfo"], string, Variant, i) {
+		uint32_t rtpTime = (uint32_t) (((uint64_t) (start * (double) MAP_VAL(i)["frequency"]))&0xffffffff);
+		uint16_t sequence = (MAP_KEY(i) == "audio") ?
+				(uint16_t) pOutboundConnectivity->GetLastAudioSequence()
+				: (uint16_t) pOutboundConnectivity->GetLastVideoSequence();
+		if (rtpInfo != "")
+			rtpInfo += ",";
+		rtpInfo += format("url=%s;seq=%"PRIu16";rtptime=%"PRIu32,
+				STR(MAP_VAL(i)["url"]),
+				sequence,
+				rtpTime
+				);
+	}
+
+	if (rtpInfo != "")
+		pFrom->PushResponseHeader(RTSP_HEADERS_RTP_INFO, rtpInfo);
+}
+
+void BaseRTSPAppProtocolHandler::ParseRange(string raw, double &start, double &end) {
+	start = 0;
+	end = -1;
+
+	trim(raw);
+	if (raw.find("npt=") != 0)
+		return;
+
+	raw = raw.substr(4);
+	if ((raw == "") || (raw.find("now-") == 0))
+		return;
+
+	string::size_type dashPos = raw.find("-");
+	if ((dashPos == string::npos) || (dashPos == 0))
+		return;
+
+	start = ParseNPT(raw.substr(0, dashPos));
+	end = ParseNPT(raw.substr(dashPos + 1));
+
+	if (start < 0)
+		start = 0;
+}
+
+double BaseRTSPAppProtocolHandler::ParseNPT(string raw) {
+	trim(raw);
+
+	if ((raw == "") || (raw == "now"))
+		return -1;
+
+	if (raw.find(":") == string::npos) {
+		return strtod(STR(raw), NULL);
+	} else {
+		string::size_type firstColon = raw.find(":", 0);
+		string::size_type secondColon = raw.find(":", firstColon + 1);
+		string::size_type dot = raw.find(".", secondColon + 1);
+		if ((firstColon == string::npos)
+				|| (secondColon == string::npos)
+				|| (firstColon == secondColon))
+			return -1;
+		uint32_t hours = (uint32_t) atoi(STR(raw.substr(0, firstColon)));
+		uint32_t minutes = (uint32_t) atoi(STR(raw.substr(firstColon + 1)));
+		uint32_t seconds = (uint32_t) atoi(STR(raw.substr(secondColon + 1)));
+		uint32_t ms = 0;
+		if (dot != string::npos) {
+			ms = (uint32_t) atoi(STR(raw.substr(dot + 1)));
+		}
+		return (double) (hours * 3600 + minutes * 60 + seconds)+(double) ms / 1000.0;
+	}
+}
+
+bool BaseRTSPAppProtocolHandler::IsVod(RTSPProtocol *pFrom) {
+	if (pFrom->GetCustomParameters().HasKey("isVod"))
+		return (bool)pFrom->GetCustomParameters()["isVod"];
+	pFrom->GetCustomParameters()["isVod"] = (bool)false;
+	return false;
+}
+
+bool BaseRTSPAppProtocolHandler::IsTs(RTSPProtocol *pFrom) {
+	if (pFrom->GetCustomParameters().HasKey("isTs"))
+		return (bool)pFrom->GetCustomParameters()["isTs"];
+	pFrom->GetCustomParameters()["isTs"] = (bool)false;
+	return false;
+}
+
+bool BaseRTSPAppProtocolHandler::IsRawTs(RTSPProtocol *pFrom) {
+	if (pFrom->GetCustomParameters().HasKey("isRawTs"))
+		return (bool)pFrom->GetCustomParameters()["isRawTs"];
+	pFrom->GetCustomParameters()["isRawTs"] = (bool)false;
+	return false;
+}
+
+string BaseRTSPAppProtocolHandler::GetStreamName(RTSPProtocol *pFrom) {
+	if (pFrom->GetCustomParameters().HasKey("streamName"))
+		return (string) pFrom->GetCustomParameters()["streamName"];
+	pFrom->GetCustomParameters()["streamName"] = "";
+	return "";
+}
+
+bool BaseRTSPAppProtocolHandler::AnalyzeUri(RTSPProtocol *pFrom, string rawUri) {
+	/*
+	 * We have the following combinations for the structure of the URI used
+	 * to access a stream via RTSP
+	 * 1. /vod/x
+	 * 2. /vodts/x
+	 * 3. /tsvod/x
+	 * 4. /ts/x
+	 * 5. /vod/x?forceTs
+	 * 6. /x?forceTs
+	 *
+	 * x - stream name
+	 * vod - request for a file
+	 * ts - request for a TS transport
+	 * ?forceTs - same as ts but needed for backward compatibility
+	 *
+	 * vod,ts and forceTs particles should be treated case-insensitive. x, since
+	 * is the stream name, must be treated as case-sensitive
+	 */
+
+	URI uri;
+	if (!URI::FromString(rawUri, false, uri)) {
+		FATAL("Invalid URI: %s", STR(rawUri));
+		return false;
+	}
+
+	bool isVod = false;
+	bool isTs = false;
+	string streamName;
+
+	string fullDocumentPathCaseInsensitive = lowerCase(uri.fullDocumentPath());
+	string fullDocumentPathCaseSensitive = uri.fullDocumentPath();
+	string::size_type fullDocumentPathSize = fullDocumentPathCaseInsensitive.length();
+
+	if ((fullDocumentPathSize >= 6)
+			&& (fullDocumentPathCaseInsensitive.substr(0, 5) == "/vod/")) {
+		//case 1
+		isVod = true;
+		streamName = fullDocumentPathCaseSensitive.substr(5);
+	} else if ((fullDocumentPathSize >= 8)
+			&& ((fullDocumentPathCaseInsensitive.substr(0, 7) == "/vodts/")
+			|| (fullDocumentPathCaseInsensitive.substr(0, 7) == "/tsvod/"))
+			) {
+		//case 2 and 3
+		isVod = true;
+		isTs = true;
+		streamName = fullDocumentPathCaseSensitive.substr(7);
+	} else if ((fullDocumentPathSize >= 5)
+			&& (fullDocumentPathCaseInsensitive.substr(0, 4) == "/ts/")) {
+		//case 4
+		isTs = true;
+		streamName = fullDocumentPathCaseSensitive.substr(4);
+	} else if (fullDocumentPathSize >= 2) {
+		streamName = fullDocumentPathCaseSensitive.substr(1);
+	}
+
+	trim(streamName);
+	if (streamName == "") {
+		FATAL("Stream name is empty");
+		return false;
+	}
+
+	// For cases 5 and 6
+	if (uri.parameters().HasKey("forceTs", false)) {
+		isTs = true;
+	}
+
+	Variant &params = pFrom->GetCustomParameters();
+	params["isVod"] = (bool)isVod;
+	params["isTs"] = (bool)isTs;
+	params["streamName"] = streamName;
+
+	BaseInStream *pInStream = GetInboundStream(streamName, pFrom);
+	if (pInStream == NULL) {
+		FATAL("Stream named %s not found", STR(streamName));
+		//FINEST("params:\n%s", STR(params.ToString()));
+		return false;
+	}
+
+	params["isTs"] = (bool)(isTs);
+
+
+	//FINEST("params:\n%s", STR(params.ToString()));
+	return true;
+}
+
 OutboundConnectivity *BaseRTSPAppProtocolHandler::GetOutboundConnectivity(
 		RTSPProtocol *pFrom, bool forceTcp) {
 	//1. Get the inbound stream
@@ -1433,29 +1791,36 @@ OutboundConnectivity *BaseRTSPAppProtocolHandler::GetOutboundConnectivity(
 	return pOutboundConnectivity;
 }
 
-BaseInNetStream *BaseRTSPAppProtocolHandler::GetInboundStream(string streamName) {
-	//1. get all the inbound network streams which begins with streamName
-	map<uint32_t, BaseStream *> streams = GetApplication()->GetStreamsManager()
-			->FindByTypeByName(ST_IN_NET, streamName, true,
-			GetApplication()->GetAllowDuplicateInboundNetworkStreams());
-	if (streams.size() == 0)
+BaseInStream *BaseRTSPAppProtocolHandler::GetInboundStream(string streamName,
+		RTSPProtocol *pFrom) {
+	if (IsVod(pFrom)) {
+		NYI;
 		return NULL;
+	} else {
+		//1. get all the inbound network streams which begins with streamName
+		map<uint32_t, BaseStream *> streams = GetApplication()->GetStreamsManager()
+				->FindByTypeByName(ST_IN_NET, streamName, true,
+				GetApplication()->GetAllowDuplicateInboundNetworkStreams());
+		if (streams.size() == 0) {
+			return NULL;
+		}
 
-	//2. Get the fisrt value and see if it is compatible
-	BaseInNetStream * pResult = (BaseInNetStream *) MAP_VAL(streams.begin());
-	if (!pResult->IsCompatibleWithType(ST_OUT_NET_RTP)) {
-		FATAL("The stream %s is not compatible with stream type %s",
-				STR(streamName), STR(tagToString(ST_OUT_NET_RTP)));
-		return NULL;
+		//2. Get the fisrt value and see if it is compatible
+		BaseInNetStream * pResult = (BaseInNetStream *) MAP_VAL(streams.begin());
+		if (!pResult->IsCompatibleWithType(ST_OUT_NET_RTP)) {
+			FATAL("The stream %s is not compatible with stream type %s",
+					STR(streamName), STR(tagToString(ST_OUT_NET_RTP)));
+			return NULL;
+		}
+
+		//2. Done
+		return pResult;
 	}
-
-	//2. Done
-	return pResult;
 }
 
 StreamCapabilities *BaseRTSPAppProtocolHandler::GetInboundStreamCapabilities(
-		string streamName) {
-	BaseInNetStream *pInboundStream = GetInboundStream(streamName);
+		string streamName, RTSPProtocol *pFrom) {
+	BaseInStream *pInboundStream = GetInboundStream(streamName, pFrom);
 	if (pInboundStream == NULL) {
 		FATAL("Stream %s not found", STR(streamName));
 		return NULL;
@@ -1467,24 +1832,29 @@ StreamCapabilities *BaseRTSPAppProtocolHandler::GetInboundStreamCapabilities(
 string BaseRTSPAppProtocolHandler::GetAudioTrack(RTSPProtocol *pFrom,
 		StreamCapabilities *pCapabilities) {
 	string result = "";
-	if (pCapabilities->audioCodecId == CODEC_AUDIO_AAC) {
-		if (pFrom->GetCustomParameters().HasKey("videoTrackId"))
-			pFrom->GetCustomParameters()["audioTrackId"] = "2"; //md5(format("A%u%s",pFrom->GetId(), STR(generateRandomString(4))), true);
-		else
-			pFrom->GetCustomParameters()["audioTrackId"] = "1"; //md5(format("A%u%s",pFrom->GetId(), STR(generateRandomString(4))), true);
+	AudioCodecInfoAAC *pInfo = NULL;
+	if ((pCapabilities != NULL)
+			&& (pCapabilities->GetAudioCodecType() == CODEC_AUDIO_AAC)
+			&& ((pInfo = pCapabilities->GetAudioCodec<AudioCodecInfoAAC > ()) != NULL)) {
+		if (pFrom->GetCustomParameters().HasKey("videoTrackId")) {
+			pFrom->GetCustomParameters()["audioTrackId"] = "2";
+		} else {
+			pFrom->GetCustomParameters()["audioTrackId"] = "1";
+		}
 		result += "m=audio 0 RTP/AVP 96\r\n";
 		result += "a=recvonly\r\n";
-		result += format("a=rtpmap:96 mpeg4-generic/%u/2\r\n",
-				pCapabilities->aac._sampleRate);
+		result += format("a=rtpmap:96 mpeg4-generic/%"PRIu32"/2\r\n",
+				pInfo->_samplingRate);
+		pFrom->GetCustomParameters()["rtpInfo"]["audio"]["frequency"] = (uint32_t) pInfo->_samplingRate;
 		//FINEST("result: %s", STR(result));
 		result += "a=control:trackID="
 				+ (string) pFrom->GetCustomParameters()["audioTrackId"] + "\r\n";
 		//rfc3640-fmtp-explained.txt Chapter 4.1
-		result += format("a=fmtp:96 streamtype=5; profile-level-id=15; mode=AAC-hbr; %s; SizeLength=13; IndexLength=3; IndexDeltaLength=3;\r\n",
-				STR(pCapabilities->aac.GetRTSPFmtpConfig()));
+		result += format("a=fmtp:96 streamtype=5; profile-level-id=15; mode=AAC-hbr; config=%s; SizeLength=13; IndexLength=3; IndexDeltaLength=3;\r\n",
+				STR(hex(pInfo->_pCodecBytes, (uint32_t) pInfo->_codecBytesLength)));
 	} else {
 		pFrom->GetCustomParameters().RemoveKey("audioTrackId");
-		WARN("Unsupported audio codec: %s", STR(tagToString(pCapabilities->audioCodecId)));
+		WARN("Unsupported audio codec for RTSP output");
 	}
 	return result;
 }
@@ -1492,7 +1862,10 @@ string BaseRTSPAppProtocolHandler::GetAudioTrack(RTSPProtocol *pFrom,
 string BaseRTSPAppProtocolHandler::GetVideoTrack(RTSPProtocol *pFrom,
 		StreamCapabilities *pCapabilities) {
 	string result = "";
-	if (pCapabilities->videoCodecId == CODEC_VIDEO_AVC) {
+	VideoCodecInfoH264 *pInfo = NULL;
+	if ((pCapabilities != NULL)
+			&& (pCapabilities->GetVideoCodecType() == CODEC_VIDEO_H264)
+			&& ((pInfo = pCapabilities->GetVideoCodec<VideoCodecInfoH264 > ()) != NULL)) {
 		if (pFrom->GetCustomParameters().HasKey("audioTrackId"))
 			pFrom->GetCustomParameters()["videoTrackId"] = "2"; //md5(format("V%u%s",pFrom->GetId(), STR(generateRandomString(4))), true);
 		else
@@ -1501,20 +1874,16 @@ string BaseRTSPAppProtocolHandler::GetVideoTrack(RTSPProtocol *pFrom,
 		result += "a=recvonly\r\n";
 		result += "a=control:trackID="
 				+ (string) pFrom->GetCustomParameters()["videoTrackId"] + "\r\n";
-		result += "a=rtpmap:97 H264/90000\r\n";
+		result += format("a=rtpmap:97 H264/%"PRIu32"\r\n", pInfo->_samplingRate);
+		pFrom->GetCustomParameters()["rtpInfo"]["video"]["frequency"] = (uint32_t) pInfo->_samplingRate;
 		result += "a=fmtp:97 profile-level-id=";
-		result += format("%02hhX%02hhX%02hhX",
-				pCapabilities->avc._pSPS[1],
-				pCapabilities->avc._pSPS[2],
-				pCapabilities->avc._pSPS[3]);
+		result += hex(pInfo->_pSPS + 1, 3);
 		result += "; packetization-mode=1; sprop-parameter-sets=";
-		result += b64(pCapabilities->avc._pSPS,
-				pCapabilities->avc._spsLength) + ",";
-		result += b64(pCapabilities->avc._pPPS,
-				pCapabilities->avc._ppsLength) + "\r\n";
+		result += b64(pInfo->_pSPS, pInfo->_spsLength) + ",";
+		result += b64(pInfo->_pPPS, pInfo->_ppsLength) + "\r\n";
 	} else {
 		pFrom->GetCustomParameters().RemoveKey("videoTrackId");
-		WARN("Unsupported video codec: %s", STR(tagToString(pCapabilities->videoCodecId)));
+		WARN("Unsupported video codec for RTSP output");
 	}
 	return result;
 }
@@ -1654,14 +2023,8 @@ bool BaseRTSPAppProtocolHandler::SendAuthenticationChallenge(RTSPProtocol *pFrom
 
 string BaseRTSPAppProtocolHandler::ComputeSDP(RTSPProtocol *pFrom,
 		string localStreamName, string targetStreamName, string host) {
-	StreamCapabilities *pCapabilities = GetInboundStreamCapabilities(localStreamName);
-	if (pCapabilities == NULL) {
-		FATAL("Inbound stream %s not found", STR(localStreamName));
-		return "";
-	}
-	string audioTrack = GetAudioTrack(pFrom, pCapabilities);
-	string videoTrack = GetVideoTrack(pFrom, pCapabilities);
-	if ((audioTrack == "") && (videoTrack == "")) {
+	if (IsVod(pFrom) || IsTs(pFrom)) {
+		NYI;
 		return "";
 	}
 
@@ -1687,6 +2050,19 @@ string BaseRTSPAppProtocolHandler::ComputeSDP(RTSPProtocol *pFrom,
 	result += "t=0 0\r\n";
 	result += "a=recvonly\r\n";
 	result += "a=control:*\r\n";
+	result += "a=range:npt=now-\r\n";
+	StreamCapabilities *pCapabilities = GetInboundStreamCapabilities(
+			localStreamName, pFrom);
+	if (pCapabilities == NULL) {
+		FATAL("Inbound stream %s not found", STR(localStreamName));
+		return "";
+	}
+	string audioTrack = GetAudioTrack(pFrom, pCapabilities);
+	string videoTrack = GetVideoTrack(pFrom, pCapabilities);
+	if ((audioTrack == "") && (videoTrack == "")) {
+		return "";
+	}
+
 	result += audioTrack + videoTrack;
 
 	//FINEST("result:\n%s", STR(result));

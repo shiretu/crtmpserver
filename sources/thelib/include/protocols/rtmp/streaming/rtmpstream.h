@@ -24,35 +24,31 @@
 
 #include "streaming/basestream.h"
 
-class BaseRTMPProtocol;
-
 class DLLEXP RTMPStream
 : public BaseStream {
 private:
 	uint32_t _rtmpStreamId;
 	uint32_t _clientSideBufer;
 public:
-	RTMPStream(BaseRTMPProtocol *pProtocol, StreamsManager *pStreamsManager,
-			uint32_t rtmpStreamId);
+	RTMPStream(BaseProtocol *pProtocol, uint32_t rtmpStreamId);
 	virtual ~RTMPStream();
 	virtual StreamCapabilities * GetCapabilities();
 	void SetClientSideBuffer(uint32_t value);
 	uint32_t GetClientSideBuffer();
 
-	virtual bool Play(double absoluteTimestamp, double length);
+	virtual bool Play(double dts, double length);
 	virtual bool Pause();
 	virtual bool Resume();
-	virtual bool Seek(double absoluteTimestamp);
+	virtual bool Seek(double dts);
 	virtual bool Stop();
-	virtual bool SignalPlay(double &absoluteTimestamp, double &length);
+	virtual bool SignalPlay(double &dts, double &length);
 	virtual bool SignalPause();
 	virtual bool SignalResume();
-	virtual bool SignalSeek(double &absoluteTimestamp);
+	virtual bool SignalSeek(double &dts);
 	virtual bool SignalStop();
-
 	virtual bool FeedData(uint8_t *pData, uint32_t dataLength,
 			uint32_t processedLength, uint32_t totalLength,
-			double absoluteTimestamp, bool isAudio);
+			double pts, double dts, bool isAudio);
 	virtual void ReadyForSend();
 	virtual bool IsCompatibleWithType(uint64_t type);
 };

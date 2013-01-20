@@ -39,7 +39,7 @@ FdStats IOHandlerManager::_fdStats;
 struct timespec IOHandlerManager::_timeout = {1, 0};
 TimersManager *IOHandlerManager::_pTimersManager = NULL;
 struct kevent IOHandlerManager::_dummy = {0, EVFILT_TIMER, 0, 0, 0, NULL};
-#endif
+#endif /* HAS_KQUEUE_TIMERS */
 
 void IOHandlerManager::SetupToken(IOHandler *pIOHandler) {
 	IOHandlerManagerToken *pResult = NULL;
@@ -96,7 +96,7 @@ void IOHandlerManager::Initialize() {
 	_pRecycledTokens = &_tokensVector2;
 #ifndef HAS_KQUEUE_TIMERS
 	_pTimersManager = new TimersManager(ProcessTimer);
-#endif
+#endif /* HAS_KQUEUE_TIMERS */
 	ResizeEvents();
 }
 
@@ -131,7 +131,7 @@ void IOHandlerManager::Shutdown() {
 #ifndef HAS_KQUEUE_TIMERS
 	delete _pTimersManager;
 	_pTimersManager = NULL;
-#endif
+#endif /* HAS_KQUEUE_TIMERS */
 
 	free(_pPendingEvents);
 	_pPendingEvents = NULL;
@@ -171,7 +171,7 @@ void IOHandlerManager::UnRegisterIOHandler(IOHandler *pIOHandler) {
 
 int IOHandlerManager::CreateRawUDPSocket() {
 	int result = socket(AF_INET, SOCK_DGRAM, 0);
-	if (result >= 0) {
+	if ((result >= 0)&&(setFdCloseOnExec(result))) {
 		_fdStats.RegisterRawUdp();
 	} else {
 		int err = errno;
@@ -247,14 +247,29 @@ bool IOHandlerManager::EnableTimer(IOHandler *pIOHandler, uint32_t seconds) {
 	return RegisterEvent(pIOHandler->GetId(), EVFILT_TIMER,
 			EV_ADD | EV_ENABLE, NOTE_USECONDS,
 			seconds*KQUEUE_TIMER_MULTIPLIER, pIOHandler->GetIOHandlerManagerToken());
-#else
-	TimerEvent event = {0, 0, 0};
+#else /* HAS_KQUEUE_TIMERS */
+	TimerEvent event = {0, 0, 0, 0};
 	event.id = pIOHandler->GetId();
-	event.period = seconds;
+	event.period = seconds * 1000;
 	event.pUserData = pIOHandler->GetIOHandlerManagerToken();
 	_pTimersManager->AddTimer(event);
 	return true;
-#endif
+#endif /* HAS_KQUEUE_TIMERS */
+}
+
+bool IOHandlerManager::EnableHighGranularityTimer(IOHandler *pIOHandler, uint32_t milliseconds) {
+#ifdef HAS_KQUEUE_TIMERS
+	return RegisterEvent(pIOHandler->GetId(), EVFILT_TIMER,
+			EV_ADD | EV_ENABLE, NOTE_USECONDS,
+			milliseconds * (KQUEUE_TIMER_MULTIPLIER / 1000), pIOHandler->GetIOHandlerManagerToken());
+#else /* HAS_KQUEUE_TIMERS */
+	TimerEvent event = {0, 0, 0, 0};
+	event.id = pIOHandler->GetId();
+	event.period = milliseconds;
+	event.pUserData = pIOHandler->GetIOHandlerManagerToken();
+	_pTimersManager->AddTimer(event);
+	return true;
+#endif /* HAS_KQUEUE_TIMERS */
 }
 
 bool IOHandlerManager::DisableTimer(IOHandler *pIOHandler, bool ignoreError) {
@@ -262,10 +277,10 @@ bool IOHandlerManager::DisableTimer(IOHandler *pIOHandler, bool ignoreError) {
 	return RegisterEvent(pIOHandler->GetId(), EVFILT_TIMER,
 			EV_DELETE, 0, 0,
 			pIOHandler->GetIOHandlerManagerToken(), ignoreError);
-#else
+#else /* HAS_KQUEUE_TIMERS */
 	_pTimersManager->RemoveTimer(pIOHandler->GetId());
 	return true;
-#endif
+#endif /* HAS_KQUEUE_TIMERS */
 }
 
 void IOHandlerManager::EnqueueForDelete(IOHandler *pIOHandler) {
@@ -294,13 +309,14 @@ bool IOHandlerManager::Pulse() {
 	result = kevent(_kq, _pPendingEvents, _pendingEventsCount,
 			_pDetectedEvents, _eventsSize, NULL);
 	_pendingEventsCount = 0;
-#else
+#else /* HAS_KQUEUE_TIMERS */
 	result = kevent(_kq, _pPendingEvents, _pendingEventsCount,
 			_pDetectedEvents, _eventsSize, &_timeout);
-
 	_pendingEventsCount = 0;
-	_pTimersManager->TimeElapsed(time(NULL));
-#endif
+	int32_t nextVal = _pTimersManager->TimeElapsed();
+	_timeout.tv_sec = nextVal / 1000;
+	_timeout.tv_nsec = (nextVal * 1000000) % 1000000000;
+#endif /* HAS_KQUEUE_TIMERS */
 
 	if (result < 0) {
 		int err = errno;
@@ -346,15 +362,18 @@ bool IOHandlerManager::Pulse() {
 
 #ifndef HAS_KQUEUE_TIMERS
 
-void IOHandlerManager::ProcessTimer(TimerEvent &event) {
+bool IOHandlerManager::ProcessTimer(TimerEvent &event) {
 	IOHandlerManagerToken *pToken =
 			(IOHandlerManagerToken *) event.pUserData;
 	if (pToken->validPayload) {
 		if (!((IOHandler *) pToken->pPayload)->OnEvent(_dummy)) {
 			EnqueueForDelete((IOHandler *) pToken->pPayload);
+			return false;
 		}
+		return true;
 	} else {
 		FATAL("Invalid token");
+		return false;
 	}
 }
 #endif /* HAS_KQUEUE_TIMERS */

@@ -35,8 +35,14 @@ public:
 	static string GetBuildDateString();
 	static string GetReleaseNumber();
 	static string GetCodeName();
+	static string GetBuilderOSName();
+	static string GetBuilderOSVersion();
+	static string GetBuilderOSArch();
+	static string GetBuilderOSUname();
+	static string GetBuilderOS();
 	static string GetBanner();
 	static Variant GetAll();
+	static Variant GetBuilder();
 };
 
 class DLLEXP Logger {

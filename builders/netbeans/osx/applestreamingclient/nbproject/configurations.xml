@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configurationDescriptor version="80">
+<configurationDescriptor version="88">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
-    <logicalFolder name="HeaderFiles"
-                   displayName="Header Files"
-                   projectFiles="true">
+    <logicalFolder name="include" displayName="include" projectFiles="true">
       <logicalFolder name="eventsink" displayName="eventsink" projectFiles="true">
         <itemPath>../../../../sources/applications/applestreamingclient/include/eventsink/baseeventsink.h</itemPath>
         <itemPath>../../../../sources/applications/applestreamingclient/include/eventsink/rtmpeventsink.h</itemPath>
@@ -51,13 +49,11 @@
       <itemPath>../../../../sources/applications/applestreamingclient/include/applestreamingclient.h</itemPath>
       <itemPath>../../../../sources/applications/applestreamingclient/include/applestreamingclientapplication.h</itemPath>
       <itemPath>../../../../sources/applications/applestreamingclient/include/clientcontext.h</itemPath>
-      <itemPath>../../../../sources/applications/applestreamingclient/include/protocols/../jnihelpers.h</itemPath>
+      <itemPath>../../../../sources/applications/applestreamingclient/include/jnihelpers.h</itemPath>
       <itemPath>../../../../sources/applications/applestreamingclient/include/playlist.h</itemPath>
       <itemPath>../../../../sources/applications/applestreamingclient/include/speedcomputer.h</itemPath>
     </logicalFolder>
-    <logicalFolder name="SourceFiles"
-                   displayName="Source Files"
-                   projectFiles="true">
+    <logicalFolder name="src" displayName="src" projectFiles="true">
       <logicalFolder name="eventsink" displayName="eventsink" projectFiles="true">
         <itemPath>../../../../sources/applications/applestreamingclient/src/eventsink/baseeventsink.cpp</itemPath>
         <itemPath>../../../../sources/applications/applestreamingclient/src/eventsink/rtmpeventsink.cpp</itemPath>
@@ -104,7 +100,7 @@
       <itemPath>../../../../sources/applications/applestreamingclient/src/applestreamingclient.cpp</itemPath>
       <itemPath>../../../../sources/applications/applestreamingclient/src/applestreamingclientapplication.cpp</itemPath>
       <itemPath>../../../../sources/applications/applestreamingclient/src/clientcontext.cpp</itemPath>
-      <itemPath>../../../../sources/applications/applestreamingclient/src/protocols/../jnihelpers.cpp</itemPath>
+      <itemPath>../../../../sources/applications/applestreamingclient/src/jnihelpers.cpp</itemPath>
       <itemPath>../../../../sources/applications/applestreamingclient/src/playlist.cpp</itemPath>
       <itemPath>../../../../sources/applications/applestreamingclient/src/speedcomputer.cpp</itemPath>
     </logicalFolder>
@@ -116,11 +112,9 @@
   </logicalFolder>
   <sourceRootList>
     <Elem>../../../sources/applications/applestreamingclient/include</Elem>
-    <Elem>../../../../sources/applications/applestreamingclient/include/protocols</Elem>
-    <Elem>../../../../sources/applications/applestreamingclient/include/eventsink</Elem>
     <Elem>../../../sources/applications/applestreamingclient/src</Elem>
-    <Elem>../../../../sources/applications/applestreamingclient/src/protocols</Elem>
-    <Elem>../../../../sources/applications/applestreamingclient/src/eventsink</Elem>
+    <Elem>../../../../sources/applications/applestreamingclient/include</Elem>
+    <Elem>../../../../sources/applications/applestreamingclient/src</Elem>
   </sourceRootList>
   <projectmakefile>Makefile.nb</projectmakefile>
   <confs>
@@ -179,6 +173,281 @@
           </linkerLibItems>
         </linkerTool>
       </compileType>
+      <item path="../../../../sources/applications/applestreamingclient/include/applestreamingclient.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/applestreamingclientapplication.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/clientcontext.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/eventsink/baseeventsink.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/eventsink/rtmpeventsink.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/eventsink/varianteventsink.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/jnihelpers.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/playlist.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/aes/aesappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/aes/inboundaesprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/genericprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/httpbuff/httpbuffappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/httpbuff/httpbufferprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/key/inboundkeyprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/key/keyappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/m3u8/basem3u8protocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/m3u8/childm3u8protocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/m3u8/m3u8appprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/m3u8/masterm3u8protocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/protocolfactory.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/rtmp/rtmpappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/rtp/rtspappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/timer/finetimer.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/timer/scheduletimerprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/ts/tsappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/variant/messagestructure.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/variant/variantappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/speedcomputer.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/applestreamingclient.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/applestreamingclientapplication.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/clientcontext.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/eventsink/baseeventsink.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/eventsink/rtmpeventsink.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/eventsink/varianteventsink.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/jnihelpers.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/playlist.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/aes/aesappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/aes/inboundaesprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/genericprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/httpbuff/httpbuffappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/httpbuff/httpbufferprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/key/inboundkeyprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/key/keyappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/m3u8/basem3u8protocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/m3u8/childm3u8protocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/m3u8/m3u8appprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/m3u8/masterm3u8protocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/protocolfactory.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/rtmp/rtmpappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/rtp/rtspappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/timer/finetimer.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/timer/scheduletimerprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/ts/tsappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/variant/variantappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/speedcomputer.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
     </conf>
     <conf name="Release" type="2">
       <toolsSet>
@@ -240,6 +509,281 @@
           </linkerLibItems>
         </linkerTool>
       </compileType>
+      <item path="../../../../sources/applications/applestreamingclient/include/applestreamingclient.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/applestreamingclientapplication.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/clientcontext.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/eventsink/baseeventsink.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/eventsink/rtmpeventsink.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/eventsink/varianteventsink.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/jnihelpers.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/playlist.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/aes/aesappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/aes/inboundaesprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/genericprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/httpbuff/httpbuffappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/httpbuff/httpbufferprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/key/inboundkeyprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/key/keyappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/m3u8/basem3u8protocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/m3u8/childm3u8protocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/m3u8/m3u8appprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/m3u8/masterm3u8protocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/protocolfactory.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/rtmp/rtmpappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/rtp/rtspappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/timer/finetimer.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/timer/scheduletimerprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/ts/tsappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/variant/messagestructure.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/protocols/variant/variantappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/include/speedcomputer.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/applestreamingclient.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/applestreamingclientapplication.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/clientcontext.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/eventsink/baseeventsink.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/eventsink/rtmpeventsink.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/eventsink/varianteventsink.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/jnihelpers.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/playlist.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/aes/aesappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/aes/inboundaesprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/genericprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/httpbuff/httpbuffappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/httpbuff/httpbufferprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/key/inboundkeyprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/key/keyappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/m3u8/basem3u8protocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/m3u8/childm3u8protocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/m3u8/m3u8appprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/m3u8/masterm3u8protocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/protocolfactory.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/rtmp/rtmpappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/rtp/rtspappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/timer/finetimer.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/timer/scheduletimerprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/ts/tsappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/protocols/variant/variantappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/applestreamingclient/src/speedcomputer.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
     </conf>
   </confs>
 </configurationDescriptor>

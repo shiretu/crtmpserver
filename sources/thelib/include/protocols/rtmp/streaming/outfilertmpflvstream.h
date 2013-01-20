@@ -23,8 +23,6 @@
 
 #include "streaming/baseoutfilestream.h"
 
-class BaseRTMPProtocol;
-
 class DLLEXP OutFileRTMPFLVStream
 : public BaseOutFileStream {
 private:
@@ -33,25 +31,35 @@ private:
 	IOBuffer _audioBuffer;
 	IOBuffer _videoBuffer;
 	uint32_t _prevTagSize;
+	string _filename;
 public:
-	OutFileRTMPFLVStream(BaseRTMPProtocol *pProtocol, StreamsManager *pStreamsManager,
-			string name);
+	OutFileRTMPFLVStream(BaseProtocol *pProtocol, string name, string filename);
 
 	virtual ~OutFileRTMPFLVStream();
-	virtual bool SignalPlay(double &absoluteTimestamp, double &length);
+	void Initialize();
+	virtual bool SignalPlay(double &dts, double &length);
 	virtual bool SignalPause();
 	virtual bool SignalResume();
-	virtual bool SignalSeek(double &absoluteTimestamp);
+	virtual bool SignalSeek(double &dts);
 	virtual bool SignalStop();
 	virtual bool FeedData(uint8_t *pData, uint32_t dataLength,
 			uint32_t processedLength, uint32_t totalLength,
-			double absoluteTimestamp, bool isAudio);
+			double pts, double dts, bool isAudio);
 	virtual bool IsCompatibleWithType(uint64_t type);
 	virtual void SignalAttachedToInStream();
 	virtual void SignalDetachedFromInStream();
 	virtual void SignalStreamCompleted();
-private:
-	bool Initialize();
+	virtual void SignalAudioStreamCapabilitiesChanged(
+			StreamCapabilities *pCapabilities, AudioCodecInfo *pOld,
+			AudioCodecInfo *pNew);
+	virtual void SignalVideoStreamCapabilitiesChanged(
+			StreamCapabilities *pCapabilities, VideoCodecInfo *pOld,
+			VideoCodecInfo *pNew);
+protected:
+	virtual bool PushVideoData(IOBuffer &buffer, double pts, double dts,
+			bool isKeyFrame);
+	virtual bool PushAudioData(IOBuffer &buffer, double pts, double dts);
+	virtual bool IsCodecSupported(uint64_t codec);
 };
 
 

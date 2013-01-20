@@ -1,14 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configurationDescriptor version="80">
+<configurationDescriptor version="88">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
-    <logicalFolder name="HeaderFiles"
-                   displayName="Header Files"
-                   projectFiles="true">
-      <itemPath>../../../../sources/crtmpserver/include/jsonparser.h</itemPath>
+    <logicalFolder name="include" displayName="include" projectFiles="true">
     </logicalFolder>
-    <logicalFolder name="SourceFiles"
-                   displayName="Source Files"
-                   projectFiles="true">
+    <logicalFolder name="src" displayName="src" projectFiles="true">
       <itemPath>../../../../sources/crtmpserver/src/crtmpserver.cpp</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
@@ -82,6 +77,11 @@
           <commandLine>-L/opt/local/lib -llua</commandLine>
         </linkerTool>
       </compileType>
+      <item path="../../../../sources/crtmpserver/src/crtmpserver.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
     </conf>
     <conf name="Release" type="1">
       <toolsSet>
@@ -138,6 +138,11 @@
           <commandLine>-L/opt/local/lib -llua</commandLine>
         </linkerTool>
       </compileType>
+      <item path="../../../../sources/crtmpserver/src/crtmpserver.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
     </conf>
   </confs>
 </configurationDescriptor>

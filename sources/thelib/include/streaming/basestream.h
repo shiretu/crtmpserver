@@ -31,7 +31,12 @@ class BaseProtocol;
 	@class BaseStream
  */
 class DLLEXP BaseStream {
+private:
+	static uint32_t _uniqueIdGenerator;
+	Variant _connectionType;
 protected:
+	string _ip;
+	uint16_t _port;
 	StreamsManager *_pStreamsManager;
 	uint64_t _type;
 	uint32_t _uniqueId;
@@ -39,10 +44,10 @@ protected:
 	string _name;
 	double _creationTimestamp;
 public:
-	BaseStream(BaseProtocol *pProtocol, StreamsManager *pStreamsManager,
-			uint64_t type, string name);
+	BaseStream(BaseProtocol *pProtocol, uint64_t type, string name);
 	virtual ~BaseStream();
 
+	virtual bool SetStreamsManager(StreamsManager *pStreamsManager);
 	/*!
 		@brief Returns the stream manager. This is read-only
 	 */
@@ -102,10 +107,10 @@ public:
 
 	/*!
 		@brief This will start the feeding process
-		@param absoluteTimestamp - the timestamp where we want to see before start the feeding process
+		@param dts - the timestamp where we want to see before start the feeding process
 		@param length - time limit
 	 */
-	virtual bool Play(double absoluteTimestamp, double length) = 0;
+	virtual bool Play(double dts, double length) = 0;
 
 	/*!
 		@brief This will pause the feeding process
@@ -119,9 +124,9 @@ public:
 
 	/*!
 		@brief  will seek to the specified point in time.
-		@param absoluteTimestamp
+		@param dts
 	 */
-	virtual bool Seek(double absoluteTimestamp) = 0;
+	virtual bool Seek(double dts) = 0;
 
 	/*!
 		 @brief This will stop the feeding process
@@ -131,10 +136,10 @@ public:
 
 	/*!
 		@brief Called when a play command was issued
-		@param absoluteTimestamp - the timestamp where we want to seek before start the feeding process
+		@param dts - the timestamp where we want to seek before start the feeding process
 		@param length
 	 */
-	virtual bool SignalPlay(double &absoluteTimestamp, double &length) = 0;
+	virtual bool SignalPlay(double &dts, double &length) = 0;
 
 	/*!
 		@brief Called when a pasue command was issued
@@ -148,9 +153,9 @@ public:
 
 	/*!
 		@brief Called when a seek command was issued
-		@param absoluteTimestamp
+		@param dts
 	 */
-	virtual bool SignalSeek(double &absoluteTimestamp) = 0;
+	virtual bool SignalSeek(double &dts) = 0;
 
 	/*!
 		@brief Called when a stop command was issued
@@ -171,7 +176,7 @@ public:
 	 */
 	virtual bool FeedData(uint8_t *pData, uint32_t dataLength,
 			uint32_t processedLength, uint32_t totalLength,
-			double absoluteTimestamp, bool isAudio) = 0;
+			double pts, double dts, bool isAudio) = 0;
 
 	/*!
 		@brief The networking layer signaled the availability for sending data
@@ -183,6 +188,9 @@ public:
 		@param type - the target type to which this strem must be linked against
 	 */
 	virtual bool IsCompatibleWithType(uint64_t type) = 0;
+private:
+	void StoreConnectionType();
+	void GetIpPort();
 };
 
 #endif	/* _BASESTREAM_H */

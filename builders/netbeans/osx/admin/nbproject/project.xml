@@ -16,6 +16,8 @@
             <sourceRootList>
                 <sourceRootElem>../../../sources/applications/admin/include</sourceRootElem>
                 <sourceRootElem>../../../sources/applications/admin/src</sourceRootElem>
+                <sourceRootElem>../../../../sources/applications/admin/include</sourceRootElem>
+                <sourceRootElem>../../../../sources/applications/admin/src</sourceRootElem>
             </sourceRootList>
             <confList>
                 <confElem>

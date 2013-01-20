@@ -22,6 +22,7 @@ AS=as
 
 # Macros
 CND_PLATFORM=GNU-MacOSX
+CND_DLIB_EXT=dylib
 CND_CONF=Debug
 CND_DISTDIR=dist
 CND_BUILDDIR=build
@@ -70,7 +71,7 @@ LDLIBSOPTIONS=-L../thelib/../Debug/GNU-MacOSX -lthelib -L../common/dist/Debug/GN
 
 ../${CND_CONF}/${CND_PLATFORM}/applications/proxypublish/libproxypublish.dylib: ${OBJECTFILES}
 	${MKDIR} -p ../${CND_CONF}/${CND_PLATFORM}/applications/proxypublish
-	${LINK.cc} -dynamiclib -install_name libproxypublish.dylib -o ../${CND_CONF}/${CND_PLATFORM}/applications/proxypublish/libproxypublish.dylib -fPIC ${OBJECTFILES} ${LDLIBSOPTIONS} 
+	${LINK.cc} -o ../${CND_CONF}/${CND_PLATFORM}/applications/proxypublish/libproxypublish.dylib ${OBJECTFILES} ${LDLIBSOPTIONS} -dynamiclib -install_name libproxypublish.dylib -fPIC
 
 ${OBJECTDIR}/_ext/1106680373/jobstimerappprotocolhandler.o: ../../../../sources/applications/proxypublish/src/jobstimerappprotocolhandler.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/1106680373

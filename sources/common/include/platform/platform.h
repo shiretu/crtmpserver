@@ -34,7 +34,6 @@
 #endif /* LINUX */
 
 #ifdef FREEBSD
-#include "platform/freebsd/max.h"
 #include "platform/freebsd/freebsdplatform.h"
 #define Platform FreeBSDPlatform
 #endif /* FREEBSD */

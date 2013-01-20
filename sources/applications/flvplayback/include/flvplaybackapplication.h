@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -37,12 +37,6 @@ namespace app_flvplayback {
 	class RTPAppProtocolHandler;
 	class RTSPAppProtocolHandler;
 #endif /* HAS_PROTOCOL_RTP */
-#ifdef HAS_PROTOCOL_MMS
-	class MMSAppProtocolHandler;
-#endif /* HAS_PROTOCOL_MMS */
-#ifdef HAS_PROTOCOL_RAWHTTPSTREAM
-	class RawHTTPStreamAppProtocolHandler;
-#endif /* HAS_PROTOCOL_RAWHTTPSTREAM */
 #ifdef HAS_PROTOCOL_HTTP
 	class HTTPAppProtocolHandler;
 #endif /* HAS_PROTOCOL_HTTP */
@@ -63,12 +57,6 @@ namespace app_flvplayback {
 		RTPAppProtocolHandler *_pRTPHandler;
 		RTSPAppProtocolHandler *_pRTSPHandler;
 #endif /* HAS_PROTOCOL_RTP */
-#ifdef HAS_PROTOCOL_MMS
-		MMSAppProtocolHandler *_pMMSHandler;
-#endif /* HAS_PROTOCOL_MMS */
-#ifdef HAS_PROTOCOL_RAWHTTPSTREAM
-		RawHTTPStreamAppProtocolHandler *_pRawHTTPStreamHandler;
-#endif /* HAS_PROTOCOL_RAWHTTPSTREAM */
 #ifdef HAS_PROTOCOL_HTTP
 		HTTPAppProtocolHandler *_pHTTPHandler;
 #endif /* HAS_PROTOCOL_HTTP */

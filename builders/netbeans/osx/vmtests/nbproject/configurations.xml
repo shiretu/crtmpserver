@@ -1,19 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configurationDescriptor version="80">
+<configurationDescriptor version="88">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
-    <logicalFolder name="HeaderFiles"
-                   displayName="Header Files"
-                   projectFiles="true">
+    <logicalFolder name="include" displayName="include" projectFiles="true">
       <itemPath>../../../../sources/vmtests/include/testvmlua.h</itemPath>
       <itemPath>../../../../sources/vmtests/include/testvmv8.h</itemPath>
     </logicalFolder>
-    <logicalFolder name="ResourceFiles"
-                   displayName="Resource Files"
-                   projectFiles="true">
-    </logicalFolder>
-    <logicalFolder name="SourceFiles"
-                   displayName="Source Files"
-                   projectFiles="true">
+    <logicalFolder name="src" displayName="src" projectFiles="true">
       <itemPath>../../../../sources/vmtests/src/main.cpp</itemPath>
       <itemPath>../../../../sources/vmtests/src/testvmlua.cpp</itemPath>
       <itemPath>../../../../sources/vmtests/src/testvmv8.cpp</itemPath>
@@ -78,6 +70,31 @@
           </linkerLibItems>
         </linkerTool>
       </compileType>
+      <item path="../../../../sources/vmtests/include/testvmlua.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/vmtests/include/testvmv8.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/vmtests/src/main.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/vmtests/src/testvmlua.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/vmtests/src/testvmv8.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
     </conf>
     <conf name="Release" type="1">
       <toolsSet>
@@ -134,6 +151,31 @@
           </linkerLibItems>
         </linkerTool>
       </compileType>
+      <item path="../../../../sources/vmtests/include/testvmlua.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/vmtests/include/testvmv8.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/vmtests/src/main.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/vmtests/src/testvmlua.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/vmtests/src/testvmv8.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
     </conf>
   </confs>
 </configurationDescriptor>

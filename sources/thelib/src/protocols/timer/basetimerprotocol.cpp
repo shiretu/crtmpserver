@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -25,6 +25,7 @@ BaseTimerProtocol::BaseTimerProtocol()
 : BaseProtocol(PT_TIMER) {
 	_pTimer = new IOTimer();
 	_pTimer->SetProtocol(this);
+	_milliseconds = 0;
 }
 
 BaseTimerProtocol::~BaseTimerProtocol() {
@@ -34,6 +35,18 @@ BaseTimerProtocol::~BaseTimerProtocol() {
 		pTimer->SetProtocol(NULL);
 		delete pTimer;
 	}
+}
+
+string BaseTimerProtocol::GetName() {
+	return _name;
+}
+
+uint32_t BaseTimerProtocol::GetTimerPeriodInMilliseconds() {
+	return _milliseconds;
+}
+
+double BaseTimerProtocol::GetTimerPeriodInSeconds() {
+	return (double) _milliseconds / 1000.0;
 }
 
 IOHandler *BaseTimerProtocol::GetIOHandler() {
@@ -54,7 +67,17 @@ bool BaseTimerProtocol::EnqueueForTimeEvent(uint32_t seconds) {
 		ASSERT("BaseTimerProtocol has no timer");
 		return false;
 	}
+	_milliseconds = seconds * 1000;
 	return _pTimer->EnqueueForTimeEvent(seconds);
+}
+
+bool BaseTimerProtocol::EnqueueForHighGranularityTimeEvent(uint32_t milliseconds) {
+	if (_pTimer == NULL) {
+		ASSERT("BaseTimerProtocol has no timer");
+		return false;
+	}
+	_milliseconds = milliseconds;
+	return _pTimer->EnqueueForHighGranularityTimeEvent(milliseconds);
 }
 
 bool BaseTimerProtocol::AllowFarProtocol(uint64_t type) {

@@ -17,8 +17,7 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include "platform/baseplatform.h"
+#include "common.h"
 
 BasePlatform::BasePlatform() {
 
@@ -26,3 +25,16 @@ BasePlatform::BasePlatform() {
 
 BasePlatform::~BasePlatform() {
 }
+
+#if defined DFREEBSD || defined FREEBSD || defined LINUX || defined OPENBSD || defined OSX || defined SOLARIS
+
+bool setFdCloseOnExec(int fd) {
+	if (fcntl(fd, F_SETFD, FD_CLOEXEC) == -1) {
+		int err = errno;
+		FATAL("fcntl failed %d %s", err, strerror(err));
+		return false;
+	}
+	return true;
+}
+
+#endif /* defined DFREEBSD || defined FREEBSD || defined LINUX || defined OPENBSD || defined OSX || defined SOLARIS */

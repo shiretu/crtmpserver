@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configurationDescriptor version="80">
+<configurationDescriptor version="88">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
-    <logicalFolder name="HeaderFiles"
-                   displayName="Header Files"
-                   projectFiles="true">
+    <logicalFolder name="include" displayName="include" projectFiles="true">
       <logicalFolder name="application" displayName="application" projectFiles="true">
         <itemPath>../../../../sources/thelib/include/application/baseappprotocolhandler.h</itemPath>
         <itemPath>../../../../sources/thelib/include/application/baseclientapplication.h</itemPath>
@@ -18,75 +16,90 @@
       <logicalFolder name="mediaformats"
                      displayName="mediaformats"
                      projectFiles="true">
-        <logicalFolder name="flv" displayName="flv" projectFiles="true">
-          <itemPath>../../../../sources/thelib/include/mediaformats/flv/flvdocument.h</itemPath>
+        <logicalFolder name="readers" displayName="readers" projectFiles="true">
+          <logicalFolder name="flv" displayName="flv" projectFiles="true">
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/flv/flvdocument.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="mp3" displayName="mp3" projectFiles="true">
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp3/id3parser.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp3/mp3document.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="mp4" displayName="mp4" projectFiles="true">
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomabst.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomafra.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomafrt.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomasrt.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomavc1.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomavcc.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomco64.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomctts.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomdata.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomdinf.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomdref.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomesds.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomftyp.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomhdlr.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomilst.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atommdhd.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atommdia.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atommeta.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atommetafield.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atommfhd.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomminf.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atommoof.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atommoov.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atommp4a.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atommvex.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atommvhd.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomnull.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomsmhd.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomstbl.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomstco.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomstsc.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomstsd.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomstss.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomstsz.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomstts.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomtfhd.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomtkhd.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomtraf.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomtrak.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomtrex.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomtrun.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomudta.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomurl.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomuuid.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomvmhd.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomwave.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/baseatom.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/boxatom.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/generateatom.sh</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/ignoredatom.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/mp4document.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/versionedatom.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/versionedboxatom.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="ts" displayName="ts" projectFiles="true">
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/ts/avcontext.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/ts/piddescriptor.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/ts/pidtypes.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/ts/streamdescriptors.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/ts/tsboundscheck.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/ts/tsdocument.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/ts/tsframereader.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/ts/tsframereaderinterface.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/ts/tspacketheader.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/ts/tspacketpat.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/ts/tspacketpmt.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/ts/tsparser.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/ts/tsparsereventsink.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/ts/tsstreaminfo.h</itemPath>
+          </logicalFolder>
+          <itemPath>../../../../sources/thelib/include/mediaformats/readers/basemediadocument.h</itemPath>
+          <itemPath>../../../../sources/thelib/include/mediaformats/readers/mediafile.h</itemPath>
+          <itemPath>../../../../sources/thelib/include/mediaformats/readers/mediaframe.h</itemPath>
+          <itemPath>../../../../sources/thelib/include/mediaformats/readers/streammetadataresolver.h</itemPath>
         </logicalFolder>
-        <logicalFolder name="mp3" displayName="mp3" projectFiles="true">
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp3/id3parser.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp3/mp3document.h</itemPath>
-        </logicalFolder>
-        <logicalFolder name="mp4" displayName="mp4" projectFiles="true">
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomabst.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomafra.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomafrt.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomasrt.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomavc1.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomavcc.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomco64.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomctts.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomdata.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomdinf.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomdref.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomesds.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomftyp.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomhdlr.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomilst.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atommdhd.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atommdia.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atommeta.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atommetafield.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atommfhd.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomminf.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atommoof.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atommoov.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atommp4a.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atommvex.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atommvhd.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomnull.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomsmhd.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomstbl.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomstco.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomstsc.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomstsd.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomstss.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomstsz.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomstts.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomtfhd.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomtkhd.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomtraf.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomtrak.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomtrex.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomtrun.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomudta.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomurl.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomuuid.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomvmhd.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/atomwave.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/baseatom.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/boxatom.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/generateatom.sh</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/ignoredatom.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/mp4document.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/versionedatom.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/mp4/versionedboxatom.h</itemPath>
-        </logicalFolder>
-        <logicalFolder name="nsv" displayName="nsv" projectFiles="true">
-          <itemPath>../../../../sources/thelib/include/mediaformats/nsv/mp3media.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/mediaformats/nsv/nsvdocument.h</itemPath>
-        </logicalFolder>
-        <itemPath>../../../../sources/thelib/include/mediaformats/basemediadocument.h</itemPath>
-        <itemPath>../../../../sources/thelib/include/mediaformats/mediafile.h</itemPath>
-        <itemPath>../../../../sources/thelib/include/mediaformats/mediaframe.h</itemPath>
       </logicalFolder>
       <logicalFolder name="netio" displayName="netio" projectFiles="true">
         <logicalFolder name="epoll" displayName="epoll" projectFiles="true">
@@ -100,18 +113,6 @@
           <itemPath>../../../../sources/thelib/include/netio/epoll/tcpcarrier.h</itemPath>
           <itemPath>../../../../sources/thelib/include/netio/epoll/tcpconnector.h</itemPath>
           <itemPath>../../../../sources/thelib/include/netio/epoll/udpcarrier.h</itemPath>
-        </logicalFolder>
-        <logicalFolder name="iocp" displayName="iocp" projectFiles="true">
-          <itemPath>../../../../sources/thelib/include/netio/iocp/inboundnamedpipecarrier.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/netio/iocp/iocpevent.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/netio/iocp/iohandler.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/netio/iocp/iohandlermanager.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/netio/iocp/iotimer.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/netio/iocp/stdiocarrier.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/netio/iocp/tcpacceptor.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/netio/iocp/tcpcarrier.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/netio/iocp/tcpconnector.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/netio/iocp/udpcarrier.h</itemPath>
         </logicalFolder>
         <logicalFolder name="kqueue" displayName="kqueue" projectFiles="true">
           <itemPath>../../../../sources/thelib/include/netio/kqueue/inboundnamedpipecarrier.h</itemPath>
@@ -148,23 +149,11 @@
           <itemPath>../../../../sources/thelib/include/protocols/cli/inboundjsoncliprotocol.h</itemPath>
         </logicalFolder>
         <logicalFolder name="dns" displayName="dns" projectFiles="true">
-          <itemPath>../../../../sources/thelib/include/protocols/dns/inbounddnsresolverprotocol.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/protocols/dns/outbounddnsresolverprotocol.h</itemPath>
-        </logicalFolder>
-        <logicalFolder name="external" displayName="external" projectFiles="true">
-          <itemPath>../../../../sources/thelib/include/protocols/external/evostreamprotocol.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/protocols/external/externalappprotocolhandler.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/protocols/external/externaljobtimerprotocol.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/protocols/external/externalmoduleapi.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/protocols/external/externalprotocol.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/protocols/external/externalprotocolmodule.h</itemPath>
         </logicalFolder>
         <logicalFolder name="http" displayName="http" projectFiles="true">
           <itemPath>../../../../sources/thelib/include/protocols/http/basehttpprotocol.h</itemPath>
           <itemPath>../../../../sources/thelib/include/protocols/http/basehttpprotocolhandler.h</itemPath>
           <itemPath>../../../../sources/thelib/include/protocols/http/httpauthhelper.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/protocols/http/httpinterface.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/protocols/http/httpprotocol.h</itemPath>
           <itemPath>../../../../sources/thelib/include/protocols/http/inboundhttpprotocol.h</itemPath>
           <itemPath>../../../../sources/thelib/include/protocols/http/outboundhttpprotocol.h</itemPath>
         </logicalFolder>
@@ -174,34 +163,10 @@
           <itemPath>../../../../sources/thelib/include/protocols/liveflv/innetliveflvstream.h</itemPath>
         </logicalFolder>
         <logicalFolder name="mms" displayName="mms" projectFiles="true">
-          <itemPath>../../../../sources/thelib/include/protocols/mms/basemmsappprotocolhandler.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/protocols/mms/innetaacstream.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/protocols/mms/innetmp3stream.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/protocols/mms/mmsprotocol.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/protocols/mms/transcoder.h</itemPath>
-        </logicalFolder>
-        <logicalFolder name="passthrough" displayName="passthrough" projectFiles="true">
-          <itemPath>../../../../sources/thelib/include/protocols/passthrough/passthroughappprotocolhandler.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/protocols/passthrough/passthroughprotocol.h</itemPath>
         </logicalFolder>
         <logicalFolder name="rawhttpstream"
                        displayName="rawhttpstream"
                        projectFiles="true">
-          <itemPath>../../../../sources/thelib/include/protocols/rawhttpstream/baserawhttpstreamappprotocolhandler.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/protocols/rawhttpstream/inboundrawhttpstreamprotocol.h</itemPath>
-        </logicalFolder>
-        <logicalFolder name="rpc" displayName="rpc" projectFiles="true">
-          <itemPath>../../../../sources/thelib/include/protocols/rpc/baserpcappprotocolhandler.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/protocols/rpc/baserpcprotocol.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/protocols/rpc/inboundrpcprotocol.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/protocols/rpc/outboundrpcprotocol.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/protocols/rpc/rpcserializer.h</itemPath>
-        </logicalFolder>
-        <logicalFolder name="rtmfp" displayName="rtmfp" projectFiles="true">
-          <itemPath>../../../../sources/thelib/include/protocols/rtmfp/basertmfpappprotocolhandler.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/protocols/rtmfp/basertmfpprotocol.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/protocols/rtmfp/inboundrtmfpprotocol.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/protocols/rtmfp/outboundrtmfpprotocol.h</itemPath>
         </logicalFolder>
         <logicalFolder name="rtmp" displayName="rtmp" projectFiles="true">
           <logicalFolder name="messagefactories"
@@ -263,6 +228,7 @@
           <itemPath>../../../../sources/thelib/include/protocols/rtp/basertpappprotocolhandler.h</itemPath>
           <itemPath>../../../../sources/thelib/include/protocols/rtp/basertspappprotocolhandler.h</itemPath>
           <itemPath>../../../../sources/thelib/include/protocols/rtp/inboundrtpprotocol.h</itemPath>
+          <itemPath>../../../../sources/thelib/include/protocols/rtp/nattraversalprotocol.h</itemPath>
           <itemPath>../../../../sources/thelib/include/protocols/rtp/rtcpprotocol.h</itemPath>
           <itemPath>../../../../sources/thelib/include/protocols/rtp/rtpheader.h</itemPath>
           <itemPath>../../../../sources/thelib/include/protocols/rtp/rtspprotocol.h</itemPath>
@@ -307,20 +273,9 @@
         <logicalFolder name="flv" displayName="flv" projectFiles="true">
           <itemPath>../../../../sources/thelib/include/recording/flv/outfileflv.h</itemPath>
         </logicalFolder>
-        <logicalFolder name="ts" displayName="ts" projectFiles="true">
-          <itemPath>../../../../sources/thelib/include/recording/ts/outfilets.h</itemPath>
-        </logicalFolder>
+        <itemPath>../../../../sources/thelib/include/recording/baseoutrecording.h</itemPath>
       </logicalFolder>
       <logicalFolder name="streaming" displayName="streaming" projectFiles="true">
-        <logicalFolder name="hls" displayName="hls" projectFiles="true">
-          <itemPath>../../../../sources/thelib/include/streaming/hls/baseouthlsstream.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/streaming/hls/basetssegment.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/streaming/hls/filetssegment.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/streaming/hls/hlsplaylist.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/streaming/hls/nettssegment.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/streaming/hls/outfilehlsstream.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/streaming/hls/outnethlsstream.h</itemPath>
-        </logicalFolder>
         <itemPath>../../../../sources/thelib/include/streaming/baseinfilestream.h</itemPath>
         <itemPath>../../../../sources/thelib/include/streaming/baseinnetstream.h</itemPath>
         <itemPath>../../../../sources/thelib/include/streaming/baseinstream.h</itemPath>
@@ -329,26 +284,19 @@
         <itemPath>../../../../sources/thelib/include/streaming/baseoutstream.h</itemPath>
         <itemPath>../../../../sources/thelib/include/streaming/basestream.h</itemPath>
         <itemPath>../../../../sources/thelib/include/streaming/codectypes.h</itemPath>
-        <itemPath>../../../../sources/thelib/include/streaming/innetexternalstream.h</itemPath>
-        <itemPath>../../../../sources/thelib/include/streaming/innetpassthroughstream.h</itemPath>
-        <itemPath>../../../../sources/thelib/include/streaming/innetrawstream.h</itemPath>
         <itemPath>../../../../sources/thelib/include/streaming/nalutypes.h</itemPath>
-        <itemPath>../../../../sources/thelib/include/streaming/outnetpassthroughstream.h</itemPath>
-        <itemPath>../../../../sources/thelib/include/streaming/outnetrawstream.h</itemPath>
-        <itemPath>../../../../sources/thelib/include/streaming/packetqueue.h</itemPath>
-        <itemPath>../../../../sources/thelib/include/streaming/sink.h</itemPath>
         <itemPath>../../../../sources/thelib/include/streaming/streamcapabilities.h</itemPath>
         <itemPath>../../../../sources/thelib/include/streaming/streamsmanager.h</itemPath>
         <itemPath>../../../../sources/thelib/include/streaming/streamstypes.h</itemPath>
       </logicalFolder>
+      <logicalFolder name="utils" displayName="utils" projectFiles="true">
+        <itemPath>../../../../sources/thelib/include/utils/readyforsendinterface.h</itemPath>
+        <itemPath>../../../../sources/thelib/include/utils/udpsenderprotocol.h</itemPath>
+      </logicalFolder>
       <logicalFolder name="vod" displayName="vod" projectFiles="true">
-        <itemPath>../../../../sources/thelib/include/vod/basevodmanager.h</itemPath>
-        <itemPath>../../../../sources/thelib/include/vod/basevodsource.h</itemPath>
       </logicalFolder>
     </logicalFolder>
-    <logicalFolder name="SourceFiles"
-                   displayName="Source Files"
-                   projectFiles="true">
+    <logicalFolder name="src" displayName="src" projectFiles="true">
       <logicalFolder name="application" displayName="application" projectFiles="true">
         <itemPath>../../../../sources/thelib/src/application/baseappprotocolhandler.cpp</itemPath>
         <itemPath>../../../../sources/thelib/src/application/baseclientapplication.cpp</itemPath>
@@ -363,75 +311,82 @@
       <logicalFolder name="mediaformats"
                      displayName="mediaformats"
                      projectFiles="true">
-        <logicalFolder name="flv" displayName="flv" projectFiles="true">
-          <itemPath>../../../../sources/thelib/src/mediaformats/flv/flvdocument.cpp</itemPath>
+        <logicalFolder name="readers" displayName="readers" projectFiles="true">
+          <logicalFolder name="flv" displayName="flv" projectFiles="true">
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/flv/flvdocument.cpp</itemPath>
+          </logicalFolder>
+          <logicalFolder name="mp3" displayName="mp3" projectFiles="true">
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp3/id3parser.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp3/mp3document.cpp</itemPath>
+          </logicalFolder>
+          <logicalFolder name="mp4" displayName="mp4" projectFiles="true">
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomabst.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomafra.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomafrt.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomasrt.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomavc1.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomavcc.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomco64.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomctts.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomdata.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomdinf.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomdref.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomesds.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomftyp.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomhdlr.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomilst.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atommdhd.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atommdia.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atommeta.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atommetafield.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atommfhd.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomminf.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atommoof.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atommoov.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atommp4a.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atommvex.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atommvhd.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomnull.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomsmhd.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomstbl.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomstco.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomstsc.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomstsd.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomstss.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomstsz.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomstts.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomtfhd.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomtkhd.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomtraf.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomtrak.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomtrex.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomtrun.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomudta.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomurl.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomuuid.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomvmhd.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomwave.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/baseatom.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/boxatom.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/generateatom.sh</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/ignoredatom.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/mp4document.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/versionedatom.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/versionedboxatom.cpp</itemPath>
+          </logicalFolder>
+          <logicalFolder name="ts" displayName="ts" projectFiles="true">
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/ts/avcontext.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/ts/streamdescriptors.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/ts/tsdocument.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/ts/tsframereader.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/ts/tspacketpat.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/ts/tspacketpmt.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/ts/tsparser.cpp</itemPath>
+          </logicalFolder>
+          <itemPath>../../../../sources/thelib/src/mediaformats/readers/basemediadocument.cpp</itemPath>
+          <itemPath>../../../../sources/thelib/src/mediaformats/readers/mediafile.cpp</itemPath>
+          <itemPath>../../../../sources/thelib/src/mediaformats/readers/streammetadataresolver.cpp</itemPath>
         </logicalFolder>
-        <logicalFolder name="mkv" displayName="mkv" projectFiles="true">
-        </logicalFolder>
-        <logicalFolder name="mp3" displayName="mp3" projectFiles="true">
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp3/id3parser.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp3/mp3document.cpp</itemPath>
-        </logicalFolder>
-        <logicalFolder name="mp4" displayName="mp4" projectFiles="true">
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomabst.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomafra.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomafrt.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomasrt.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomavc1.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomavcc.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomco64.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomctts.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomdata.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomdinf.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomdref.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomesds.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomftyp.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomhdlr.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomilst.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atommdhd.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atommdia.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atommeta.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atommetafield.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atommfhd.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomminf.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atommoof.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atommoov.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atommp4a.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atommvex.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atommvhd.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomnull.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomsmhd.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomstbl.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomstco.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomstsc.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomstsd.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomstss.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomstsz.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomstts.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomtfhd.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomtkhd.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomtraf.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomtrak.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomtrex.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomtrun.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomudta.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomurl.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomuuid.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomvmhd.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/atomwave.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/baseatom.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/boxatom.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/generateatom.sh</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/ignoredatom.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/mp4document.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/versionedatom.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/mp4/versionedboxatom.cpp</itemPath>
-        </logicalFolder>
-        <logicalFolder name="nsv" displayName="nsv" projectFiles="true">
-          <itemPath>../../../../sources/thelib/src/mediaformats/nsv/mp3media.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/mediaformats/nsv/nsvdocument.cpp</itemPath>
-        </logicalFolder>
-        <itemPath>../../../../sources/thelib/src/mediaformats/basemediadocument.cpp</itemPath>
       </logicalFolder>
       <logicalFolder name="netio" displayName="netio" projectFiles="true">
         <logicalFolder name="epoll" displayName="epoll" projectFiles="true">
@@ -443,16 +398,6 @@
           <itemPath>../../../../sources/thelib/src/netio/epoll/tcpacceptor.cpp</itemPath>
           <itemPath>../../../../sources/thelib/src/netio/epoll/tcpcarrier.cpp</itemPath>
           <itemPath>../../../../sources/thelib/src/netio/epoll/udpcarrier.cpp</itemPath>
-        </logicalFolder>
-        <logicalFolder name="iocp" displayName="iocp" projectFiles="true">
-          <itemPath>../../../../sources/thelib/src/netio/iocp/inboundnamedpipecarrier.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/netio/iocp/iohandler.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/netio/iocp/iohandlermanager.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/netio/iocp/iotimer.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/netio/iocp/stdiocarrier.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/netio/iocp/tcpacceptor.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/netio/iocp/tcpcarrier.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/netio/iocp/udpcarrier.cpp</itemPath>
         </logicalFolder>
         <logicalFolder name="kqueue" displayName="kqueue" projectFiles="true">
           <itemPath>../../../../sources/thelib/src/netio/kqueue/inboundnamedpipecarrier.cpp</itemPath>
@@ -484,21 +429,11 @@
           <itemPath>../../../../sources/thelib/src/protocols/cli/inboundjsoncliprotocol.cpp</itemPath>
         </logicalFolder>
         <logicalFolder name="dns" displayName="dns" projectFiles="true">
-          <itemPath>../../../../sources/thelib/src/protocols/dns/inbounddnsresolverprotocol.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/protocols/dns/outbounddnsresolverprotocol.cpp</itemPath>
-        </logicalFolder>
-        <logicalFolder name="external" displayName="external" projectFiles="true">
-          <itemPath>../../../../sources/thelib/src/protocols/external/externalappprotocolhandler.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/protocols/external/externaljobtimerprotocol.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/protocols/external/externalmoduleapi.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/protocols/external/externalprotocol.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/protocols/external/externalprotocolmodule.cpp</itemPath>
         </logicalFolder>
         <logicalFolder name="http" displayName="http" projectFiles="true">
           <itemPath>../../../../sources/thelib/src/protocols/http/basehttpappprotocolhandler.cpp</itemPath>
           <itemPath>../../../../sources/thelib/src/protocols/http/basehttpprotocol.cpp</itemPath>
           <itemPath>../../../../sources/thelib/src/protocols/http/httpauthhelper.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/protocols/http/httpprotocol.cpp</itemPath>
           <itemPath>../../../../sources/thelib/src/protocols/http/inboundhttpprotocol.cpp</itemPath>
           <itemPath>../../../../sources/thelib/src/protocols/http/outboundhttpprotocol.cpp</itemPath>
         </logicalFolder>
@@ -508,34 +443,10 @@
           <itemPath>../../../../sources/thelib/src/protocols/liveflv/innetliveflvstream.cpp</itemPath>
         </logicalFolder>
         <logicalFolder name="mms" displayName="mms" projectFiles="true">
-          <itemPath>../../../../sources/thelib/src/protocols/mms/basemmsappprotocolhandler.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/protocols/mms/innetaacstream.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/protocols/mms/innetmp3stream.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/protocols/mms/mmsprotocol.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/protocols/mms/transcoder.cpp</itemPath>
-        </logicalFolder>
-        <logicalFolder name="passthrough" displayName="passthrough" projectFiles="true">
-          <itemPath>../../../../sources/thelib/src/protocols/passthrough/passthroughappprotocolhandler.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/protocols/passthrough/passthroughprotocol.cpp</itemPath>
         </logicalFolder>
         <logicalFolder name="rawhttpstream"
                        displayName="rawhttpstream"
                        projectFiles="true">
-          <itemPath>../../../../sources/thelib/src/protocols/rawhttpstream/baserawhttpstreamappprotocolhandler.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/protocols/rawhttpstream/inboundrawhttpstreamprotocol.cpp</itemPath>
-        </logicalFolder>
-        <logicalFolder name="rpc" displayName="rpc" projectFiles="true">
-          <itemPath>../../../../sources/thelib/src/protocols/rpc/baserpcappprotocolhandler.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/protocols/rpc/baserpcprotocol.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/protocols/rpc/inboundrpcprotocol.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/protocols/rpc/outboundrpcprotocol.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/protocols/rpc/rpcserializer.cpp</itemPath>
-        </logicalFolder>
-        <logicalFolder name="rtmfp" displayName="rtmfp" projectFiles="true">
-          <itemPath>../../../../sources/thelib/src/protocols/rtmfp/basertmfpappprotocolhandler.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/protocols/rtmfp/basertmfpprotocol.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/protocols/rtmfp/inboundrtmfpprotocol.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/protocols/rtmfp/outboundrtmfpprotocol.cpp</itemPath>
         </logicalFolder>
         <logicalFolder name="rtmp" displayName="rtmp" projectFiles="true">
           <logicalFolder name="messagefactories"
@@ -593,6 +504,7 @@
           <itemPath>../../../../sources/thelib/src/protocols/rtp/basertpappprotocolhandler.cpp</itemPath>
           <itemPath>../../../../sources/thelib/src/protocols/rtp/basertspappprotocolhandler.cpp</itemPath>
           <itemPath>../../../../sources/thelib/src/protocols/rtp/inboundrtpprotocol.cpp</itemPath>
+          <itemPath>../../../../sources/thelib/src/protocols/rtp/nattraversalprotocol.cpp</itemPath>
           <itemPath>../../../../sources/thelib/src/protocols/rtp/rtcpprotocol.cpp</itemPath>
           <itemPath>../../../../sources/thelib/src/protocols/rtp/rtspprotocol.cpp</itemPath>
           <itemPath>../../../../sources/thelib/src/protocols/rtp/sdp.cpp</itemPath>
@@ -633,20 +545,9 @@
         <logicalFolder name="flv" displayName="flv" projectFiles="true">
           <itemPath>../../../../sources/thelib/src/recording/flv/outfileflv.cpp</itemPath>
         </logicalFolder>
-        <logicalFolder name="ts" displayName="ts" projectFiles="true">
-          <itemPath>../../../../sources/thelib/src/recording/ts/outfilets.cpp</itemPath>
-        </logicalFolder>
+        <itemPath>../../../../sources/thelib/src/recording/baseoutrecording.cpp</itemPath>
       </logicalFolder>
       <logicalFolder name="streaming" displayName="streaming" projectFiles="true">
-        <logicalFolder name="hls" displayName="hls" projectFiles="true">
-          <itemPath>../../../../sources/thelib/src/streaming/hls/baseouthlsstream.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/streaming/hls/basetssegment.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/streaming/hls/filetssegment.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/streaming/hls/hlsplaylist.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/streaming/hls/nettssegment.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/streaming/hls/outfilehlsstream.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/streaming/hls/outnethlsstream.cpp</itemPath>
-        </logicalFolder>
         <itemPath>../../../../sources/thelib/src/streaming/baseinfilestream.cpp</itemPath>
         <itemPath>../../../../sources/thelib/src/streaming/baseinnetstream.cpp</itemPath>
         <itemPath>../../../../sources/thelib/src/streaming/baseinstream.cpp</itemPath>
@@ -654,19 +555,14 @@
         <itemPath>../../../../sources/thelib/src/streaming/baseoutnetstream.cpp</itemPath>
         <itemPath>../../../../sources/thelib/src/streaming/baseoutstream.cpp</itemPath>
         <itemPath>../../../../sources/thelib/src/streaming/basestream.cpp</itemPath>
-        <itemPath>../../../../sources/thelib/src/streaming/innetexternalstream.cpp</itemPath>
-        <itemPath>../../../../sources/thelib/src/streaming/innetpassthroughstream.cpp</itemPath>
-        <itemPath>../../../../sources/thelib/src/streaming/innetrawstream.cpp</itemPath>
         <itemPath>../../../../sources/thelib/src/streaming/nalutypes.cpp</itemPath>
-        <itemPath>../../../../sources/thelib/src/streaming/outnetpassthroughstream.cpp</itemPath>
-        <itemPath>../../../../sources/thelib/src/streaming/outnetrawstream.cpp</itemPath>
-        <itemPath>../../../../sources/thelib/src/streaming/packetqueue.cpp</itemPath>
-        <itemPath>../../../../sources/thelib/src/streaming/sink.cpp</itemPath>
         <itemPath>../../../../sources/thelib/src/streaming/streamcapabilities.cpp</itemPath>
         <itemPath>../../../../sources/thelib/src/streaming/streamsmanager.cpp</itemPath>
       </logicalFolder>
+      <logicalFolder name="utils" displayName="utils" projectFiles="true">
+        <itemPath>../../../../sources/thelib/src/utils/udpsenderprotocol.cpp</itemPath>
+      </logicalFolder>
       <logicalFolder name="vod" displayName="vod" projectFiles="true">
-        <itemPath>../../../../sources/thelib/src/vod/basevodmanager.cpp</itemPath>
       </logicalFolder>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
@@ -676,22 +572,8 @@
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
-    <Elem>../../../../sources/thelib/include/application</Elem>
-    <Elem>../../../../sources/thelib/include/configuration</Elem>
-    <Elem>../../../../sources/thelib/include/netio</Elem>
-    <Elem>../../../../sources/thelib/include/protocols</Elem>
-    <Elem>../../../../sources/thelib/src/application</Elem>
-    <Elem>../../../../sources/thelib/src/configuration</Elem>
-    <Elem>../../../../sources/thelib/src/netio</Elem>
-    <Elem>../../../../sources/thelib/src/protocols</Elem>
-    <Elem>../../../../sources/thelib/include/streaming</Elem>
-    <Elem>../../../../sources/thelib/src/streaming</Elem>
-    <Elem>../../../../sources/thelib/include/mediaformats</Elem>
-    <Elem>../../../../sources/thelib/src/mediaformats</Elem>
-    <Elem>../../../../sources/thelib/src/recording</Elem>
-    <Elem>../../../../sources/thelib/include/recording</Elem>
-    <Elem>../../../../sources/thelib/include/vod</Elem>
-    <Elem>../../../../sources/thelib/src/vod</Elem>
+    <Elem>../../../../sources/thelib/include</Elem>
+    <Elem>../../../../sources/thelib/src</Elem>
   </sourceRootList>
   <projectmakefile>Makefile.nb</projectmakefile>
   <confs>
@@ -706,31 +588,19 @@
             <pElem>/opt/local/include</pElem>
             <pElem>../../../../sources/common/include</pElem>
             <pElem>../../../../sources/thelib/include</pElem>
-            <pElem>../../../../../ffmpeg_bin/include</pElem>
           </incDir>
           <preprocessorList>
-            <Elem>CreateRTCPPacket=CreateRTCPPacket_none</Elem>
-            <Elem>FeedDataAudioMPEG4Generic=FeedDataAudioMPEG4Generic_one_by_one</Elem>
             <Elem>GLOBALLY_ACCOUNT_BYTES</Elem>
-            <Elem>HAS_LICENSE</Elem>
             <Elem>HAS_LUA</Elem>
             <Elem>HAS_MEDIA_FLV</Elem>
             <Elem>HAS_MEDIA_MKV</Elem>
             <Elem>HAS_MEDIA_MKV</Elem>
             <Elem>HAS_MEDIA_MP3</Elem>
             <Elem>HAS_MEDIA_MP4</Elem>
-            <Elem>HAS_MEDIA_NSV</Elem>
+            <Elem>HAS_MEDIA_TS</Elem>
             <Elem>HAS_PROTOCOL_CLI</Elem>
-            <Elem>HAS_PROTOCOL_EXTERNAL</Elem>
-            <Elem>HAS_PROTOCOL_HLS</Elem>
             <Elem>HAS_PROTOCOL_HTTP</Elem>
-            <Elem>HAS_PROTOCOL_HTTP2</Elem>
-            <Elem>HAS_PROTOCOL_HTTP_VER2</Elem>
             <Elem>HAS_PROTOCOL_LIVEFLV</Elem>
-            <Elem>HAS_PROTOCOL_MMS</Elem>
-            <Elem>HAS_PROTOCOL_RAWHTTPSTREAM</Elem>
-            <Elem>HAS_PROTOCOL_RPC</Elem>
-            <Elem>HAS_PROTOCOL_RTMFP</Elem>
             <Elem>HAS_PROTOCOL_RTMP</Elem>
             <Elem>HAS_PROTOCOL_RTP</Elem>
             <Elem>HAS_PROTOCOL_TS</Elem>
@@ -761,6 +631,1986 @@
           <commandLine>-L/opt/local/lib -llua -lcrypto -lssl -lfetch</commandLine>
         </linkerTool>
       </compileType>
+      <item path="../../../../sources/thelib/include/application/baseappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/application/baseclientapplication.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/application/clientapplicationmanager.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/configuration/configfile.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/configuration/module.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/basemediadocument.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/flv/flvdocument.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mediafile.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mediaframe.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp3/id3parser.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp3/mp3document.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomabst.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomafra.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomafrt.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomasrt.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomavc1.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomavcc.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomco64.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomctts.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomdata.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomdinf.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomdref.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomesds.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomftyp.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomhdlr.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomilst.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atommdhd.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atommdia.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atommeta.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atommetafield.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atommfhd.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomminf.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atommoof.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atommoov.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atommp4a.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atommvex.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atommvhd.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomnull.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomsmhd.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomstbl.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomstco.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomstsc.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomstsd.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomstss.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomstsz.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomstts.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomtfhd.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomtkhd.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomtraf.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomtrak.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomtrex.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomtrun.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomudta.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomurl.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomuuid.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomvmhd.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomwave.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/baseatom.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/boxatom.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/generateatom.sh"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/ignoredatom.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/mp4document.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/versionedatom.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/versionedboxatom.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/streammetadataresolver.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/ts/avcontext.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/ts/piddescriptor.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/ts/pidtypes.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/ts/streamdescriptors.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/ts/tsboundscheck.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/ts/tsdocument.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/ts/tsframereader.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/ts/tsframereaderinterface.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/ts/tspacketheader.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/ts/tspacketpat.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/ts/tspacketpmt.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/ts/tsparser.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/ts/tsparsereventsink.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/ts/tsstreaminfo.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/epoll/inboundnamedpipecarrier.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/epoll/iohandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/epoll/iohandlermanager.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/epoll/iohandlermanagertoken.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/epoll/iotimer.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/epoll/stdiocarrier.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/epoll/tcpacceptor.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/epoll/tcpcarrier.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/epoll/tcpconnector.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/epoll/udpcarrier.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/fdstats.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/iohandlertype.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/kqueue/inboundnamedpipecarrier.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/kqueue/iohandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/kqueue/iohandlermanager.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/kqueue/iohandlermanagertoken.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/kqueue/iotimer.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/kqueue/stdiocarrier.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/kqueue/tcpacceptor.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/kqueue/tcpcarrier.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/kqueue/tcpconnector.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/kqueue/udpcarrier.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/netio.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/select/inboundnamedpipecarrier.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/select/iohandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/select/iohandlermanager.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/select/iotimer.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/select/stdiocarrier.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/select/tcpacceptor.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/select/tcpcarrier.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/select/tcpconnector.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/select/udpcarrier.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/baseprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/baseprotocolfactory.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/cli/basecliappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/cli/http4cliprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/cli/inboundbasecliprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/cli/inboundjsoncliprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/defaultprotocolfactory.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/http/basehttpprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/http/basehttpprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/http/httpauthhelper.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/http/inboundhttpprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/http/outboundhttpprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/liveflv/baseliveflvappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/liveflv/inboundliveflvprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/liveflv/innetliveflvstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/protocolfactorymanager.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/protocolmanager.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/protocoltypes.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/amf0serializer.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/amf3serializer.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/amfserializer.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/amftypes.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/basertmpappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/basertmpprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/channel.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/header.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/header_be_ba.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/header_le_ba.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/header_le_sa.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/inboundhttp4rtmp.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/inboundrtmpprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/inboundrtmpsdiscriminatorprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/messagefactories/connectionmessagefactory.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/messagefactories/genericmessagefactory.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/messagefactories/messagefactories.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/messagefactories/somessagefactory.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/messagefactories/streammessagefactory.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/monitorrtmpprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/outboundrtmpprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/rtmpeprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/rtmpprotocolserializer.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/sharedobjects/so.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/sharedobjects/somanager.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/streaming/baseoutnetrtmpstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/streaming/infilertmpstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/streaming/innetrtmpstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/streaming/outfilertmpflvstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/streaming/outnetrtmp4rtmpstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/streaming/outnetrtmp4tsstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/streaming/rtmpstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtp/basertpappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtp/basertspappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtp/connectivity/baseconnectivity.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtp/connectivity/inboundconnectivity.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtp/connectivity/outboundconnectivity.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtp/inboundrtpprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtp/nattraversalprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtp/rtcpprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtp/rtpheader.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtp/rtspprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtp/sdp.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtp/streaming/baseoutnetrtpudpstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtp/streaming/innetrtpstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtp/streaming/outnetrtpudph264stream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/ssl/basesslprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/ssl/inboundsslprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/ssl/outboundsslprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/tcpprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/timer/basetimerprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/ts/basetsappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/ts/inboundtsprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/ts/innettsstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/ts/pidtypes.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/ts/streamdescriptors.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/ts/tsboundscheck.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/ts/tspacketheader.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/ts/tspacketpat.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/ts/tspacketpmt.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/udpprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/variant/basevariantappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/variant/basevariantprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/variant/binvariantprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/variant/jsonvariantprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/variant/xmlvariantprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/recording/baseoutrecording.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/recording/flv/outfileflv.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/streaming/baseinfilestream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/streaming/baseinnetstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/streaming/baseinstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/streaming/baseoutfilestream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/streaming/baseoutnetstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/streaming/baseoutstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/streaming/basestream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/streaming/codectypes.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/streaming/nalutypes.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/streaming/streamcapabilities.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/streaming/streamsmanager.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/streaming/streamstypes.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/utils/readyforsendinterface.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/utils/udpsenderprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/application/baseappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/application/baseclientapplication.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/application/clientapplicationmanager.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/configuration/configfile.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/configuration/module.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/basemediadocument.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/flv/flvdocument.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mediafile.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp3/id3parser.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp3/mp3document.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomabst.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomafra.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomafrt.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomasrt.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomavc1.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomavcc.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomco64.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomctts.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomdata.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomdinf.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomdref.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomesds.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomftyp.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomhdlr.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomilst.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atommdhd.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atommdia.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atommeta.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atommetafield.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atommfhd.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomminf.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atommoof.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atommoov.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atommp4a.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atommvex.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atommvhd.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomnull.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomsmhd.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomstbl.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomstco.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomstsc.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomstsd.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomstss.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomstsz.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomstts.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomtfhd.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomtkhd.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomtraf.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomtrak.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomtrex.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomtrun.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomudta.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomurl.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomuuid.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomvmhd.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomwave.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/baseatom.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/boxatom.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/generateatom.sh"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/ignoredatom.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/mp4document.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/versionedatom.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/versionedboxatom.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/streammetadataresolver.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/ts/avcontext.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/ts/streamdescriptors.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/ts/tsdocument.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/ts/tsframereader.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/ts/tspacketpat.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/ts/tspacketpmt.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/ts/tsparser.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/epoll/inboundnamedpipecarrier.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/epoll/iohandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/epoll/iohandlermanager.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/epoll/iotimer.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/epoll/stdiocarrier.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/epoll/tcpacceptor.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/epoll/tcpcarrier.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/epoll/udpcarrier.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/fdstats.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/kqueue/inboundnamedpipecarrier.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/kqueue/iohandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/kqueue/iohandlermanager.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/kqueue/iotimer.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/kqueue/stdiocarrier.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/kqueue/tcpacceptor.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/kqueue/tcpcarrier.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/kqueue/udpcarrier.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/select/inboundnamedpipecarrier.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/select/iohandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/select/iohandlermanager.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/select/iotimer.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/select/stdiocarrier.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/select/tcpacceptor.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/select/tcpcarrier.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/select/udpcarrier.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/baseprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/baseprotocolfactory.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/cli/basecliappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/cli/http4cliprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/cli/inboundbasecliprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/cli/inboundjsoncliprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/defaultprotocolfactory.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/http/basehttpappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/http/basehttpprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/http/httpauthhelper.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/http/inboundhttpprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/http/outboundhttpprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/liveflv/baseliveflvappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/liveflv/inboundliveflvprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/liveflv/innetliveflvstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/protocolfactorymanager.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/protocolmanager.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/amf0serializer.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/amf3serializer.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/basertmpappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/basertmpprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/channel.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/header_be_ba.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/header_le_ba.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/header_le_sa.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/inboundhttp4rtmp.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/inboundrtmpprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/inboundrtmpsdiscriminatorprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/messagefactories/connectionmessagefactory.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/messagefactories/genericmessagefactory.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/messagefactories/somessagefactory.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/messagefactories/streammessagefactory.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/monitorrtmpprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/outboundrtmpprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/rtmpeprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/rtmpprotocolserializer.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/sharedobjects/so.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/sharedobjects/somanager.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/streaming/baseoutnetrtmpstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/streaming/infilertmpstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/streaming/innetrtmpstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/streaming/outfilertmpflvstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/streaming/outnetrtmp4rtmpstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/streaming/outnetrtmp4tsstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/streaming/rtmpstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtp/basertpappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtp/basertspappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtp/connectivity/baseconnectivity.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtp/connectivity/inboundconnectivity.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtp/connectivity/outboundconnectivity.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtp/inboundrtpprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtp/nattraversalprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtp/rtcpprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtp/rtspprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtp/sdp.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtp/streaming/baseoutnetrtpudpstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtp/streaming/innetrtpstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtp/streaming/outnetrtpudph264stream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/ssl/basesslprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/ssl/inboundsslprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/ssl/outboundsslprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/tcpprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/timer/basetimerprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/ts/basetsappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/ts/inboundtsprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/ts/innettsstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/ts/pidtypes.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/ts/streamdescriptors.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/ts/tspacketpat.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/ts/tspacketpmt.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/udpprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/variant/basevariantappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/variant/basevariantprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/variant/binvariantprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/variant/jsonvariantprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/variant/xmlvariantprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/recording/baseoutrecording.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/recording/flv/outfileflv.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/streaming/baseinfilestream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/streaming/baseinnetstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/streaming/baseinstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/streaming/baseoutfilestream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/streaming/baseoutnetstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/streaming/baseoutstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/streaming/basestream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/streaming/nalutypes.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/streaming/streamcapabilities.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/streaming/streamsmanager.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/utils/udpsenderprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
     </conf>
     <conf name="Release" type="2">
       <toolsSet>
@@ -779,15 +2629,23 @@
             <pElem>../../../../sources/thelib/include</pElem>
           </incDir>
           <preprocessorList>
+            <Elem>GLOBALLY_ACCOUNT_BYTES</Elem>
+            <Elem>HAS_LUA</Elem>
             <Elem>HAS_MEDIA_FLV</Elem>
+            <Elem>HAS_MEDIA_MKV</Elem>
+            <Elem>HAS_MEDIA_MKV</Elem>
             <Elem>HAS_MEDIA_MP3</Elem>
             <Elem>HAS_MEDIA_MP4</Elem>
+            <Elem>HAS_MEDIA_TS</Elem>
+            <Elem>HAS_PROTOCOL_CLI</Elem>
             <Elem>HAS_PROTOCOL_HTTP</Elem>
             <Elem>HAS_PROTOCOL_LIVEFLV</Elem>
             <Elem>HAS_PROTOCOL_RTMP</Elem>
             <Elem>HAS_PROTOCOL_RTP</Elem>
             <Elem>HAS_PROTOCOL_TS</Elem>
             <Elem>HAS_PROTOCOL_VAR</Elem>
+            <Elem>HAS_SYSLOG</Elem>
+            <Elem>HAS_VOD_MANAGER</Elem>
             <Elem>LITTLE_ENDIAN_BYTE_ALIGNED</Elem>
             <Elem>NET_KQUEUE</Elem>
             <Elem>OSX</Elem>
@@ -815,6 +2673,1986 @@
           <commandLine>-L/opt/local/lib -llua -lcrypto -lssl -lfetch</commandLine>
         </linkerTool>
       </compileType>
+      <item path="../../../../sources/thelib/include/application/baseappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/application/baseclientapplication.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/application/clientapplicationmanager.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/configuration/configfile.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/configuration/module.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/basemediadocument.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/flv/flvdocument.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mediafile.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mediaframe.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp3/id3parser.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp3/mp3document.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomabst.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomafra.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomafrt.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomasrt.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomavc1.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomavcc.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomco64.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomctts.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomdata.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomdinf.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomdref.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomesds.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomftyp.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomhdlr.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomilst.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atommdhd.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atommdia.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atommeta.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atommetafield.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atommfhd.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomminf.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atommoof.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atommoov.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atommp4a.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atommvex.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atommvhd.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomnull.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomsmhd.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomstbl.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomstco.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomstsc.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomstsd.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomstss.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomstsz.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomstts.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomtfhd.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomtkhd.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomtraf.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomtrak.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomtrex.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomtrun.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomudta.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomurl.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomuuid.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomvmhd.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomwave.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/baseatom.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/boxatom.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/generateatom.sh"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/ignoredatom.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/mp4document.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/versionedatom.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/versionedboxatom.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/streammetadataresolver.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/ts/avcontext.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/ts/piddescriptor.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/ts/pidtypes.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/ts/streamdescriptors.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/ts/tsboundscheck.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/ts/tsdocument.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/ts/tsframereader.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/ts/tsframereaderinterface.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/ts/tspacketheader.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/ts/tspacketpat.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/ts/tspacketpmt.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/ts/tsparser.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/ts/tsparsereventsink.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/ts/tsstreaminfo.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/epoll/inboundnamedpipecarrier.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/epoll/iohandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/epoll/iohandlermanager.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/epoll/iohandlermanagertoken.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/epoll/iotimer.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/epoll/stdiocarrier.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/epoll/tcpacceptor.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/epoll/tcpcarrier.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/epoll/tcpconnector.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/epoll/udpcarrier.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/fdstats.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/iohandlertype.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/kqueue/inboundnamedpipecarrier.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/kqueue/iohandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/kqueue/iohandlermanager.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/kqueue/iohandlermanagertoken.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/kqueue/iotimer.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/kqueue/stdiocarrier.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/kqueue/tcpacceptor.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/kqueue/tcpcarrier.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/kqueue/tcpconnector.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/kqueue/udpcarrier.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/netio.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/select/inboundnamedpipecarrier.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/select/iohandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/select/iohandlermanager.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/select/iotimer.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/select/stdiocarrier.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/select/tcpacceptor.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/select/tcpcarrier.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/select/tcpconnector.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/netio/select/udpcarrier.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/baseprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/baseprotocolfactory.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/cli/basecliappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/cli/http4cliprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/cli/inboundbasecliprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/cli/inboundjsoncliprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/defaultprotocolfactory.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/http/basehttpprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/http/basehttpprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/http/httpauthhelper.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/http/inboundhttpprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/http/outboundhttpprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/liveflv/baseliveflvappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/liveflv/inboundliveflvprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/liveflv/innetliveflvstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/protocolfactorymanager.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/protocolmanager.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/protocoltypes.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/amf0serializer.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/amf3serializer.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/amfserializer.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/amftypes.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/basertmpappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/basertmpprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/channel.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/header.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/header_be_ba.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/header_le_ba.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/header_le_sa.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/inboundhttp4rtmp.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/inboundrtmpprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/inboundrtmpsdiscriminatorprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/messagefactories/connectionmessagefactory.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/messagefactories/genericmessagefactory.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/messagefactories/messagefactories.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/messagefactories/somessagefactory.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/messagefactories/streammessagefactory.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/monitorrtmpprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/outboundrtmpprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/rtmpeprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/rtmpprotocolserializer.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/sharedobjects/so.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/sharedobjects/somanager.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/streaming/baseoutnetrtmpstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/streaming/infilertmpstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/streaming/innetrtmpstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/streaming/outfilertmpflvstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/streaming/outnetrtmp4rtmpstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/streaming/outnetrtmp4tsstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/streaming/rtmpstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtp/basertpappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtp/basertspappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtp/connectivity/baseconnectivity.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtp/connectivity/inboundconnectivity.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtp/connectivity/outboundconnectivity.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtp/inboundrtpprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtp/nattraversalprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtp/rtcpprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtp/rtpheader.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtp/rtspprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtp/sdp.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtp/streaming/baseoutnetrtpudpstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtp/streaming/innetrtpstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtp/streaming/outnetrtpudph264stream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/ssl/basesslprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/ssl/inboundsslprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/ssl/outboundsslprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/tcpprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/timer/basetimerprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/ts/basetsappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/ts/inboundtsprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/ts/innettsstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/ts/pidtypes.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/ts/streamdescriptors.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/ts/tsboundscheck.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/ts/tspacketheader.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/ts/tspacketpat.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/ts/tspacketpmt.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/udpprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/variant/basevariantappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/variant/basevariantprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/variant/binvariantprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/variant/jsonvariantprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/variant/xmlvariantprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/recording/baseoutrecording.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/recording/flv/outfileflv.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/streaming/baseinfilestream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/streaming/baseinnetstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/streaming/baseinstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/streaming/baseoutfilestream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/streaming/baseoutnetstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/streaming/baseoutstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/streaming/basestream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/streaming/codectypes.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/streaming/nalutypes.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/streaming/streamcapabilities.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/streaming/streamsmanager.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/streaming/streamstypes.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/utils/readyforsendinterface.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/utils/udpsenderprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/application/baseappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/application/baseclientapplication.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/application/clientapplicationmanager.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/configuration/configfile.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/configuration/module.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/basemediadocument.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/flv/flvdocument.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mediafile.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp3/id3parser.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp3/mp3document.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomabst.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomafra.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomafrt.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomasrt.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomavc1.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomavcc.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomco64.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomctts.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomdata.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomdinf.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomdref.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomesds.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomftyp.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomhdlr.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomilst.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atommdhd.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atommdia.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atommeta.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atommetafield.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atommfhd.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomminf.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atommoof.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atommoov.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atommp4a.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atommvex.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atommvhd.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomnull.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomsmhd.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomstbl.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomstco.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomstsc.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomstsd.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomstss.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomstsz.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomstts.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomtfhd.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomtkhd.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomtraf.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomtrak.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomtrex.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomtrun.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomudta.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomurl.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomuuid.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomvmhd.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomwave.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/baseatom.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/boxatom.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/generateatom.sh"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/ignoredatom.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/mp4document.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/versionedatom.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/versionedboxatom.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/streammetadataresolver.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/ts/avcontext.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/ts/streamdescriptors.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/ts/tsdocument.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/ts/tsframereader.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/ts/tspacketpat.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/ts/tspacketpmt.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/ts/tsparser.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/epoll/inboundnamedpipecarrier.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/epoll/iohandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/epoll/iohandlermanager.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/epoll/iotimer.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/epoll/stdiocarrier.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/epoll/tcpacceptor.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/epoll/tcpcarrier.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/epoll/udpcarrier.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/fdstats.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/kqueue/inboundnamedpipecarrier.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/kqueue/iohandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/kqueue/iohandlermanager.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/kqueue/iotimer.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/kqueue/stdiocarrier.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/kqueue/tcpacceptor.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/kqueue/tcpcarrier.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/kqueue/udpcarrier.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/select/inboundnamedpipecarrier.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/select/iohandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/select/iohandlermanager.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/select/iotimer.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/select/stdiocarrier.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/select/tcpacceptor.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/select/tcpcarrier.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/netio/select/udpcarrier.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/baseprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/baseprotocolfactory.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/cli/basecliappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/cli/http4cliprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/cli/inboundbasecliprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/cli/inboundjsoncliprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/defaultprotocolfactory.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/http/basehttpappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/http/basehttpprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/http/httpauthhelper.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/http/inboundhttpprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/http/outboundhttpprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/liveflv/baseliveflvappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/liveflv/inboundliveflvprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/liveflv/innetliveflvstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/protocolfactorymanager.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/protocolmanager.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/amf0serializer.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/amf3serializer.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/basertmpappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/basertmpprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/channel.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/header_be_ba.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/header_le_ba.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/header_le_sa.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/inboundhttp4rtmp.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/inboundrtmpprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/inboundrtmpsdiscriminatorprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/messagefactories/connectionmessagefactory.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/messagefactories/genericmessagefactory.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/messagefactories/somessagefactory.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/messagefactories/streammessagefactory.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/monitorrtmpprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/outboundrtmpprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/rtmpeprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/rtmpprotocolserializer.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/sharedobjects/so.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/sharedobjects/somanager.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/streaming/baseoutnetrtmpstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/streaming/infilertmpstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/streaming/innetrtmpstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/streaming/outfilertmpflvstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/streaming/outnetrtmp4rtmpstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/streaming/outnetrtmp4tsstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/streaming/rtmpstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtp/basertpappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtp/basertspappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtp/connectivity/baseconnectivity.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtp/connectivity/inboundconnectivity.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtp/connectivity/outboundconnectivity.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtp/inboundrtpprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtp/nattraversalprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtp/rtcpprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtp/rtspprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtp/sdp.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtp/streaming/baseoutnetrtpudpstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtp/streaming/innetrtpstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtp/streaming/outnetrtpudph264stream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/ssl/basesslprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/ssl/inboundsslprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/ssl/outboundsslprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/tcpprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/timer/basetimerprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/ts/basetsappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/ts/inboundtsprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/ts/innettsstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/ts/pidtypes.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/ts/streamdescriptors.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/ts/tspacketpat.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/ts/tspacketpmt.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/udpprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/variant/basevariantappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/variant/basevariantprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/variant/binvariantprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/variant/jsonvariantprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/variant/xmlvariantprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/recording/baseoutrecording.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/recording/flv/outfileflv.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/streaming/baseinfilestream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/streaming/baseinnetstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/streaming/baseinstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/streaming/baseoutfilestream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/streaming/baseoutnetstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/streaming/baseoutstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/streaming/basestream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/streaming/nalutypes.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/streaming/streamcapabilities.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/streaming/streamsmanager.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/utils/udpsenderprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
     </conf>
   </confs>
 </configurationDescriptor>

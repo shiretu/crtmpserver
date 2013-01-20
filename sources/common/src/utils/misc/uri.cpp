@@ -85,7 +85,6 @@ bool parseURI(string stringUri, URI &uri) {
 		_schemeToPort["rtsp"] = 554;
 		_schemeToPort["rtmp"] = 1935;
 		_schemeToPort["rtmpe"] = 1935;
-		_schemeToPort["mms"] = 1755;
 	}
 	if (MAP_HAS1(_schemeToPort, scheme)) {
 		port = _schemeToPort[scheme];
@@ -275,6 +274,31 @@ bool parseURI(string stringUri, URI &uri) {
 	uri.parameters(parameters);
 
 	return true;
+}
+
+string URI::baseURI() {
+	if ((scheme() == "")
+			|| (host() == "")
+			|| (documentPath() == ""))
+		return "";
+	string result = "";
+	result = scheme() + "://";
+	if ((userName() != "") && (password() != "")) {
+		result += userName() + ":" + password() + "@";
+	}
+	result += host();
+	if (portSpecified())
+		result += format(":%"PRIu16, port());
+	result += documentPath();
+	return result;
+}
+
+string URI::derivedURI(string relativePath, bool includeParams) {
+	string result = baseURI() + relativePath;
+	if ((fullParameters() != "") && (includeParams)) {
+		result += fullParameters();
+	}
+	return result;
 }
 
 bool URI::FromVariant(Variant & variant, URI &uri) {

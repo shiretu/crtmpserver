@@ -1,17 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configurationDescriptor version="80">
+<configurationDescriptor version="88">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
-    <logicalFolder name="HeaderFiles"
-                   displayName="Header Files"
-                   projectFiles="true">
+    <logicalFolder name="include" displayName="include" projectFiles="true">
       <itemPath>../../../../sources/applications/admin/include/admin.h</itemPath>
       <itemPath>../../../../sources/applications/admin/include/adminapplication.h</itemPath>
       <itemPath>../../../../sources/applications/admin/include/cliappprotocolhandler.h</itemPath>
       <itemPath>../../../../sources/applications/admin/include/rtmpappprotocolhandler.h</itemPath>
     </logicalFolder>
-    <logicalFolder name="SourceFiles"
-                   displayName="Source Files"
-                   projectFiles="true">
+    <logicalFolder name="src" displayName="src" projectFiles="true">
       <itemPath>../../../../sources/applications/admin/src/admin.cpp</itemPath>
       <itemPath>../../../../sources/applications/admin/src/adminapplication.cpp</itemPath>
       <itemPath>../../../../sources/applications/admin/src/cliappprotocolhandler.cpp</itemPath>
@@ -26,6 +22,8 @@
   <sourceRootList>
     <Elem>../../../sources/applications/admin/include</Elem>
     <Elem>../../../sources/applications/admin/src</Elem>
+    <Elem>../../../../sources/applications/admin/include</Elem>
+    <Elem>../../../../sources/applications/admin/src</Elem>
   </sourceRootList>
   <projectmakefile>Makefile.nb</projectmakefile>
   <confs>
@@ -79,6 +77,46 @@
           </linkerLibItems>
         </linkerTool>
       </compileType>
+      <item path="../../../../sources/applications/admin/include/admin.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/admin/include/adminapplication.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/admin/include/cliappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/admin/include/rtmpappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/admin/src/admin.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/admin/src/adminapplication.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/admin/src/cliappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/admin/src/rtmpappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
     </conf>
     <conf name="Release" type="2">
       <toolsSet>
@@ -135,6 +173,46 @@
           </linkerLibItems>
         </linkerTool>
       </compileType>
+      <item path="../../../../sources/applications/admin/include/admin.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/admin/include/adminapplication.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/admin/include/cliappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/admin/include/rtmpappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/admin/src/admin.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/admin/src/adminapplication.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/admin/src/cliappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/applications/admin/src/rtmpappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
     </conf>
   </confs>
 </configurationDescriptor>

@@ -174,7 +174,7 @@ public:
 
 	inline void UpdateSpeeds() {
 		double now;
-		GETCLOCKS(now);
+		GETCLOCKS(now, double);
 		uint64_t nowInBytes = InBytes();
 		uint64_t nowOutBytes = OutBytes();
 		if (_lastUpdateSpeedsTime > 0) {

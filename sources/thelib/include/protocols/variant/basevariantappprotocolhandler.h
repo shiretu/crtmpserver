@@ -62,6 +62,11 @@ public:
 	bool Send(string url, Variant &variant,
 			VariantSerializer serializer = VariantSerializer_XML);
 
+	//opens an OUTBOUNDHTTPXMLVARIANT or an OUTBOUNDHTTPBINVARIANT
+	//and sends the variant (with optional client certificate setting)
+	bool Send(string url, string caFilename, string certificate, string key,
+			Variant &variant, VariantSerializer serializer = VariantSerializer_XML);
+
 	//used internally
 	static bool SignalProtocolCreated(BaseProtocol *pProtocol, Variant &parameters);
 	virtual void ConnectionFailed(Variant &parameters);

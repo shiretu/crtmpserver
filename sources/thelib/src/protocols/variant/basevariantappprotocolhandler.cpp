@@ -143,6 +143,31 @@ bool BaseVariantAppProtocolHandler::Send(string url, Variant &variant,
 	return true;
 }
 
+bool BaseVariantAppProtocolHandler::Send(string url, string serverCertificate, string certificate,
+		string key, Variant &variant, VariantSerializer serializer) {
+	//1. Build the parameters
+	Variant &parameters = GetScaffold(url);
+	if (parameters != V_MAP) {
+		FATAL("Unable to get parameters scaffold");
+		return false;
+	}
+	parameters["payload"] = variant;
+	parameters["serverCert"] = serverCertificate;
+	parameters[CONF_SSL_KEY] = key;
+	parameters[CONF_SSL_CERT] = certificate;
+
+	//2. Start the HTTP request
+	if (!TCPConnector<BaseVariantAppProtocolHandler>::Connect(parameters["ip"],
+			parameters["port"],
+			GetTransport(serializer, true, parameters["isSsl"]),
+			parameters)) {
+		FATAL("Unable to open connection");
+		return false;
+	}
+
+	return true;
+}
+
 bool BaseVariantAppProtocolHandler::SignalProtocolCreated(BaseProtocol *pProtocol, Variant &parameters) {
 	//1. Get the application
 	BaseClientApplication *pApplication = ClientApplicationManager::FindAppByName(

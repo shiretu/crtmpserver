@@ -25,6 +25,7 @@
 #include "streaming/baseinfilestream.h"
 #include "protocols/rtmp/header.h"
 #include "protocols/rtmp/amf0serializer.h"
+#include "mediaformats/readers/streammetadataresolver.h"
 
 
 class BaseRTMPProtocol;
@@ -38,7 +39,7 @@ private:
 	public:
 		BaseBuilder();
 		virtual ~BaseBuilder();
-		virtual bool BuildFrame(FileClass *pFile, MediaFrame &mediaFrame,
+		virtual bool BuildFrame(MediaFile *pFile, MediaFrame &mediaFrame,
 				IOBuffer &buffer) = 0;
 	};
 
@@ -50,7 +51,7 @@ private:
 	public:
 		AVCBuilder();
 		virtual ~AVCBuilder();
-		virtual bool BuildFrame(FileClass *pFile, MediaFrame &mediaFrame,
+		virtual bool BuildFrame(MediaFile *pFile, MediaFrame &mediaFrame,
 				IOBuffer &buffer);
 	};
 
@@ -61,7 +62,7 @@ private:
 	public:
 		AACBuilder();
 		virtual ~AACBuilder();
-		virtual bool BuildFrame(FileClass *pFile, MediaFrame &mediaFrame,
+		virtual bool BuildFrame(MediaFile *pFile, MediaFrame &mediaFrame,
 				IOBuffer &buffer);
 	};
 
@@ -71,7 +72,7 @@ private:
 	public:
 		MP3Builder();
 		virtual ~MP3Builder();
-		virtual bool BuildFrame(FileClass *pFile, MediaFrame &mediaFrame,
+		virtual bool BuildFrame(MediaFile *pFile, MediaFrame &mediaFrame,
 				IOBuffer &buffer);
 	};
 
@@ -79,7 +80,7 @@ private:
 	public:
 		PassThroughBuilder();
 		virtual ~PassThroughBuilder();
-		virtual bool BuildFrame(FileClass *pFile, MediaFrame &mediaFrame,
+		virtual bool BuildFrame(MediaFile *pFile, MediaFrame &mediaFrame,
 				IOBuffer &buffer);
 	};
 private:
@@ -92,39 +93,33 @@ private:
 	Variant _metadataParameters;
 	Variant _tempVariant;
 protected:
-	Variant _completeMetadata;
+	Metadata _completeMetadata;
 	uint32_t _chunkSize;
 public:
-	InFileRTMPStream(BaseRTMPProtocol *pProtocol, StreamsManager *pStreamsManager,
-			string name);
+	InFileRTMPStream(BaseProtocol *pProtocol,uint64_t type, string name);
 	virtual ~InFileRTMPStream();
 
-#ifdef HAS_VOD_MANAGER
-	virtual bool Initialize(Variant &medatada, int32_t clientSideBufferLength,
-			bool hasTimer);
-#else /* HAS_VOD_MANAGER */
-	virtual bool Initialize(int32_t clientSideBufferLength, bool hasTimer);
-#endif /* HAS_VOD_MANAGER */
-
+	virtual bool Initialize(Metadata &metadata, TimerType timerType,
+			uint32_t granularity);
 	virtual bool FeedData(uint8_t *pData, uint32_t dataLength,
 			uint32_t processedLength, uint32_t totalLength,
-			double absoluteTimestamp, bool isAudio);
+			double pts, double dts, bool isAudio);
 
 	virtual bool IsCompatibleWithType(uint64_t type);
 
 	uint32_t GetChunkSize();
 
 	static InFileRTMPStream *GetInstance(BaseRTMPProtocol *pRTMPProtocol,
-			StreamsManager *pStreamsManager, Variant &metadata);
+			StreamsManager *pStreamsManager, Metadata &metadata);
 
-	void SetCompleteMetadata(Variant &completeMetadata);
-	Variant GetCompleteMetadata();
+	void SetCompleteMetadata(Metadata &completeMetadata);
+	Metadata &GetCompleteMetadata();
 	virtual void SignalOutStreamAttached(BaseOutStream *pOutStream);
 	virtual void SignalOutStreamDetached(BaseOutStream *pOutStream);
 
-	virtual bool BuildFrame(FileClass *pFile, MediaFrame &mediaFrame,
+	virtual bool BuildFrame(MediaFile *pFile, MediaFrame &mediaFrame,
 			IOBuffer &buffer);
-	virtual bool FeedMetaData(FileClass *pFile, MediaFrame &mediaFrame);
+	virtual bool FeedMetaData(MediaFile *pFile, MediaFrame &mediaFrame);
 
 };
 

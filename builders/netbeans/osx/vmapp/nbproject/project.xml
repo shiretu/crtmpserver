@@ -18,9 +18,8 @@
                 <sourceRootElem>../../../sources/applications/luavmapp/src</sourceRootElem>
                 <sourceRootElem>../../../../sources/applications/luavmapp/include/vm</sourceRootElem>
                 <sourceRootElem>../../../../sources/applications/luavmapp/src/vm</sourceRootElem>
-                <sourceRootElem>../../../../sources/applications/vmapp/include/vm</sourceRootElem>
-                <sourceRootElem>../../../../sources/applications/vmapp/src/vm</sourceRootElem>
-                <sourceRootElem>../../../../sources/applications/vmapp/include/api</sourceRootElem>
+                <sourceRootElem>../../../../sources/applications/vmapp/include</sourceRootElem>
+                <sourceRootElem>../../../../sources/applications/vmapp/src</sourceRootElem>
             </sourceRootList>
             <confList>
                 <confElem>

@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -19,10 +19,12 @@
 
 #ifdef HAS_PROTOCOL_RTP
 #include "protocols/rtp/nattraversalprotocol.h"
+#include "protocols/rtp/connectivity/outboundconnectivity.h"
 
 NATTraversalProtocol::NATTraversalProtocol()
 : BaseProtocol(PT_RTP_NAT_TRAVERSAL) {
 	_pOutboundAddress = NULL;
+	_pConnectivity = NULL;
 }
 
 NATTraversalProtocol::~NATTraversalProtocol() {
@@ -64,7 +66,6 @@ bool NATTraversalProtocol::SignalInputData(IOBuffer &buffer, sockaddr_in *pPeerA
 				STR(ipAddress),
 				ENTOHS(_pOutboundAddress->sin_port));
 	} else {
-
 		INFO("The client is behind firewall: %s:%"PRIu16" -> %s:%"PRIu16,
 				STR(ipAddress),
 				ENTOHS(_pOutboundAddress->sin_port),
@@ -78,6 +79,19 @@ bool NATTraversalProtocol::SignalInputData(IOBuffer &buffer, sockaddr_in *pPeerA
 
 void NATTraversalProtocol::SetOutboundAddress(sockaddr_in *pOutboundAddress) {
 	_pOutboundAddress = pOutboundAddress;
+}
+
+void NATTraversalProtocol::SetOutboundConnectivity(OutboundConnectivity *pConnectivity) {
+	_pConnectivity = pConnectivity;
+}
+
+void NATTraversalProtocol::ResetOutboundConnectivity() {
+	_pConnectivity = NULL;
+}
+
+void NATTraversalProtocol::ReadyForSend() {
+	if (_pConnectivity != NULL)
+		_pConnectivity->ReadyForSend();
 }
 
 #endif /* HAS_PROTOCOL_RTP */

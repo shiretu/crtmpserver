@@ -915,7 +915,7 @@ void CommonTestsSuite::test_ParseURL() {
 
 void CommonTestsSuite::test_setFdOptions() {
 	InitNetworking();
-	SOCKET fd = socket(AF_INET, SOCK_STREAM, 0);
+	SOCKET fd = socket(AF_INET, SOCK_STREAM, 0); //NOINHERIT
 	TS_ASSERT(fd > 0);
 	TS_ASSERT(setFdNoSIGPIPE(fd));
 	TS_ASSERT(setFdNonBlock(fd));
@@ -924,7 +924,7 @@ void CommonTestsSuite::test_setFdOptions() {
 	TS_ASSERT(setFdReuseAddress(fd));
 	CLOSE_SOCKET(fd);
 	fd = (SOCKET) - 1;
-	fd = socket(AF_INET, SOCK_STREAM, 0);
+	fd = socket(AF_INET, SOCK_STREAM, 0); //NOINHERIT
 	TS_ASSERT(fd > 0);
 	TS_ASSERT(setFdOptions(fd, false));
 	CLOSE_SOCKET(fd);

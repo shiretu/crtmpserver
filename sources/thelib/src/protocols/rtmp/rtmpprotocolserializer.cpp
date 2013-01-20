@@ -330,6 +330,18 @@ bool RTMPProtocolSerializer::SerializeUsrCtrl(IOBuffer &buffer, Variant message)
 			}
 			return true;
 		}
+		case RM_USRCTRL_TYPE_STREAM_SET_BUFFER_LENGTH:
+		{
+			if (!_amf0.WriteInt32(buffer, message[RM_USRCTRL_STREAMID], false)) {
+				FATAL("Unable to write stream id from user control message");
+				return false;
+			}
+			if (!_amf0.WriteInt32(buffer, message[RM_USRCTRL_BUFFLEN], false)) {
+				FATAL("Unable to write stream id from user control message");
+				return false;
+			}
+			return true;
+		}
 		case RM_USRCTRL_TYPE_PING_RESPONSE:
 		{
 			if (!_amf0.WriteInt32(buffer, message[RM_USRCTRL_PONG], false)) {

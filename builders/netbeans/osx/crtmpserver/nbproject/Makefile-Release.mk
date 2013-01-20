@@ -22,6 +22,7 @@ AS=as
 
 # Macros
 CND_PLATFORM=GNU-MacOSX
+CND_DLIB_EXT=dylib
 CND_CONF=Release
 CND_DISTDIR=dist
 CND_BUILDDIR=build
@@ -63,7 +64,7 @@ LDLIBSOPTIONS=-L../common/dist/Release/GNU-MacOSX -lcommon -L../thelib/../Releas
 
 ../${CND_CONF}/${CND_PLATFORM}/rtmpserver: ${OBJECTFILES}
 	${MKDIR} -p ../${CND_CONF}/${CND_PLATFORM}
-	${LINK.cc} -L/opt/local/lib -llua -o ../${CND_CONF}/${CND_PLATFORM}/rtmpserver ${OBJECTFILES} ${LDLIBSOPTIONS} 
+	${LINK.cc} -o ../${CND_CONF}/${CND_PLATFORM}/rtmpserver ${OBJECTFILES} ${LDLIBSOPTIONS} -L/opt/local/lib -llua
 
 ${OBJECTDIR}/_ext/802483657/crtmpserver.o: ../../../../sources/crtmpserver/src/crtmpserver.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/802483657

@@ -38,6 +38,7 @@ public:
 	virtual bool SignalOutputData();
 	virtual bool OnEvent(struct epoll_event &eventWrapper);
 	bool EnqueueForTimeEvent(uint32_t seconds);
+	bool EnqueueForHighGranularityTimeEvent(uint32_t milliseconds);
 	virtual operator string();
 	virtual void GetStats(Variant &info, uint32_t namespaceId = 0);
 };

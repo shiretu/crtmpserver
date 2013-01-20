@@ -18,13 +18,11 @@
  */
 
 #ifdef HAS_PROTOCOL_RTMP
-#include "protocols/rtmp/basertmpprotocol.h"
 #include "protocols/rtmp/streaming/rtmpstream.h"
 #include "streaming/streamstypes.h"
 
-RTMPStream::RTMPStream(BaseRTMPProtocol *pProtocol,
-		StreamsManager *pStreamsManager, uint32_t rtmpStreamId)
-: BaseStream(pProtocol, pStreamsManager, ST_NEUTRAL_RTMP, "") {
+RTMPStream::RTMPStream(BaseProtocol *pProtocol, uint32_t rtmpStreamId)
+: BaseStream(pProtocol, ST_NEUTRAL_RTMP, "") {
 	_rtmpStreamId = rtmpStreamId;
 	_clientSideBufer = 0;
 }
@@ -33,7 +31,6 @@ RTMPStream::~RTMPStream() {
 }
 
 StreamCapabilities * RTMPStream::GetCapabilities() {
-	ASSERT("Operation not supported");
 	return NULL;
 }
 
@@ -45,7 +42,7 @@ uint32_t RTMPStream::GetClientSideBuffer() {
 	return _clientSideBufer;
 }
 
-bool RTMPStream::Play(double absoluteTimestamp, double length) {
+bool RTMPStream::Play(double dts, double length) {
 	ASSERT("Operation not supported");
 	return false;
 }
@@ -60,7 +57,7 @@ bool RTMPStream::Resume() {
 	return false;
 }
 
-bool RTMPStream::Seek(double absoluteTimestamp) {
+bool RTMPStream::Seek(double dts) {
 	ASSERT("Operation not supported");
 	return false;
 }
@@ -70,7 +67,7 @@ bool RTMPStream::Stop() {
 	return false;
 }
 
-bool RTMPStream::SignalPlay(double &absoluteTimestamp, double &length) {
+bool RTMPStream::SignalPlay(double &dts, double &length) {
 	ASSERT("Operation not supported");
 	return false;
 }
@@ -85,7 +82,7 @@ bool RTMPStream::SignalResume() {
 	return false;
 }
 
-bool RTMPStream::SignalSeek(double &absoluteTimestamp) {
+bool RTMPStream::SignalSeek(double &dts) {
 	ASSERT("Operation not supported");
 	return false;
 }
@@ -97,7 +94,7 @@ bool RTMPStream::SignalStop() {
 
 bool RTMPStream::FeedData(uint8_t *pData, uint32_t dataLength,
 		uint32_t processedLength, uint32_t totalLength,
-		double absoluteTimestamp, bool isAudio) {
+		double pts, double dts, bool isAudio) {
 	ASSERT("Operation not supported");
 	return false;
 }

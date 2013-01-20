@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configurationDescriptor version="80">
+<configurationDescriptor version="88">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
-    <logicalFolder name="HeaderFiles"
-                   displayName="Header Files"
-                   projectFiles="true">
+    <logicalFolder name="include" displayName="include" projectFiles="true">
       <logicalFolder name="platform" displayName="platform" projectFiles="true">
         <logicalFolder name="android" displayName="android" projectFiles="true">
           <itemPath>../../../../sources/common/include/platform/android/androidplatform.h</itemPath>
@@ -57,7 +55,6 @@
           <itemPath>../../../../sources/common/include/utils/logging/fileloglocation.h</itemPath>
           <itemPath>../../../../sources/common/include/utils/logging/formatter.h</itemPath>
           <itemPath>../../../../sources/common/include/utils/logging/logcatloglocation.h</itemPath>
-          <itemPath>../../../../sources/common/include/utils/logging/logeventfactory.h</itemPath>
           <itemPath>../../../../sources/common/include/utils/logging/logger.h</itemPath>
           <itemPath>../../../../sources/common/include/utils/logging/logging.h</itemPath>
           <itemPath>../../../../sources/common/include/utils/logging/syslogloglocation.h</itemPath>
@@ -72,8 +69,6 @@
           <itemPath>../../../../sources/common/include/utils/misc/crypto.h</itemPath>
           <itemPath>../../../../sources/common/include/utils/misc/dhgroups.h</itemPath>
           <itemPath>../../../../sources/common/include/utils/misc/file.h</itemPath>
-          <itemPath>../../../../sources/common/include/utils/misc/license.h</itemPath>
-          <itemPath>../../../../sources/common/include/utils/misc/licensehw.h</itemPath>
           <itemPath>../../../../sources/common/include/utils/misc/linkedlist.h</itemPath>
           <itemPath>../../../../sources/common/include/utils/misc/misc.h</itemPath>
           <itemPath>../../../../sources/common/include/utils/misc/mmapfile.h</itemPath>
@@ -82,50 +77,38 @@
           <itemPath>../../../../sources/common/include/utils/misc/variant.h</itemPath>
           <itemPath>../../../../sources/common/include/utils/misc/variantmap.h</itemPath>
         </logicalFolder>
-        <logicalFolder name="f1" displayName="tinyxml" projectFiles="true">
-          <itemPath>../../../../3rdparty/tinyxml/tinyxml.h</itemPath>
-        </logicalFolder>
         <itemPath>../../../../sources/common/include/utils/utils.h</itemPath>
       </logicalFolder>
       <itemPath>../../../../sources/common/include/common.h</itemPath>
       <itemPath>../../../../sources/common/include/defines.h</itemPath>
+      <itemPath>../../../../sources/common/include/version.h</itemPath>
     </logicalFolder>
-    <logicalFolder name="SourceFiles"
-                   displayName="Source Files"
-                   projectFiles="true">
+    <logicalFolder name="src" displayName="src" projectFiles="true">
       <logicalFolder name="platform" displayName="platform" projectFiles="true">
         <logicalFolder name="android" displayName="android" projectFiles="true">
           <itemPath>../../../../sources/common/src/platform/android/androidplatform.cpp</itemPath>
-          <itemPath>../../../../sources/common/src/platform/android/platformlicenseandroid.cpp</itemPath>
           <itemPath>../../../../sources/common/src/platform/android/timegm.cpp</itemPath>
         </logicalFolder>
         <logicalFolder name="dfreebsd" displayName="dfreebsd" projectFiles="true">
           <itemPath>../../../../sources/common/src/platform/dfreebsd/dfreebsdplatform.cpp</itemPath>
-          <itemPath>../../../../sources/common/src/platform/dfreebsd/platformlicensedfreebsd.cpp</itemPath>
         </logicalFolder>
         <logicalFolder name="freebsd" displayName="freebsd" projectFiles="true">
           <itemPath>../../../../sources/common/src/platform/freebsd/freebsdplatform.cpp</itemPath>
-          <itemPath>../../../../sources/common/src/platform/freebsd/platformlicensefreebsd.cpp</itemPath>
         </logicalFolder>
         <logicalFolder name="linux" displayName="linux" projectFiles="true">
           <itemPath>../../../../sources/common/src/platform/linux/linuxplatform.cpp</itemPath>
-          <itemPath>../../../../sources/common/src/platform/linux/platformlicenselinux.cpp</itemPath>
         </logicalFolder>
         <logicalFolder name="openbsd" displayName="openbsd" projectFiles="true">
           <itemPath>../../../../sources/common/src/platform/openbsd/openbsdplatform.cpp</itemPath>
-          <itemPath>../../../../sources/common/src/platform/openbsd/platformlicenseopenbsd.cpp</itemPath>
         </logicalFolder>
         <logicalFolder name="osx" displayName="osx" projectFiles="true">
           <itemPath>../../../../sources/common/src/platform/osx/osxplatform.cpp</itemPath>
-          <itemPath>../../../../sources/common/src/platform/osx/platformlicenseosx.cpp</itemPath>
         </logicalFolder>
         <logicalFolder name="solaris" displayName="solaris" projectFiles="true">
-          <itemPath>../../../../sources/common/src/platform/solaris/platformlicensesolaris.cpp</itemPath>
           <itemPath>../../../../sources/common/src/platform/solaris/solarisplatform.cpp</itemPath>
           <itemPath>../../../../sources/common/src/platform/solaris/timegm.cpp</itemPath>
         </logicalFolder>
         <logicalFolder name="windows" displayName="windows" projectFiles="true">
-          <itemPath>../../../../sources/common/src/platform/windows/platformlicensewin32.cpp</itemPath>
           <itemPath>../../../../sources/common/src/platform/windows/strncasecmp.cpp</itemPath>
           <itemPath>../../../../sources/common/src/platform/windows/strptime.cpp</itemPath>
           <itemPath>../../../../sources/common/src/platform/windows/timegm.cpp</itemPath>
@@ -143,7 +126,6 @@
           <itemPath>../../../../sources/common/src/utils/logging/fileloglocation.cpp</itemPath>
           <itemPath>../../../../sources/common/src/utils/logging/formatter.cpp</itemPath>
           <itemPath>../../../../sources/common/src/utils/logging/logcatloglocation.cpp</itemPath>
-          <itemPath>../../../../sources/common/src/utils/logging/logeventfactory.cpp</itemPath>
           <itemPath>../../../../sources/common/src/utils/logging/logger.cpp</itemPath>
           <itemPath>../../../../sources/common/src/utils/logging/syslogloglocation.cpp</itemPath>
         </logicalFolder>
@@ -156,17 +138,10 @@
         <logicalFolder name="misc" displayName="misc" projectFiles="true">
           <itemPath>../../../../sources/common/src/utils/misc/crypto.cpp</itemPath>
           <itemPath>../../../../sources/common/src/utils/misc/file.cpp</itemPath>
-          <itemPath>../../../../sources/common/src/utils/misc/license.cpp</itemPath>
-          <itemPath>../../../../sources/common/src/utils/misc/licensehw.cpp</itemPath>
           <itemPath>../../../../sources/common/src/utils/misc/mmapfile.cpp</itemPath>
           <itemPath>../../../../sources/common/src/utils/misc/timersmanager.cpp</itemPath>
           <itemPath>../../../../sources/common/src/utils/misc/uri.cpp</itemPath>
           <itemPath>../../../../sources/common/src/utils/misc/variant.cpp</itemPath>
-        </logicalFolder>
-        <logicalFolder name="f1" displayName="tinyxml" projectFiles="true">
-          <itemPath>../../../../3rdparty/tinyxml/tinyxml.cpp</itemPath>
-          <itemPath>../../../../3rdparty/tinyxml/tinyxmlerror.cpp</itemPath>
-          <itemPath>../../../../3rdparty/tinyxml/tinyxmlparser.cpp</itemPath>
         </logicalFolder>
       </logicalFolder>
     </logicalFolder>
@@ -177,11 +152,8 @@
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
-    <Elem>../../../../sources/common/include/platform</Elem>
-    <Elem>../../../../sources/common/include/utils</Elem>
-    <Elem>../../../../sources/common/src/platform</Elem>
-    <Elem>../../../../sources/common/src/utils</Elem>
     <Elem>../../../../sources/common/include</Elem>
+    <Elem>../../../../sources/common/src</Elem>
   </sourceRootList>
   <projectmakefile>Makefile.nb</projectmakefile>
   <confs>
@@ -209,6 +181,396 @@
           </preprocessorList>
         </ccTool>
       </compileType>
+      <item path="../../../../sources/common/include/common.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/defines.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/android/androidplatform.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/android/max.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/baseplatform.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/dfreebsd/dfreebsdplatform.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/dfreebsd/max.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/endianess/big_endian_byte_aligned.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/endianess/big_endian_short_aligned.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/endianess/endianness.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/endianess/little_endian_byte_aligned.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/endianess/little_endian_short_aligned.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/freebsd/freebsdplatform.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/freebsd/max.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/linux/linuxplatform.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/linux/max.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/openbsd/max.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/openbsd/openbsdplatform.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/osx/osxplatform.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/platform.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/solaris/solarisplatform.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/windows/max.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/windows/win32platform.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/buffering/bitarray.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/buffering/buffering.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/buffering/iobuffer.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/logging/baseloglocation.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/logging/consoleloglocation.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/logging/fileloglocation.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/logging/formatter.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/logging/logcatloglocation.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/logging/logger.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/logging/logging.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/logging/syslogloglocation.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/lua/luautils.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/mempool/mempool.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/misc/crypto.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/misc/dhgroups.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/misc/file.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/misc/linkedlist.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/misc/misc.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/misc/mmapfile.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/misc/timersmanager.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/misc/uri.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/misc/variant.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/misc/variantmap.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/utils.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/version.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/platform/android/androidplatform.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/platform/android/timegm.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/platform/baseplatform.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/platform/dfreebsd/dfreebsdplatform.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/platform/freebsd/freebsdplatform.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/platform/linux/linuxplatform.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/platform/openbsd/openbsdplatform.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/platform/osx/osxplatform.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/platform/solaris/solarisplatform.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/platform/solaris/timegm.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/platform/windows/strncasecmp.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/platform/windows/strptime.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/platform/windows/timegm.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/platform/windows/win32platform.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/buffering/iobuffer.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/logging/baseloglocation.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/logging/consoleloglocation.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/logging/fileloglocation.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/logging/formatter.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/logging/logcatloglocation.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/logging/logger.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/logging/syslogloglocation.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/lua/luautils.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/mempool/mempool.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/misc/crypto.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/misc/file.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/misc/mmapfile.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/misc/timersmanager.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/misc/uri.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/misc/variant.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
     </conf>
     <conf name="Release" type="2">
       <toolsSet>
@@ -238,6 +600,396 @@
           <developmentMode>5</developmentMode>
         </fortranCompilerTool>
       </compileType>
+      <item path="../../../../sources/common/include/common.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/defines.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/android/androidplatform.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/android/max.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/baseplatform.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/dfreebsd/dfreebsdplatform.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/dfreebsd/max.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/endianess/big_endian_byte_aligned.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/endianess/big_endian_short_aligned.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/endianess/endianness.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/endianess/little_endian_byte_aligned.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/endianess/little_endian_short_aligned.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/freebsd/freebsdplatform.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/freebsd/max.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/linux/linuxplatform.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/linux/max.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/openbsd/max.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/openbsd/openbsdplatform.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/osx/osxplatform.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/platform.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/solaris/solarisplatform.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/windows/max.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/platform/windows/win32platform.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/buffering/bitarray.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/buffering/buffering.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/buffering/iobuffer.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/logging/baseloglocation.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/logging/consoleloglocation.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/logging/fileloglocation.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/logging/formatter.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/logging/logcatloglocation.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/logging/logger.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/logging/logging.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/logging/syslogloglocation.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/lua/luautils.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/mempool/mempool.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/misc/crypto.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/misc/dhgroups.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/misc/file.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/misc/linkedlist.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/misc/misc.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/misc/mmapfile.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/misc/timersmanager.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/misc/uri.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/misc/variant.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/misc/variantmap.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/utils/utils.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/include/version.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/platform/android/androidplatform.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/platform/android/timegm.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/platform/baseplatform.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/platform/dfreebsd/dfreebsdplatform.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/platform/freebsd/freebsdplatform.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/platform/linux/linuxplatform.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/platform/openbsd/openbsdplatform.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/platform/osx/osxplatform.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/platform/solaris/solarisplatform.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/platform/solaris/timegm.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/platform/windows/strncasecmp.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/platform/windows/strptime.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/platform/windows/timegm.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/platform/windows/win32platform.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/buffering/iobuffer.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/logging/baseloglocation.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/logging/consoleloglocation.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/logging/fileloglocation.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/logging/formatter.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/logging/logcatloglocation.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/logging/logger.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/logging/syslogloglocation.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/lua/luautils.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/mempool/mempool.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/misc/crypto.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/misc/file.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/misc/mmapfile.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/misc/timersmanager.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/misc/uri.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/misc/variant.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
     </conf>
   </confs>
 </configurationDescriptor>

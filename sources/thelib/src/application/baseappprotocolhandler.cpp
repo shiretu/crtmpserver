@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -59,4 +59,10 @@ bool BaseAppProtocolHandler::PushLocalStream(Variant streamConfig) {
 	WARN("Pushing out streams for this protocol handler in application %s not yet implemented.",
 			STR(GetApplication()->GetName()));
 	return false;
+}
+
+StreamMetadataResolver *BaseAppProtocolHandler::GetStreamMetadataResolver() {
+	if (_pApplication != NULL)
+		return _pApplication->GetStreamMetadataResolver();
+	return NULL;
 }

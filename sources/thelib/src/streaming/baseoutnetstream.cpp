@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -22,9 +22,8 @@
 #include "streaming/baseoutnetstream.h"
 #include "streaming/streamstypes.h"
 
-BaseOutNetStream::BaseOutNetStream(BaseProtocol *pProtocol,
-		StreamsManager *pStreamsManager, uint64_t type, string name)
-: BaseOutStream(pProtocol, pStreamsManager, type, name) {
+BaseOutNetStream::BaseOutNetStream(BaseProtocol *pProtocol, uint64_t type, string name)
+: BaseOutStream(pProtocol, type, name) {
 	if (!TAG_KIND_OF(type, ST_OUT_NET)) {
 		ASSERT("Incorrect stream type. Wanted a stream type in class %s and got %s",
 				STR(tagToString(ST_OUT_NET)), STR(tagToString(type)));

@@ -179,6 +179,12 @@ uint16_t TCPCarrier::GetNearEndpointPort() {
 }
 
 bool TCPCarrier::GetEndpointsInfo() {
+	if ((_farIp != "")
+			&& (_farPort != 0)
+			&& (_nearIp != "")
+			&& (_nearPort != 0)) {
+		return true;
+	}
 	socklen_t len = sizeof (sockaddr);
 	if (getpeername(_inboundFd, (sockaddr *) & _farAddress, &len) != 0) {
 		FATAL("Unable to get peer's address");

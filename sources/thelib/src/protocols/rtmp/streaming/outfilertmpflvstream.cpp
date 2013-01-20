@@ -22,19 +22,79 @@
 #include "protocols/rtmp/streaming/outfilertmpflvstream.h"
 #include "application/baseclientapplication.h"
 #include "streaming/streamstypes.h"
-#include "protocols/rtmp/basertmpprotocol.h"
+#include "protocols/baseprotocol.h"
 
-OutFileRTMPFLVStream::OutFileRTMPFLVStream(BaseRTMPProtocol *pProtocol,
-		StreamsManager *pStreamsManager, string name)
-: BaseOutFileStream(pProtocol, pStreamsManager, ST_OUT_FILE_RTMP_FLV, name) {
+OutFileRTMPFLVStream::OutFileRTMPFLVStream(BaseProtocol *pProtocol, string name,
+		string filename)
+: BaseOutFileStream(pProtocol, ST_OUT_FILE_RTMP_FLV, name) {
 	_timeBase = -1;
 	_prevTagSize = 0;
+	_filename = filename;
 }
 
 OutFileRTMPFLVStream::~OutFileRTMPFLVStream() {
+	if (_file.IsOpen()) {
+		_file.Close();
+	}
 }
 
-bool OutFileRTMPFLVStream::SignalPlay(double &absoluteTimestamp, double &length) {
+void OutFileRTMPFLVStream::Initialize() {
+	if (!_file.Initialize(_filename, FILE_OPEN_MODE_TRUNCATE)) {
+		FATAL("Unable to initialize file %s", STR(_filename));
+		_pProtocol->EnqueueForDelete();
+	}
+
+	//REFERENCE: video_file_format_spec_v10.pdf page 8/48
+
+	//2. Write FLV header
+	string flv = "FLV";
+	if (!_file.WriteString(flv)) {
+		FATAL("Unable to write FLV signature");
+		_pProtocol->EnqueueForDelete();
+		return;
+	}
+
+	//3. Write FLV version
+	if (!_file.WriteUI8(1)) {
+		FATAL("Unable to write FLV version");
+		_pProtocol->EnqueueForDelete();
+		return;
+	}
+
+	//4. Write FLV flags
+	if (!_file.WriteUI8(5)) {
+		FATAL("Unable to write flags");
+		_pProtocol->EnqueueForDelete();
+		return;
+	}
+
+	//5. Write FLV offset
+	if (!_file.WriteUI32(9)) {
+		FATAL("Unable to write data offset");
+		_pProtocol->EnqueueForDelete();
+		return;
+	}
+
+	//6. Write first dummy audio
+	if (!FeedData(NULL, 0, 0, 0, 0, 0, true)) {
+		FATAL("Unable to write dummy audio packet");
+		_pProtocol->EnqueueForDelete();
+		return;
+	}
+
+	//7. Write first dummy video
+	if (!FeedData(NULL, 0, 0, 0, 0, 0, false)) {
+		FATAL("Unable to write dummy audio packet");
+		_pProtocol->EnqueueForDelete();
+		return;
+	}
+
+	//8. Set the timebase to unknown value
+	_timeBase = -1;
+	return;
+}
+
+bool OutFileRTMPFLVStream::SignalPlay(double &dts, double &length) {
 	NYIR;
 }
 
@@ -46,7 +106,7 @@ bool OutFileRTMPFLVStream::SignalResume() {
 	NYIR;
 }
 
-bool OutFileRTMPFLVStream::SignalSeek(double &absoluteTimestamp) {
+bool OutFileRTMPFLVStream::SignalSeek(double &dts) {
 	NYIR;
 }
 
@@ -56,16 +116,13 @@ bool OutFileRTMPFLVStream::SignalStop() {
 
 bool OutFileRTMPFLVStream::FeedData(uint8_t *pData, uint32_t dataLength,
 		uint32_t processedLength, uint32_t totalLength,
-		double absoluteTimestamp, bool isAudio) {
+		double pts, double dts, bool isAudio) {
 	if (!_file.IsOpen()) {
-		if (!Initialize()) {
-			FATAL("Unable to initialize the FLV out file stream");
-			return false;
-		}
+		Initialize();
 	}
 
 	if (_timeBase < 0)
-		_timeBase = absoluteTimestamp;
+		_timeBase = dts;
 
 	IOBuffer &buffer = isAudio ? _audioBuffer : _videoBuffer;
 
@@ -98,7 +155,7 @@ bool OutFileRTMPFLVStream::FeedData(uint8_t *pData, uint32_t dataLength,
 		return false;
 	}
 
-	if (!_file.WriteSUI32((uint32_t) absoluteTimestamp - (uint32_t) _timeBase)) {
+	if (!_file.WriteSUI32((uint32_t) dts - (uint32_t) _timeBase)) {
 		FATAL("Unable to timestamp");
 		return false;
 	}
@@ -136,61 +193,35 @@ void OutFileRTMPFLVStream::SignalDetachedFromInStream() {
 void OutFileRTMPFLVStream::SignalStreamCompleted() {
 }
 
-bool OutFileRTMPFLVStream::Initialize() {
-	if (!_file.Initialize(_name, FILE_OPEN_MODE_TRUNCATE)) {
-		FATAL("Unable to initialize file %s", STR(_name));
-		_pProtocol->EnqueueForDelete();
-		return false;
-	}
+void OutFileRTMPFLVStream::SignalAudioStreamCapabilitiesChanged(
+		StreamCapabilities *pCapabilities, AudioCodecInfo *pOld,
+		AudioCodecInfo *pNew) {
+	if ((pOld != NULL)&&(pNew != NULL))
+		EnqueueForDelete();
+}
 
-	//REFERENCE: video_file_format_spec_v10.pdf page 8/48
+void OutFileRTMPFLVStream::SignalVideoStreamCapabilitiesChanged(
+		StreamCapabilities *pCapabilities, VideoCodecInfo *pOld,
+		VideoCodecInfo *pNew) {
+	if ((pOld != NULL)&&(pNew != NULL))
+		EnqueueForDelete();
+}
 
-	//2. Write FLV header
-	string flv = "FLV";
-	if (!_file.WriteString(flv)) {
-		FATAL("Unable to write FLV signature");
-		_pProtocol->EnqueueForDelete();
-		return false;
-	}
-
-	//3. Write FLV version
-	if (!_file.WriteUI8(1)) {
-		FATAL("Unable to write FLV version");
-		_pProtocol->EnqueueForDelete();
-		return false;
-	}
-
-	//4. Write FLV flags
-	if (!_file.WriteUI8(5)) {
-		FATAL("Unable to write flags");
-		_pProtocol->EnqueueForDelete();
-		return false;
-	}
-
-	//5. Write FLV offset
-	if (!_file.WriteUI32(9)) {
-		FATAL("Unable to write data offset");
-		_pProtocol->EnqueueForDelete();
-		return false;
-	}
-
-	//6. Write first dummy audio
-	if (!FeedData(NULL, 0, 0, 0, 0, true)) {
-		FATAL("Unable to write dummy audio packet");
-		_pProtocol->EnqueueForDelete();
-		return false;
-	}
-
-	//7. Write first dummy video
-	if (!FeedData(NULL, 0, 0, 0, 0, false)) {
-		FATAL("Unable to write dummy audio packet");
-		_pProtocol->EnqueueForDelete();
-		return false;
-	}
-
-	//8. Set the timebase to unknown value
-	_timeBase = -1;
+bool OutFileRTMPFLVStream::PushVideoData(IOBuffer &buffer, double pts, double dts,
+		bool isKeyFrame) {
+	ASSERT("Operation not supported");
 	return false;
 }
+
+bool OutFileRTMPFLVStream::PushAudioData(IOBuffer &buffer, double pts, double dts) {
+	ASSERT("Operation not supported");
+	return false;
+}
+
+bool OutFileRTMPFLVStream::IsCodecSupported(uint64_t codec) {
+	ASSERT("Operation not supported");
+	return false;
+}
+
 #endif /* HAS_PROTOCOL_RTMP */
 

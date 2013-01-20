@@ -27,17 +27,17 @@ Logger *Logger::_pLogger = NULL;
 string Version::GetBuildNumber() {
 #ifdef CRTMPSERVER_VERSION_BUILD_NUMBER
 	return CRTMPSERVER_VERSION_BUILD_NUMBER;
-#else /* EVOSTREAM_VERSION_BUILD_NUMBER */
+#else /* CRTMPSERVER_VERSION_BUILD_NUMBER */
 	return "";
-#endif /* EVOSTREAM_VERSION_BUILD_NUMBER */
+#endif /* CRTMPSERVER_VERSION_BUILD_NUMBER */
 }
 
 uint64_t Version::GetBuildDate() {
 #ifdef CRTMPSERVER_VERSION_BUILD_DATE
 	return CRTMPSERVER_VERSION_BUILD_DATE;
-#else /* EVOSTREAM_VERSION_BUILD_DATE */
+#else /* CRTMPSERVER_VERSION_BUILD_DATE */
 	return 0;
-#endif /* EVOSTREAM_VERSION_BUILD_DATE */
+#endif /* CRTMPSERVER_VERSION_BUILD_DATE */
 }
 
 string Version::GetBuildDateString() {
@@ -53,26 +53,76 @@ string Version::GetBuildDateString() {
 string Version::GetReleaseNumber() {
 #ifdef CRTMPSERVER_VERSION_RELEASE_NUMBER
 	return CRTMPSERVER_VERSION_RELEASE_NUMBER;
-#else /* EVOSTREAM_VERSION_RELEASE_NUMBER */
+#else /* CRTMPSERVER_VERSION_RELEASE_NUMBER */
 	return "";
-#endif /* EVOSTREAM_VERSION_RELEASE_NUMBER */
+#endif /* CRTMPSERVER_VERSION_RELEASE_NUMBER */
 }
 
 string Version::GetCodeName() {
 #ifdef CRTMPSERVER_VERSION_CODE_NAME
 	return CRTMPSERVER_VERSION_CODE_NAME;
-#else /* EVOSTREAM_VERSION_CODE_NAME */
+#else /* CRTMPSERVER_VERSION_CODE_NAME */
 	return "";
-#endif /* EVOSTREAM_VERSION_CODE_NAME */
+#endif /* CRTMPSERVER_VERSION_CODE_NAME */
+}
+
+string Version::GetBuilderOSName() {
+#ifdef CRTMPSERVER_VERSION_BUILDER_OS_NAME
+	return CRTMPSERVER_VERSION_BUILDER_OS_NAME;
+#else /* CRTMPSERVER_VERSION_BUILDER_OS_NAME */
+	return "";
+#endif /* CRTMPSERVER_VERSION_BUILDER_OS_NAME */
+}
+
+string Version::GetBuilderOSVersion() {
+#ifdef CRTMPSERVER_VERSION_BUILDER_OS_VERSION
+	return CRTMPSERVER_VERSION_BUILDER_OS_VERSION;
+#else /* CRTMPSERVER_VERSION_BUILDER_OS_VERSION */
+	return "";
+#endif /* CRTMPSERVER_VERSION_BUILDER_OS_VERSION */
+}
+
+string Version::GetBuilderOSArch() {
+#ifdef CRTMPSERVER_VERSION_BUILDER_OS_ARCH
+	return CRTMPSERVER_VERSION_BUILDER_OS_ARCH;
+#else /* CRTMPSERVER_VERSION_BUILDER_OS_ARCH */
+	return "";
+#endif /* CRTMPSERVER_VERSION_BUILDER_OS_ARCH */
+}
+
+string Version::GetBuilderOSUname() {
+#ifdef CRTMPSERVER_VERSION_BUILDER_OS_UNAME
+	return CRTMPSERVER_VERSION_BUILDER_OS_UNAME;
+#else /* CRTMPSERVER_VERSION_BUILDER_OS_UNAME */
+	return "";
+#endif /* CRTMPSERVER_VERSION_BUILDER_OS_UNAME */
+}
+
+string Version::GetBuilderOS() {
+	if (GetBuilderOSName() == "")
+		return "";
+	string result = GetBuilderOSName();
+	if (GetBuilderOSVersion() != "") {
+		result += "-" + GetBuilderOSVersion();
+	}
+	if (GetBuilderOSArch() != "") {
+		result += "-" + GetBuilderOSArch();
+	}
+	return result;
 }
 
 string Version::GetBanner() {
 	string result = HTTP_HEADERS_SERVER_US;
 	if (GetReleaseNumber() != "")
 		result += " version " + GetReleaseNumber();
-	result += " build " + GetBuildNumber() + " - " + GetBuildDateString();
+	result += " build " + GetBuildNumber();
 	if (GetCodeName() != "")
-		result += " (" + GetCodeName() + ")";
+		result += " - " + GetCodeName();
+	if (GetBuilderOS() != "") {
+		result += " - (built for " + GetBuilderOS() + " on " + GetBuildDateString() + ")";
+	}else{
+		result += " - (built on " + GetBuildDateString() + ")";
+	}
 	return result;
 }
 
@@ -83,6 +133,15 @@ Variant Version::GetAll() {
 	result["releaseNumber"] = (string) GetReleaseNumber();
 	result["codeName"] = (string) GetCodeName();
 	result["banner"] = (string) GetBanner();
+	return result;
+}
+
+Variant Version::GetBuilder() {
+	Variant result;
+	result["name"] = (string) GetBuilderOSName();
+	result["version"] = (string) GetBuilderOSVersion();
+	result["arch"] = (string) GetBuilderOSArch();
+	result["uname"] = (string) GetBuilderOSUname();
 	return result;
 }
 

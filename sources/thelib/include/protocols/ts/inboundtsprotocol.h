@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -18,45 +18,32 @@
  */
 
 
-#ifdef HAS_PROTOCOL_TS
+#if defined HAS_PROTOCOL_TS && defined HAS_MEDIA_TS
 #ifndef _INBOUNDTSPROTOCOL_H
 #define	_INBOUNDTSPROTOCOL_H
 
 #include "protocols/baseprotocol.h"
-#include "protocols/ts/pidtypes.h"
-#include "protocols/ts/tspacketheader.h"
+#include "mediaformats/readers/ts/pidtypes.h"
+#include "mediaformats/readers/ts/tspacketheader.h"
+#include "mediaformats/readers/ts/piddescriptor.h"
+#include "mediaformats/readers/ts/tsparsereventsink.h"
 
 #define TS_CHUNK_188 188
 #define TS_CHUNK_204 204
 #define TS_CHUNK_208 208
 
-class TSProgram;
-class TSBaseStream;
-class TSVideoStream;
-class TSAudioStream;
-class TSSubtitleStream;
+class TSParser;
 class BaseTSAppProtocolHandler;
 class InNetTSStream;
 
-typedef struct _PIDDescriptor {
-	PIDType type;
-	uint16_t pid;
-
-	union {
-		uint32_t crc;
-		InNetTSStream *pStream;
-	} payload;
-} PIDDescriptor;
-
 class DLLEXP InboundTSProtocol
-: public BaseProtocol {
+: public BaseProtocol, TSParserEventsSink {
 private:
 	uint32_t _chunkSizeDetectionCount;
 	uint32_t _chunkSize;
-	map<uint16_t, PIDDescriptor *> _pidMapping;
 	BaseTSAppProtocolHandler *_pProtocolHandler;
-	bool _stepByStep;
-	map<uint16_t, uint16_t> _unknownPids;
+	TSParser *_pParser;
+	InNetTSStream *_pInStream;
 public:
 	InboundTSProtocol();
 	virtual ~InboundTSProtocol();
@@ -71,19 +58,23 @@ public:
 	virtual void SetApplication(BaseClientApplication *pApplication);
 	BaseTSAppProtocolHandler *GetProtocolHandler();
 	uint32_t GetChunkSize();
-	void SetStepByStep(bool stepByStep);
+
+	virtual BaseInStream *GetInStream();
+	virtual void SignalResetChunkSize();
+	virtual void SignalPAT(TSPacketPAT *pPAT);
+	virtual void SignalPMT(TSPacketPMT *pPMT);
+	virtual void SignalPMTComplete();
+	virtual bool SignalStreamsPIDSChanged(map<uint16_t, TSStreamInfo> &streams);
+	virtual bool SignalStreamPIDDetected(TSStreamInfo &streamInfo,
+			BaseAVContext *pContext, PIDType type, bool &ignore);
+	virtual void SignalUnknownPIDDetected(TSStreamInfo &streamInfo);
+	virtual bool FeedData(BaseAVContext *pContext, uint8_t *pData,
+			uint32_t dataLength, double pts, double dts, bool isAudio);
 private:
-	void FreePidDescriptor(PIDDescriptor *pPIDDescriptor);
 	bool DetermineChunkSize(IOBuffer &buffer);
-	bool ProcessPacket(uint32_t packetHeader, IOBuffer &buffer, uint32_t maxCursor);
-	bool ProcessPidTypePAT(uint32_t packetHeader,
-			PIDDescriptor &pidDescriptor, uint8_t *pBuffer, uint32_t &cursor,
-			uint32_t maxCursor);
-	bool ProcessPidTypePMT(uint32_t packetHeader, PIDDescriptor &pidDescriptor,
-			uint8_t *pBuffer, uint32_t &cursor, uint32_t maxCursor);
 };
 
 
 #endif	/* _INBOUNDTSPROTOCOL_H */
-#endif	/* HAS_PROTOCOL_TS */
+#endif	/* defined HAS_PROTOCOL_TS && defined HAS_MEDIA_TS */
 

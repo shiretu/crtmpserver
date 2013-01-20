@@ -113,7 +113,7 @@ void FileLogLocation::SignalFork() {
 bool FileLogLocation::OpenFile() {
 	CloseFile();
 	double ts;
-	GETCLOCKS(ts);
+	GETCLOCKS(ts, double);
 	ts = (ts / CLOCKS_PER_SECOND)*1000;
 	string temp = format("%s.%"PRIu64".%"PRIu64, STR(_fileName), (uint64_t) getpid(), (uint64_t) ts);
 	_fileStream = new File();

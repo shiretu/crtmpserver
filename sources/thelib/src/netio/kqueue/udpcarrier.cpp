@@ -56,7 +56,8 @@ bool UDPCarrier::OnEvent(struct kevent &event) {
 		}
 		case EVFILT_WRITE:
 		{
-			NYIR;
+			_pProtocol->ReadyForSend();
+			return true;
 		}
 		default:
 		{
@@ -100,6 +101,10 @@ bool UDPCarrier::StartAccept() {
 	return IOHandlerManager::EnableReadData(this);
 }
 
+bool UDPCarrier::EnableWriteEvents() {
+	return true;
+}
+
 string UDPCarrier::GetFarEndpointAddress() {
 	ASSERT("Operation not supported");
 	return "";
@@ -124,12 +129,12 @@ uint16_t UDPCarrier::GetNearEndpointPort() {
 	return _nearPort;
 }
 
-UDPCarrier* UDPCarrier::Create(string bindIp, uint16_t bindPort,
-		uint16_t ttl, uint16_t tos) {
+UDPCarrier* UDPCarrier::Create(string bindIp, uint16_t bindPort, uint16_t ttl,
+		uint16_t tos, string ssmIp) {
 
 	//1. Create the socket
 	int sock = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sock < 0) {
+	if ((sock < 0) || (!setFdCloseOnExec(sock))) {
 		int err = errno;
 		FATAL("Unable to create socket: (%d) %s", err, strerror(err));
 		return NULL;
@@ -197,11 +202,8 @@ UDPCarrier* UDPCarrier::Create(string bindIp, uint16_t bindPort,
 			return NULL;
 		}
 		if ((testVal > 0xe0000000) && (testVal < 0xefffffff)) {
-			struct ip_mreq group;
-			group.imr_multiaddr.s_addr = inet_addr(STR(bindIp));
-			group.imr_interface.s_addr = INADDR_ANY;
-			if (setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *) &group, sizeof (group)) < 0) {
-				FATAL("Adding multicast group error");
+			if (!setFdJoinMulticast(sock, bindIp, bindPort, ssmIp)) {
+				FATAL("Adding multicast failed");
 				CLOSE_SOCKET(sock);
 				return NULL;
 			}
@@ -216,13 +218,13 @@ UDPCarrier* UDPCarrier::Create(string bindIp, uint16_t bindPort,
 }
 
 UDPCarrier* UDPCarrier::Create(string bindIp, uint16_t bindPort,
-		BaseProtocol *pProtocol, uint16_t ttl, uint16_t tos) {
+		BaseProtocol *pProtocol, uint16_t ttl, uint16_t tos, string ssmIp) {
 	if (pProtocol == NULL) {
 		FATAL("Protocol can't be null");
 		return NULL;
 	}
 
-	UDPCarrier *pResult = Create(bindIp, bindPort, ttl, tos);
+	UDPCarrier *pResult = Create(bindIp, bindPort, ttl, tos, ssmIp);
 	if (pResult == NULL) {
 		FATAL("Unable to create UDP carrier");
 		return NULL;

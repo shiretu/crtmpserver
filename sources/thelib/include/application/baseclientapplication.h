@@ -29,9 +29,13 @@ class BaseProtocol;
 class BaseAppProtocolHandler;
 class BaseStream;
 class IOHandler;
-#ifdef HAS_VOD_MANAGER
-class BaseVODManager;
-#endif /* HAS_VOD_MANAGER */
+class StreamMetadataResolver;
+
+enum OperationType {
+	OPERATION_TYPE_STANDARD = 0,
+	OPERATION_TYPE_PULL,
+	OPERATION_TYPE_PUSH
+};
 
 /*!
 	@brief
@@ -47,9 +51,8 @@ private:
 	bool _allowDuplicateInboundNetworkStreams;
 	map<string, string> _streamAliases;
 	bool _hasStreamAliases;
-#ifdef HAS_VOD_MANAGER
-	BaseVODManager *_pVODManager;
-#endif /* HAS_VOD_MANAGER */
+	StreamMetadataResolver *_pStreamMetadataResolver;
+	Variant _dummy;
 protected:
 	Variant _configuration;
 	bool _isDefault;
@@ -83,9 +86,7 @@ public:
 	 */
 	bool IsDefault();
 	StreamsManager *GetStreamsManager();
-#ifdef HAS_VOD_MANAGER
-	BaseVODManager *GetVODManager();
-#endif /* HAS_VOD_MANAGER */
+	StreamMetadataResolver *GetStreamMetadataResolver();
 
 	virtual bool Initialize();
 
@@ -121,6 +122,8 @@ public:
 
 	template<class T>
 	T *GetProtocolHandler(BaseProtocol *pProtocol) {
+		if (pProtocol == NULL)
+			return NULL;
 		return (T *) GetProtocolHandler(pProtocol);
 	}
 	BaseAppProtocolHandler *GetProtocolHandler(BaseProtocol *pProtocol);
@@ -163,8 +166,8 @@ public:
 	virtual void SignalStreamUnRegistered(BaseStream *pStream);
 
 	virtual bool PullExternalStreams();
-	virtual bool PullExternalStream(Variant streamConfig);
-	virtual bool PushLocalStream(Variant streamConfig);
+	virtual bool PullExternalStream(Variant &streamConfig);
+	virtual bool PushLocalStream(Variant &streamConfig);
 	bool ParseAuthentication();
 
 	virtual void SignalUnLinkingStreams(BaseInStream *pInStream, BaseOutStream *pOutStream);
@@ -179,6 +182,11 @@ public:
 	void SetStreamAlias(string &streamName, string &streamAlias);
 	void RemoveStreamAlias(string &streamAlias);
 	map<string, string> & GetAllStreamAliases();
+
+	OperationType GetOperationType(BaseProtocol *pProtocol, Variant &streamConfig);
+	OperationType GetOperationType(Variant &allParameters, Variant &streamConfig);
+	void StoreConnectionType(Variant &dest, BaseProtocol *pProtocol);
+	Variant &GetStreamSettings(Variant &src);
 private:
 	string GetServiceInfo(IOHandler *pIOHander);
 };

@@ -27,11 +27,19 @@
 class DLLEXP OutNetRTMP4RTMPStream
 : public BaseOutNetRTMPStream {
 public:
-	OutNetRTMP4RTMPStream(BaseRTMPProtocol *pProtocol, StreamsManager *pStreamsManager,
-			string name, uint32_t rtmpStreamId, uint32_t chunkSize);
+	OutNetRTMP4RTMPStream(BaseProtocol *pProtocol, string name,
+			uint32_t rtmpStreamId, uint32_t chunkSize);
 	virtual ~OutNetRTMP4RTMPStream();
 
 	virtual bool IsCompatibleWithType(uint64_t type);
+	virtual bool FeedData(uint8_t *pData, uint32_t dataLength,
+			uint32_t processedLength, uint32_t totalLength,
+			double pts, double dts, bool isAudio);
+protected:
+	virtual bool PushVideoData(IOBuffer &buffer, double pts, double dts,
+			bool isKeyFrame);
+	virtual bool PushAudioData(IOBuffer &buffer, double pts, double dts);
+	virtual bool IsCodecSupported(uint64_t codec);
 };
 
 

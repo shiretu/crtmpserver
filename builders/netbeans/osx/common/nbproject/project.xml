@@ -11,11 +11,8 @@
             <sourceEncoding>UTF-8</sourceEncoding>
             <make-dep-projects/>
             <sourceRootList>
-                <sourceRootElem>../../../../sources/common/include/platform</sourceRootElem>
-                <sourceRootElem>../../../../sources/common/include/utils</sourceRootElem>
-                <sourceRootElem>../../../../sources/common/src/platform</sourceRootElem>
-                <sourceRootElem>../../../../sources/common/src/utils</sourceRootElem>
                 <sourceRootElem>../../../../sources/common/include</sourceRootElem>
+                <sourceRootElem>../../../../sources/common/src</sourceRootElem>
             </sourceRootList>
             <confList>
                 <confElem>

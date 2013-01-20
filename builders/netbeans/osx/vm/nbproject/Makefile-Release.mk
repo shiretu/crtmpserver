@@ -22,6 +22,7 @@ AS=as
 
 # Macros
 CND_PLATFORM=GNU-MacOSX
+CND_DLIB_EXT=dylib
 CND_CONF=Release
 CND_DISTDIR=dist
 CND_BUILDDIR=build
@@ -57,13 +58,13 @@ LDLIBSOPTIONS=-L../common/dist/Release/GNU-MacOSX -lcommon
 
 # Build Targets
 .build-conf: ${BUILD_SUBPROJECTS}
-	"${MAKE}"  -f nbproject/Makefile-${CND_CONF}.mk ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libvm.dylib
+	"${MAKE}"  -f nbproject/Makefile-${CND_CONF}.mk ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libvm.${CND_DLIB_EXT}
 
-${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libvm.dylib: ../common/dist/Release/GNU-MacOSX/libcommon.dylib
+${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libvm.${CND_DLIB_EXT}: ../common/dist/Release/GNU-MacOSX/libcommon.dylib
 
-${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libvm.dylib: ${OBJECTFILES}
+${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libvm.${CND_DLIB_EXT}: ${OBJECTFILES}
 	${MKDIR} -p ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}
-	${LINK.cc} ../../../../3rdparty/v8/libv8.a -dynamiclib -install_name libvm.dylib -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libvm.dylib -fPIC ${OBJECTFILES} ${LDLIBSOPTIONS} 
+	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libvm.${CND_DLIB_EXT} ${OBJECTFILES} ${LDLIBSOPTIONS} ../../../../3rdparty/v8/libv8.a -dynamiclib -install_name libvm.${CND_DLIB_EXT} -fPIC
 
 ${OBJECTDIR}/_ext/431490565/basevmv8.o: ../../../../sources/vm/src/vmv8/basevmv8.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/431490565
@@ -87,7 +88,7 @@ ${OBJECTDIR}/_ext/491298005/basevmlua.o: ../../../../sources/vm/src/vmlua/basevm
 # Clean Targets
 .clean-conf: ${CLEAN_SUBPROJECTS}
 	${RM} -r ${CND_BUILDDIR}/${CND_CONF}
-	${RM} ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libvm.dylib
+	${RM} ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libvm.${CND_DLIB_EXT}
 
 # Subprojects
 .clean-subprojects:

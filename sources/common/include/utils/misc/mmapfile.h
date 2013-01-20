@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -69,7 +69,7 @@ public:
 	virtual ~MmapFile();
 
 	//init
-	bool Initialize(string path, uint32_t windowSize, bool exclusive);
+	bool Initialize(string path, uint32_t windowSize);
 
 	//info
 	uint64_t Size();

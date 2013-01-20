@@ -45,6 +45,8 @@ public:
 	VARIANT_GETSET(string, document, "");
 	VARIANT_GETSET(string, documentWithFullParameters, "");
 	VARIANT_GETSET(Variant, parameters, Variant());
+	string baseURI();
+	string derivedURI(string relativePath, bool includeParams);
 
 	static bool FromVariant(Variant & variant, URI &uri);
 	static bool FromString(string stringUri, bool resolveHost, URI &uri);

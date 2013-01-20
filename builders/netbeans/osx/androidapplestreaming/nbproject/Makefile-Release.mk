@@ -22,6 +22,7 @@ AS=as
 
 # Macros
 CND_PLATFORM=GNU-MacOSX
+CND_DLIB_EXT=dylib
 CND_CONF=Release
 CND_DISTDIR=dist
 CND_BUILDDIR=build
@@ -58,11 +59,11 @@ LDLIBSOPTIONS=
 
 # Build Targets
 .build-conf: ${BUILD_SUBPROJECTS}
-	"${MAKE}"  -f nbproject/Makefile-${CND_CONF}.mk ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libandroidapplestreaming.dylib
+	"${MAKE}"  -f nbproject/Makefile-${CND_CONF}.mk ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libandroidapplestreaming.${CND_DLIB_EXT}
 
-${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libandroidapplestreaming.dylib: ${OBJECTFILES}
+${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libandroidapplestreaming.${CND_DLIB_EXT}: ${OBJECTFILES}
 	${MKDIR} -p ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}
-	${LINK.cc} -dynamiclib -install_name libandroidapplestreaming.dylib -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libandroidapplestreaming.dylib -fPIC ${OBJECTFILES} ${LDLIBSOPTIONS} 
+	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libandroidapplestreaming.${CND_DLIB_EXT} ${OBJECTFILES} ${LDLIBSOPTIONS} -dynamiclib -install_name libandroidapplestreaming.${CND_DLIB_EXT} -fPIC
 
 ${OBJECTDIR}/_ext/2044958859/variantconnection.o: ../../../../sources/androidapplestreaming/src/variantconnection.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/2044958859
@@ -90,7 +91,7 @@ ${OBJECTDIR}/_ext/2044958859/api.o: ../../../../sources/androidapplestreaming/sr
 # Clean Targets
 .clean-conf: ${CLEAN_SUBPROJECTS}
 	${RM} -r ${CND_BUILDDIR}/${CND_CONF}
-	${RM} ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libandroidapplestreaming.dylib
+	${RM} ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libandroidapplestreaming.${CND_DLIB_EXT}
 
 # Subprojects
 .clean-subprojects:

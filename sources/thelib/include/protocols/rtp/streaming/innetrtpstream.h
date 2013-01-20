@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -35,18 +35,21 @@ private:
 	StreamCapabilities _capabilities;
 
 	bool _hasAudio;
+	bool _isLatm;
 	uint16_t _audioSequence;
 	uint64_t _audioPacketsCount;
 	uint64_t _audioDroppedPacketsCount;
 	uint64_t _audioBytesCount;
+	uint64_t _audioDroppedBytesCount;
 	double _audioNTP;
 	double _audioRTP;
-	double _audioLastTs;
+	double _audioLastDts;
 	uint32_t _audioLastRTP;
 	uint32_t _audioRTPRollCount;
 	double _audioFirstTimestamp;
 	uint32_t _lastAudioRTCPRTP;
 	uint32_t _audioRTCPRTPRollCount;
+	double _audioSampleRate;
 
 	bool _hasVideo;
 	IOBuffer _currentNalu;
@@ -56,22 +59,29 @@ private:
 	uint64_t _videoBytesCount;
 	double _videoNTP;
 	double _videoRTP;
-	double _videoLastTs;
+	double _videoLastPts;
+	double _videoLastDts;
 	uint32_t _videoLastRTP;
 	uint32_t _videoRTPRollCount;
 	double _videoFirstTimestamp;
 	uint32_t _lastVideoRTCPRTP;
 	uint32_t _videoRTCPRTPRollCount;
+	double _videoSampleRate;
 
 	uint8_t _rtcpPresence;
 	uint8_t _rtcpDetectionInterval;
 	time_t _rtcpDetectionStart;
 
-	bool _avCodecsSent;
+	size_t _dtsCacheSize;
+	map<double, double> _dtsCache;
+
+	IOBuffer _sps;
+	IOBuffer _pps;
+	//double _maxDts;
 public:
-	InNetRTPStream(BaseProtocol *pProtocol, StreamsManager *pStreamsManager,
-			string name, string SPS, string PPS, string AAC,
-			uint32_t bandwidthHint, uint8_t rtcpDetectionInterval);
+	InNetRTPStream(BaseProtocol *pProtocol, string name, Variant &videoTrack,
+			Variant &audioTrack, uint32_t bandwidthHint,
+			uint8_t rtcpDetectionInterval);
 	virtual ~InNetRTPStream();
 
 	virtual StreamCapabilities * GetCapabilities();
@@ -79,24 +89,28 @@ public:
 	virtual bool IsCompatibleWithType(uint64_t type);
 	virtual void SignalOutStreamAttached(BaseOutStream *pOutStream);
 	virtual void SignalOutStreamDetached(BaseOutStream *pOutStream);
-	virtual bool SignalPlay(double &absoluteTimestamp, double &length);
+	virtual bool SignalPlay(double &dts, double &length);
 	virtual bool SignalPause();
 	virtual bool SignalResume();
-	virtual bool SignalSeek(double &absoluteTimestamp);
+	virtual bool SignalSeek(double &dts);
 	virtual bool SignalStop();
 	virtual bool FeedData(uint8_t *pData, uint32_t dataLength,
 			uint32_t processedLength, uint32_t totalLength,
-			double absoluteTimestamp, bool isAudio);
-	virtual bool FeedVideoData(uint8_t *pData, uint32_t dataLength,
+			double pts, double dts, bool isAudio);
+	bool FeedVideoData(uint8_t *pData, uint32_t dataLength,
 			RTPHeader &rtpHeader);
-	virtual bool FeedAudioData(uint8_t *pData, uint32_t dataLength,
+	bool FeedAudioData(uint8_t *pData, uint32_t dataLength,
 			RTPHeader &rtpHeader);
 	virtual void GetStats(Variant &info, uint32_t namespaceId = 0);
-
 	void ReportSR(uint64_t ntpMicroseconds, uint32_t rtpTimestamp, bool isAudio);
 private:
-	void FeedVideoCodecSetup(BaseOutStream *pOutStream);
-	void FeedAudioCodecSetup(BaseOutStream *pOutStream);
+	bool FeedAudioDataAU(uint8_t *pData, uint32_t dataLength,
+			RTPHeader &rtpHeader);
+	bool FeedAudioDataLATM(uint8_t *pData, uint32_t dataLength,
+			RTPHeader &rtpHeader);
+	virtual bool InternalFeedData(uint8_t *pData, uint32_t dataLength,
+			uint32_t processedLength, uint32_t totalLength,
+			double dts, bool isAudio);
 	uint64_t ComputeRTP(uint32_t &currentRtp, uint32_t &lastRtp,
 			uint32_t &rtpRollCount);
 };

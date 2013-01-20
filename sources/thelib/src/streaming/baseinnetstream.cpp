@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -21,9 +21,8 @@
 #include "streaming/baseinnetstream.h"
 #include "streaming/streamstypes.h"
 
-BaseInNetStream::BaseInNetStream(BaseProtocol *pProtocol,
-		StreamsManager *pStreamsManager, uint64_t type, string name)
-: BaseInStream(pProtocol, pStreamsManager, type, name) {
+BaseInNetStream::BaseInNetStream(BaseProtocol *pProtocol, uint64_t type, string name)
+: BaseInStream(pProtocol, type, name) {
 	if (!TAG_KIND_OF(type, ST_IN_NET)) {
 		ASSERT("Incorrect stream type. Wanted a stream type in class %s and got %s",
 				STR(tagToString(ST_IN_NET)), STR(tagToString(type)));

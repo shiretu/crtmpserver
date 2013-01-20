@@ -63,8 +63,9 @@ void StreamsManager::UnRegisterStream(BaseStream *pStream) {
 		MAP_ERASE2(_streamsByProtocolId, pStream->GetProtocol()->GetId(), pStream->GetUniqueId());
 	MAP_ERASE2(_streamsByType, pStream->GetType(), pStream->GetUniqueId());
 	MAP_ERASE2(_streamsByName, pStream->GetName(), pStream->GetUniqueId());
-	if (signalStreamUnregistered)
+	if (signalStreamUnregistered) {
 		_pApplication->SignalStreamUnRegistered(pStream);
+	}
 }
 
 void StreamsManager::UnRegisterStreams(uint32_t protocolId) {

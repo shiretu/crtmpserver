@@ -55,8 +55,11 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <vector>
+#include <queue>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
+#include <spawn.h>
 using namespace std;
 
 //platform defines
@@ -107,11 +110,18 @@ using namespace std;
 #define PIOFFT off_t
 
 #define CLOCKS_PER_SECOND 1000000L
-#define GETCLOCKS(result) \
+#define GETCLOCKS(result,type) \
 do { \
     struct timeval ___timer___; \
     gettimeofday(&___timer___,NULL); \
-    result=(double)___timer___.tv_sec*(double)CLOCKS_PER_SECOND+(double) ___timer___.tv_usec; \
+    result=(type)___timer___.tv_sec*(type)CLOCKS_PER_SECOND+(type) ___timer___.tv_usec; \
+}while(0);
+
+#define GETMILLISECONDS(result) \
+do { \
+    struct timespec ___timer___; \
+    clock_gettime(CLOCK_MONOTONIC_FAST, &___timer___); \
+    result=(uint64_t)___timer___.tv_sec*1000+___timer___.tv_nsec/1000000; \
 }while(0);
 
 #define GETNTP(result) \
@@ -146,6 +156,7 @@ typedef struct _select_event {
 #define IOVEC iovec
 #define MSGHDR_MSG_IOV msg_iov
 #define MSGHDR_MSG_IOVLEN msg_iovlen
+#define MSGHDR_MSG_IOVLEN_TYPE size_t
 #define MSGHDR_MSG_NAME msg_name
 #define MSGHDR_MSG_NAMELEN msg_namelen
 #define IOVEC_IOV_BASE iov_base
@@ -164,6 +175,8 @@ string lowerCase(string value);
 string upperCase(string value);
 string changeCase(string &value, bool lowerCase);
 string tagToString(uint64_t tag);
+bool setFdJoinMulticast(SOCKET sock, string bindIp, uint16_t bindPort, string ssmIp);
+bool setFdCloseOnExec(int fd);
 bool setFdNonBlock(SOCKET fd);
 bool setFdNoSIGPIPE(SOCKET fd);
 bool setFdKeepAlive(SOCKET fd, bool isUdp);
@@ -175,6 +188,7 @@ bool setFdTOS(SOCKET fd, uint8_t tos);
 bool setFdOptions(SOCKET fd, bool isUdp);
 bool deleteFile(string path);
 bool deleteFolder(string path, bool force);
+bool createFolder(string path, bool recursive);
 string getHostByName(string name);
 bool isNumeric(string value);
 void split(string str, string separator, vector<string> &result);
@@ -192,6 +206,7 @@ bool listFolder(string path, vector<string> &result,
 		bool normalizeAllPaths = true, bool includeFolders = false,
 		bool recursive = true);
 bool moveFile(string src, string dst);
+bool isAbsolutePath(string &path);
 void installSignal(int sig, SignalFnc pSignalFnc);
 void installQuitSignal(SignalFnc pQuitSignalFnc);
 void installConfRereadSignal(SignalFnc pConfRereadSignalFnc);

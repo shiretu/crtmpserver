@@ -53,6 +53,10 @@ void name(type val) { \
 };
 
 #define VARIANT_GETSET(type, name, defaultValue) VARIANT_GET(type,name,defaultValue);VARIANT_SET(type,name);
+#define VARIANT_COPY_CONSTRUCTORS(type) \
+type() : Variant() {} \
+type(const Variant &ref) { *((Variant *)this) = ref; } \
+type& operator =(const Variant &ref) { *((Variant *)this) = ref; return *this; }
 
 typedef enum _VariantType {
 	V_NULL = VAR_ENUM_VALUE_NULL,
@@ -99,6 +103,7 @@ private:
 		string *s;
 		VariantMap *m;
 	} _value;
+	char _pNumericKey[11];
 #ifdef LOG_VARIANT_MEMORY_MANAGEMENT
 	static int _constructorCount;
 	static int _dynamicAllocationCount;
@@ -179,11 +184,13 @@ public:
 	bool operator==(const VariantType value) const;
 	bool operator!=(const VariantType value) const;
 
+	time_t GetTimeT();
 	string GetTypeName();
 	void SetTypeName(string name);
 	bool HasKey(const string &key, bool caseSensitive = true);
+	bool HasIndex(const uint32_t index);
 	bool HasKeyChain(VariantType end, bool caseSensitive, uint32_t depth, ...);
-	void RemoveKey(const string &key);
+	void RemoveKey(const string &key, bool caseSensitive = true);
 	void RemoveAt(const uint32_t index);
 	void RemoveAllKeys();
 	uint32_t MapSize();
@@ -223,6 +230,8 @@ public:
 
 	static bool DeserializeFromCmdLineArgs(uint32_t count, const char **pArguments,
 			Variant &result);
+
+	static bool ParseTime(const char *pRaw, const char *pFormat, Variant &result);
 private:
 	TiXmlElement *SerializeToXmlElement(string &name);
 	static bool DeserializeFromBin(uint8_t *pBuffer, uint32_t bufferSize,

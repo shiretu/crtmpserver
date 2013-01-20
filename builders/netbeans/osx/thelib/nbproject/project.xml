@@ -13,22 +13,8 @@
                 <make-dep-project>../common</make-dep-project>
             </make-dep-projects>
             <sourceRootList>
-                <sourceRootElem>../../../../sources/thelib/include/application</sourceRootElem>
-                <sourceRootElem>../../../../sources/thelib/include/configuration</sourceRootElem>
-                <sourceRootElem>../../../../sources/thelib/include/netio</sourceRootElem>
-                <sourceRootElem>../../../../sources/thelib/include/protocols</sourceRootElem>
-                <sourceRootElem>../../../../sources/thelib/src/application</sourceRootElem>
-                <sourceRootElem>../../../../sources/thelib/src/configuration</sourceRootElem>
-                <sourceRootElem>../../../../sources/thelib/src/netio</sourceRootElem>
-                <sourceRootElem>../../../../sources/thelib/src/protocols</sourceRootElem>
-                <sourceRootElem>../../../../sources/thelib/include/streaming</sourceRootElem>
-                <sourceRootElem>../../../../sources/thelib/src/streaming</sourceRootElem>
-                <sourceRootElem>../../../../sources/thelib/include/mediaformats</sourceRootElem>
-                <sourceRootElem>../../../../sources/thelib/src/mediaformats</sourceRootElem>
-                <sourceRootElem>../../../../sources/thelib/src/recording</sourceRootElem>
-                <sourceRootElem>../../../../sources/thelib/include/recording</sourceRootElem>
-                <sourceRootElem>../../../../sources/thelib/include/vod</sourceRootElem>
-                <sourceRootElem>../../../../sources/thelib/src/vod</sourceRootElem>
+                <sourceRootElem>../../../../sources/thelib/include</sourceRootElem>
+                <sourceRootElem>../../../../sources/thelib/src</sourceRootElem>
             </sourceRootList>
             <confList>
                 <confElem>

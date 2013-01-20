@@ -20,8 +20,7 @@
 #ifdef SOLARIS
 
 #include "platform/solaris/solarisplatform.h"
-#include "platform/endianess/endianness.h"
-#include "utils/logging/logging.h"
+#include "common.h"
 
 string alowedCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 static map<int, SignalFnc> _signalHandlers;
@@ -35,38 +34,6 @@ SolarisPlatform::SolarisPlatform() {
 }
 
 SolarisPlatform::~SolarisPlatform() {
-}
-
-int vasprintf(char **ret, const char *format, va_list args) {
-	va_list copy;
-	va_copy(copy, args);
-
-	/* Make sure it is determinate, despite manuals indicating otherwise */
-	*ret = 0;
-
-	int count = vsnprintf(NULL, 0, format, args);
-	if (count >= 0) {
-		char* buffer = (char *) malloc(count + 1);
-		if (buffer != NULL) {
-			count = vsnprintf(buffer, count + 1, format, copy);
-			if (count < 0)
-				free(buffer);
-			else
-				*ret = buffer;
-		}
-	}
-	va_end(args); // Each va_start() or va_copy() needs a va_end()
-
-	return count;
-}
-
-int asprintf(char **strp, const char *fmt, ...) {
-	int32_t size;
-	va_list args;
-	va_start(args, fmt);
-	size = vasprintf(strp, fmt, args);
-	va_end(args);
-	return size;
 }
 
 string format(string fmt, ...) {
@@ -141,6 +108,53 @@ string tagToString(uint64_t tag) {
 	return result;
 }
 
+bool setFdJoinMulticast(SOCKET sock, string bindIp, uint16_t bindPort, string ssmIp) {
+	if (ssmIp == "") {
+		struct ip_mreq group;
+		group.imr_multiaddr.s_addr = inet_addr(STR(bindIp));
+		group.imr_interface.s_addr = INADDR_ANY;
+		if (setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP,
+				(char *) &group, sizeof (group)) < 0) {
+			int err = errno;
+			FATAL("Adding multicast failed. Error was: (%d) %s", err, strerror(err));
+			return false;
+		}
+		return true;
+	} else {
+		struct group_source_req multicast;
+		struct sockaddr_in *pGroup = (struct sockaddr_in*) &multicast.gsr_group;
+		struct sockaddr_in *pSource = (struct sockaddr_in*) &multicast.gsr_source;
+
+		memset(&multicast, 0, sizeof (multicast));
+
+		//Setup the group we want to join
+		pGroup->sin_family = AF_INET;
+		pGroup->sin_addr.s_addr = inet_addr(STR(bindIp));
+		pGroup->sin_port = EHTONS(bindPort);
+
+		//setup the source we want to listen
+		pSource->sin_family = AF_INET;
+		pSource->sin_addr.s_addr = inet_addr(STR(ssmIp));
+		if (pSource->sin_addr.s_addr == INADDR_NONE) {
+			FATAL("Unable to SSM on address %s", STR(ssmIp));
+			return false;
+		}
+		pSource->sin_port = 0;
+
+		INFO("Try to SSM on ip %s", STR(ssmIp));
+
+		if (setsockopt(sock, IPPROTO_IP, MCAST_JOIN_SOURCE_GROUP, &multicast,
+				sizeof (multicast)) < 0) {
+			int err = errno;
+			FATAL("Adding multicast failed. Error was: (%d) %s", err,
+					strerror(err));
+			return false;
+		}
+
+		return true;
+	}
+}
+
 bool setFdNonBlock(SOCKET fd) {
 	int32_t arg;
 	if ((arg = fcntl(fd, F_GETFL, NULL)) < 0) {
@@ -191,6 +205,12 @@ bool setFdReuseAddress(SOCKET fd) {
 		FATAL("Unable to reuse address");
 		return false;
 	}
+#ifdef SO_REUSEPORT
+	if (setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, (char *) & one, sizeof (one)) != 0) {
+		FATAL("Unable to reuse port");
+		return false;
+	}
+#endif /* SO_REUSEPORT */
 	return true;
 }
 
@@ -222,9 +242,11 @@ bool setFdTOS(SOCKET fd, uint8_t tos) {
 }
 
 bool setFdOptions(SOCKET fd, bool isUdp) {
-	if (!setFdNonBlock(fd)) {
-		FATAL("Unable to set non block");
-		return false;
+	if (!isUdp) {
+		if (!setFdNonBlock(fd)) {
+			FATAL("Unable to set non block");
+			return false;
+		}
 	}
 
 	if (!setFdNoSIGPIPE(fd)) {
@@ -361,8 +383,7 @@ void trim(string &value) {
 }
 
 int8_t getCPUCount() {
-	NYI;
-	return 0;
+	return sysconf(_SC_NPROCESSORS_ONLN);
 }
 
 map<string, string> mapping(string str, string separator1, string separator2, bool trimStrings) {
@@ -447,7 +468,7 @@ string normalizePath(string base, string file) {
 
 bool listFolder(string path, vector<string> &result, bool normalizeAllPaths,
 		bool includeFolders, bool recursive) {
-	/*if (path == "")
+	if (path == "")
 		path = ".";
 	if (path[path.size() - 1] != PATH_SEPARATOR)
 		path += PATH_SEPARATOR;
@@ -459,6 +480,9 @@ bool listFolder(string path, vector<string> &result, bool normalizeAllPaths,
 		FATAL("Unable to open folder: %s (%d) %s", STR(path), err, strerror(err));
 		return false;
 	}
+
+	struct stat tempStat;
+	memset(&tempStat, 0, sizeof (tempStat));
 
 	struct dirent *pDirent = NULL;
 	while ((pDirent = readdir(pDir)) != NULL) {
@@ -475,7 +499,13 @@ bool listFolder(string path, vector<string> &result, bool normalizeAllPaths,
 		if (entry == "")
 			continue;
 
-		if (pDirent->d_type == DT_DIR) {
+		if (stat(pDirent->d_name, &tempStat) != 0) {
+			FATAL("Unable to list folder");
+			closedir(pDir);
+			return false;
+		}
+
+		if ((tempStat.st_mode & S_IFMT) == S_IFDIR) {
 			if (includeFolders) {
 				ADD_VECTOR_END(result, entry);
 			}
@@ -492,8 +522,7 @@ bool listFolder(string path, vector<string> &result, bool normalizeAllPaths,
 	}
 
 	closedir(pDir);
-	return true;*/
-	NYIR;
+	return true;
 }
 
 bool moveFile(string src, string dst) {
@@ -503,6 +532,10 @@ bool moveFile(string src, string dst) {
 		return false;
 	}
 	return true;
+}
+
+bool isAbsolutePath(string &path) {
+	return (bool)((path.size() > 0) && (path[0] == PATH_SEPARATOR));
 }
 
 void signalHandler(int sig) {
@@ -536,21 +569,52 @@ void installConfRereadSignal(SignalFnc pConfRereadSignalFnc) {
 
 static time_t _gUTCOffset = -1;
 
-void computeGMTTimeOffset() {
+void computeUTCOffset() {
 	time_t now = time(NULL);
-	struct tm *pTemp = localtime(&now);
-	_gUTCOffset = pTemp->tm_gmtoff;
+	struct tm *pTemp1 = localtime(&now);
+	struct tm *pTemp2 = gmtime(&now);
+
+	pTemp1->tm_isdst = 0;
+	pTemp2->tm_isdst = 0;
+
+	char *tz;
+
+	tz = getenv("TZ");
+	setenv("TZ", "", 1);
+	tzset();
+	_gUTCOffset = mktime(pTemp1) - mktime(pTemp2);
+	if (tz)
+		setenv("TZ", tz, 1);
+	else
+		unsetenv("TZ");
+	tzset();
+}
+
+time_t timegm(struct tm *tm) {
+	time_t ret;
+	char *tz;
+
+	tz = getenv("TZ");
+	setenv("TZ", "", 1);
+	tzset();
+	ret = mktime(tm);
+	if (tz)
+		setenv("TZ", tz, 1);
+	else
+		unsetenv("TZ");
+	tzset();
+	return ret;
 }
 
 time_t getlocaltime() {
 	if (_gUTCOffset == -1)
-		computeGMTTimeOffset();
+		computeUTCOffset();
 	return getutctime() + _gUTCOffset;
 }
 
 time_t gettimeoffset() {
 	if (_gUTCOffset == -1)
-		computeGMTTimeOffset();
+		computeUTCOffset();
 	return _gUTCOffset;
 }
 #endif /* SOLARIS */

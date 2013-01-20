@@ -22,6 +22,7 @@ AS=as
 
 # Macros
 CND_PLATFORM=GNU-MacOSX
+CND_DLIB_EXT=dylib
 CND_CONF=Debug
 CND_DISTDIR=dist
 CND_BUILDDIR=build
@@ -66,7 +67,7 @@ LDLIBSOPTIONS=-L../thelib/../Debug/GNU-MacOSX -lthelib -L../common/dist/Debug/GN
 
 ../${CND_CONF}/${CND_PLATFORM}/applications/vptests/libvptests.dylib: ${OBJECTFILES}
 	${MKDIR} -p ../${CND_CONF}/${CND_PLATFORM}/applications/vptests
-	${LINK.cc} -dynamiclib -install_name libvptests.dylib -o ../${CND_CONF}/${CND_PLATFORM}/applications/vptests/libvptests.dylib -fPIC ${OBJECTFILES} ${LDLIBSOPTIONS} 
+	${LINK.cc} -o ../${CND_CONF}/${CND_PLATFORM}/applications/vptests/libvptests.dylib ${OBJECTFILES} ${LDLIBSOPTIONS} -dynamiclib -install_name libvptests.dylib -fPIC
 
 ${OBJECTDIR}/_ext/573837895/vptestsapplication.o: ../../../../sources/applications/vptests/src/vptestsapplication.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/573837895

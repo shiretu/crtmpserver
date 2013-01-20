@@ -58,7 +58,7 @@ bool RTSPProtocol::RTSPKeepAliveTimer::TimePeriodElapsed() {
 		EnqueueForDelete();
 		return true;
 	}
-	if (!pProtocol->SendKeepAliveOptions()) {
+	if (!pProtocol->SendKeepAlive()) {
 		FATAL("Unable to send keep alive options");
 		pProtocol->EnqueueForDelete();
 		return true;
@@ -80,6 +80,9 @@ RTSPProtocol::RTSPProtocol()
 	_keepAliveTimerId = 0;
 	_pOutStream = NULL;
 	_enableTearDown = false;
+	_keepAliveMethod = RTSP_METHOD_OPTIONS;
+	_maxBufferSize = 256 * 1024;
+	_clientSideBuffer = 2;
 }
 
 RTSPProtocol::~RTSPProtocol() {
@@ -113,6 +116,9 @@ void RTSPProtocol::SetApplication(BaseClientApplication *pApplication) {
 		if (_pProtocolHandler == NULL) {
 			FATAL("Protocol handler not found");
 			EnqueueForDelete();
+		}
+		if (pApplication->GetConfiguration().HasKeyChain(_V_NUMERIC, false, 1, "maxRtspOutBuffer")) {
+			_maxBufferSize = (uint32_t) pApplication->GetConfiguration().GetValue("maxRtspOutBuffer", false);
 		}
 	} else {
 		_pProtocolHandler = NULL;
@@ -212,8 +218,12 @@ void RTSPProtocol::EnableTearDown() {
 	_enableTearDown = true;
 }
 
-bool RTSPProtocol::SendKeepAliveOptions() {
-	PushRequestFirstLine(RTSP_METHOD_OPTIONS, _keepAliveURI, RTSP_VERSION_1_0);
+void RTSPProtocol::SetKeepAliveMethod(string keepAliveMethod) {
+	_keepAliveMethod = keepAliveMethod;
+}
+
+bool RTSPProtocol::SendKeepAlive() {
+	PushRequestFirstLine(_keepAliveMethod, _keepAliveURI, RTSP_VERSION_1_0);
 	if (GetCustomParameters().HasKey(RTSP_HEADERS_SESSION)) {
 		PushRequestHeader(RTSP_HEADERS_SESSION,
 				GetCustomParameters()[RTSP_HEADERS_SESSION]);
@@ -227,6 +237,13 @@ bool RTSPProtocol::HasConnectivity() {
 
 SDP &RTSPProtocol::GetInboundSDP() {
 	return _inboundSDP;
+}
+
+bool RTSPProtocol::FeedRTSPRequest(string &data) {
+	if (data.size() == 0)
+		return true;
+	_internalBuffer.ReadFromBuffer((const uint8_t *) data.data(), (uint32_t) data.size());
+	return SignalInputData(_internalBuffer);
 }
 
 bool RTSPProtocol::SignalInputData(IOBuffer &buffer) {
@@ -295,10 +312,14 @@ void RTSPProtocol::PushRequestContent(string outboundContent, bool append) {
 
 bool RTSPProtocol::SendRequestMessage() {
 	//1. Put the first line
-	_outputBuffer.ReadFromString(format("%s %s %s\r\n",
+	string firstLine = format("%s %s %s\r\n",
 			STR(_requestHeaders[RTSP_FIRST_LINE][RTSP_METHOD]),
 			STR(_requestHeaders[RTSP_FIRST_LINE][RTSP_URL]),
-			STR(_requestHeaders[RTSP_FIRST_LINE][RTSP_VERSION])));
+			STR(_requestHeaders[RTSP_FIRST_LINE][RTSP_VERSION]));
+#ifdef RTSP_DUMP_TRAFFIC
+	_debugOutputData = firstLine;
+#endif /* RTSP_DUMP_TRAFFIC */
+	_outputBuffer.ReadFromString(firstLine);
 
 	//2. Put our request sequence in place
 	_requestHeaders[RTSP_HEADERS][RTSP_HEADERS_CSEQ] = format("%u", ++_requestSequence);
@@ -326,6 +347,18 @@ bool RTSPProtocol::SendRequestMessage() {
 		FATAL("Requests backlog count too high");
 		return false;
 	}
+
+	string date;
+	char tempBuff[128] = {0};
+	struct tm tm;
+	time_t t = getutctime();
+	gmtime_r(&t, &tm);
+	strftime(tempBuff, 127, "%a, %d %b %Y %H:%M:%S UTC", &tm);
+	date = tempBuff;
+
+	_requestHeaders[RTSP_HEADERS]["Date"] = date;
+	_requestHeaders[RTSP_HEADERS][RTSP_HEADERS_X_POWERED_BY] = RTSP_HEADERS_X_POWERED_BY_US;
+	_requestHeaders[RTSP_HEADERS].RemoveKey(RTSP_HEADERS_SERVER, false);
 
 	//3. send the mesage
 	return SendMessage(_requestHeaders, _requestContent);
@@ -373,11 +406,30 @@ void RTSPProtocol::PushResponseContent(string outboundContent, bool append) {
 }
 
 bool RTSPProtocol::SendResponseMessage() {
-	//1. Put the first line
-	_outputBuffer.ReadFromString(format("%s %u %s\r\n",
+	string firstLine = format("%s %u %s\r\n",
 			STR(_responseHeaders[RTSP_FIRST_LINE][RTSP_VERSION]),
 			(uint32_t) _responseHeaders[RTSP_FIRST_LINE][RTSP_STATUS_CODE],
-			STR(_responseHeaders[RTSP_FIRST_LINE][RTSP_STATUS_CODE_REASON])));
+			STR(_responseHeaders[RTSP_FIRST_LINE][RTSP_STATUS_CODE_REASON]));
+#ifdef RTSP_DUMP_TRAFFIC
+	_debugOutputData = firstLine;
+#endif /* RTSP_DUMP_TRAFFIC */
+	//1. Put the first line
+	_outputBuffer.ReadFromString(firstLine);
+
+	string date;
+	char tempBuff[128] = {0};
+	struct tm tm;
+	time_t t = getutctime();
+	gmtime_r(&t, &tm);
+	strftime(tempBuff, 127, "%a, %d %b %Y %H:%M:%S UTC", &tm);
+	date = tempBuff;
+
+	_responseHeaders[RTSP_HEADERS]["Date"] = date;
+	_responseHeaders[RTSP_HEADERS]["Expires"] = date;
+	_responseHeaders[RTSP_HEADERS]["Cache-Control"] = "no-store";
+	_responseHeaders[RTSP_HEADERS]["Pragma"] = "no-cache";
+	_responseHeaders[RTSP_HEADERS][RTSP_HEADERS_SERVER] = RTSP_HEADERS_SERVER_US;
+	_responseHeaders[RTSP_HEADERS].RemoveKey(RTSP_HEADERS_X_POWERED_BY, false);
 
 	//2. send the mesage
 	return SendMessage(_responseHeaders, _responseContent);
@@ -387,9 +439,13 @@ OutboundConnectivity * RTSPProtocol::GetOutboundConnectivity(
 		BaseInNetStream *pInNetStream, bool forceTcp) {
 	if (_pOutboundConnectivity == NULL) {
 		BaseOutNetRTPUDPStream *pOutStream = new OutNetRTPUDPH264Stream(this,
-				GetApplication()->GetStreamsManager(),
 				pInNetStream->GetName(), forceTcp);
-
+		if (!pOutStream->SetStreamsManager(GetApplication()->GetStreamsManager())) {
+			FATAL("Unable to set the streams manager");
+			delete pOutStream;
+			pOutStream = NULL;
+			return NULL;
+		}
 
 		_pOutboundConnectivity = new OutboundConnectivity(forceTcp, this);
 		if (!_pOutboundConnectivity->Initialize()) {
@@ -440,13 +496,28 @@ void RTSPProtocol::CloseInboundConnectivity() {
 	}
 }
 
-bool RTSPProtocol::SendRaw(uint8_t *pBuffer, uint32_t length) {
+bool RTSPProtocol::SendRaw(uint8_t *pBuffer, uint32_t length, bool allowDrop) {
+	if ((allowDrop)&&(length > 0)) {
+		if (GETAVAILABLEBYTESCOUNT(_outputBuffer) > _maxBufferSize) {
+			//			WARN("%"PRIu32" bytes dropped on connection %s. Max: %"PRIu32"; Current: %"PRIu32,
+			//					length, STR(*this), _maxBufferSize, GETAVAILABLEBYTESCOUNT(_outputBuffer));
+			return true;
+		}
+	}
 	_outputBuffer.ReadFromBuffer(pBuffer, length);
 	return EnqueueForOutbound();
 }
 
-bool RTSPProtocol::SendRaw(MSGHDR *pMessage, uint16_t length, RTPClient *pClient, bool isAudio,
-		bool isData) {
+bool RTSPProtocol::SendRaw(MSGHDR *pMessage, uint16_t length, RTPClient *pClient,
+		bool isAudio, bool isData, bool allowDrop) {
+	if ((allowDrop)&&(length > 0)) {
+		if (GETAVAILABLEBYTESCOUNT(_outputBuffer) > _maxBufferSize) {
+			//			WARN("%"PRIu32" bytes dropped on connection %s. Max: %"PRIu32"; Current: %"PRIu32,
+			//					length, STR(*this), _maxBufferSize, GETAVAILABLEBYTESCOUNT(_outputBuffer));
+			return true;
+		}
+	}
+
 	_outputBuffer.ReadFromByte((uint8_t) '$');
 	if (isAudio) {
 		if (isData) {
@@ -479,10 +550,6 @@ void RTSPProtocol::SetOutStream(BaseOutStream *pOutStream) {
 }
 
 bool RTSPProtocol::SendMessage(Variant &headers, string &content) {
-	//1. Add info about us
-	headers[RTSP_HEADERS][RTSP_HEADERS_SERVER] = RTSP_HEADERS_SERVER_US;
-	headers[RTSP_HEADERS][RTSP_HEADERS_X_POWERED_BY] = RTSP_HEADERS_X_POWERED_BY_US;
-
 	//2. Add the content length if required
 	if (content.size() > 0) {
 		headers[RTSP_HEADERS][RTSP_HEADERS_CONTENT_LENGTH] = format("%"PRIz"u", content.size());
@@ -497,14 +564,22 @@ bool RTSPProtocol::SendMessage(Variant &headers, string &content) {
 
 	FOR_MAP(headers[RTSP_HEADERS], string, Variant, i) {
 		_outputBuffer.ReadFromString(MAP_KEY(i) + ": " + (string) MAP_VAL(i) + "\r\n");
+#ifdef RTSP_DUMP_TRAFFIC
+		_debugOutputData += MAP_KEY(i) + ": " + (string) MAP_VAL(i) + "\r\n";
+#endif /* RTSP_DUMP_TRAFFIC */
 	}
 	_outputBuffer.ReadFromString("\r\n");
+#ifdef RTSP_DUMP_TRAFFIC
+	_debugOutputData += "\r\n";
+#endif /* RTSP_DUMP_TRAFFIC */
 
 	//4. Write the content
 	_outputBuffer.ReadFromString(content);
-
-	//	string a = string((char *) GETIBPOINTER(_outputBuffer), GETAVAILABLEBYTESCOUNT(_outputBuffer));
-	//	FINEST("\n`%s`", STR(a));
+#ifdef RTSP_DUMP_TRAFFIC
+	_debugOutputData += content;
+	FINEST("OUTPUT\n`%s`", STR(_debugOutputData));
+	_debugOutputData = "";
+#endif /* RTSP_DUMP_TRAFFIC */
 
 	//5. Enqueue for outbound
 	return EnqueueForOutbound();
@@ -598,6 +673,9 @@ bool RTSPProtocol::ParseNormalHeaders(IOBuffer &buffer) {
 
 	//4. Get the raw headers and plit it into lines
 	string rawHeaders = string((char *) GETIBPOINTER(buffer), headersSize);
+#ifdef RTSP_DUMP_TRAFFIC
+	_debugInputData = rawHeaders + "\r\n\r\n";
+#endif /* RTSP_DUMP_TRAFFIC */
 	vector<string> lines;
 	split(rawHeaders, "\r\n", lines);
 	if (lines.size() == 0) {
@@ -685,6 +763,7 @@ bool RTSPProtocol::ParseFirstLine(string &line) {
 		_inboundHeaders[RTSP_FIRST_LINE][RTSP_STATUS_CODE] = (uint32_t) atoi(STR(parts[1]));
 		_inboundHeaders[RTSP_FIRST_LINE][RTSP_STATUS_CODE_REASON] = reason;
 		_inboundHeaders["isRequest"] = false;
+		_inboundHeaders["isHttp"] = (bool)false;
 
 
 		return true;
@@ -696,9 +775,17 @@ bool RTSPProtocol::ParseFirstLine(string &line) {
 			|| (parts[0] == RTSP_METHOD_SETUP)
 			|| (parts[0] == RTSP_METHOD_TEARDOWN)
 			|| (parts[0] == RTSP_METHOD_RECORD)
-			|| (parts[0] == RTSP_METHOD_ANNOUNCE)) {
-		if (parts[2] != RTSP_VERSION_1_0) {
-			FATAL("RTSP version not supported: %s", STR(parts[2]));
+			|| (parts[0] == RTSP_METHOD_ANNOUNCE)
+			|| (parts[0] == RTSP_METHOD_GET_PARAMETER)
+			|| (parts[0] == RTSP_METHOD_SET_PARAMETER)
+			|| (parts[0] == HTTP_METHOD_GET)
+			|| (parts[0] == HTTP_METHOD_POST)
+			) {
+		if ((parts[2] != RTSP_VERSION_1_0)
+				&&(parts[2] != HTTP_VERSION_1_0)
+				&&(parts[2] != HTTP_VERSION_1_1)
+				) {
+			FATAL("RTSP/HTTP version not supported: %s", STR(parts[2]));
 			return false;
 		}
 
@@ -706,11 +793,12 @@ bool RTSPProtocol::ParseFirstLine(string &line) {
 		_inboundHeaders[RTSP_FIRST_LINE][RTSP_URL] = parts[1];
 		_inboundHeaders[RTSP_FIRST_LINE][RTSP_VERSION] = parts[2];
 		_inboundHeaders["isRequest"] = true;
+		_inboundHeaders["isHttp"] = (bool)((parts[0] == HTTP_METHOD_GET)
+				|| (parts[0] == HTTP_METHOD_POST));
 
 		return true;
 	} else {
 		FATAL("Incorrect first line: %s", STR(line));
-
 		return false;
 	}
 }
@@ -730,10 +818,16 @@ bool RTSPProtocol::HandleRTSPMessage(IOBuffer &buffer) {
 		chunkLength = GETAVAILABLEBYTESCOUNT(buffer) < chunkLength ?
 				GETAVAILABLEBYTESCOUNT(buffer) : chunkLength;
 		_inboundContent += string((char *) GETIBPOINTER(buffer), chunkLength);
+#ifdef RTSP_DUMP_TRAFFIC
+		_debugInputData += string((char *) GETIBPOINTER(buffer), chunkLength);
+#endif /* RTSP_DUMP_TRAFFIC */
+
 		buffer.Ignore(chunkLength);
-		if (_inboundContent.size() < _contentLength) {
-			FINEST("Not enough data. Wanted: %u; got: %"PRIz"u", _contentLength, _inboundContent.size());
-			return true;
+		if (!((bool)_inboundHeaders["isHttp"])) {
+			if (_inboundContent.size() < _contentLength) {
+				FINEST("Not enough data. Wanted: %u; got: %"PRIz"u", _contentLength, _inboundContent.size());
+				return true;
+			}
 		}
 	}
 
@@ -741,12 +835,45 @@ bool RTSPProtocol::HandleRTSPMessage(IOBuffer &buffer) {
 
 	//2. Call the protocol handler
 	if ((bool)_inboundHeaders["isRequest"]) {
-		result = _pProtocolHandler->HandleRTSPRequest(this, _inboundHeaders, _inboundContent);
+		if ((bool)_inboundHeaders["isHttp"]) {
+			uint32_t before = (uint32_t) _inboundContent.size();
+			result = _pProtocolHandler->HandleHTTPRequest(this, _inboundHeaders,
+					_inboundContent);
+			uint32_t after = (uint32_t) _inboundContent.size();
+			if (after > before) {
+				FATAL("Data added to content");
+				return false;
+			}
+			if (_contentLength == before) {
+				_state = RTSP_STATE_HEADERS;
+			} else {
+				if (_contentLength < (before - after)) {
+					FATAL("Invalid content length detected");
+					return false;
+				}
+				_contentLength -= (before - after);
+			}
+			if (_contentLength == 0) {
+				_state = RTSP_STATE_HEADERS;
+			}
+		} else {
+#ifdef RTSP_DUMP_TRAFFIC
+			WARN("INPUT\n`%s`", STR(_debugInputData));
+			_debugInputData = "";
+#endif /* RTSP_DUMP_TRAFFIC */
+			result = _pProtocolHandler->HandleRTSPRequest(this, _inboundHeaders,
+					_inboundContent);
+			_state = RTSP_STATE_HEADERS;
+		}
 	} else {
+#ifdef RTSP_DUMP_TRAFFIC
+		WARN("INPUT\n`%s`", STR(_debugInputData));
+		_debugInputData = "";
+#endif /* RTSP_DUMP_TRAFFIC */
 		result = _pProtocolHandler->HandleRTSPResponse(this, _inboundHeaders, _inboundContent);
+		_state = RTSP_STATE_HEADERS;
 	}
 
-	_state = RTSP_STATE_HEADERS;
 	return result;
 }
 

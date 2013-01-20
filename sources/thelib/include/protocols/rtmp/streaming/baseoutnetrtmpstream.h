@@ -25,6 +25,7 @@
 #include "streaming/baseoutnetstream.h"
 #include "protocols/rtmp/header.h"
 #include "protocols/rtmp/channel.h"
+#include "mediaformats/readers/streammetadataresolver.h"
 
 class BaseRTMPProtocol;
 
@@ -54,11 +55,13 @@ private:
 	bool _videoCurrentFrameDropped;
 	uint32_t _maxBufferSize;
 	uint64_t _attachedStreamType;
-	Variant _completeMetadata;
 	string _clientId;
 	bool _paused;
 
 	bool _sendOnStatusPlayMessages;
+	PublicMetadata _metadata;
+	uint64_t _metaFileSize;
+	double _metaFileDuration;
 
 	uint64_t _audioPacketsCount;
 	uint64_t _audioDroppedPacketsCount;
@@ -68,11 +71,13 @@ private:
 	uint64_t _videoDroppedPacketsCount;
 	uint64_t _videoBytesCount;
 	uint64_t _videoDroppedBytesCount;
+
+	bool _absoluteTimestamps;
 protected:
-	BaseOutNetRTMPStream(BaseRTMPProtocol *pProtocol, StreamsManager *pStreamsManager,
-			uint64_t type, string name, uint32_t rtmpStreamId, uint32_t chunkSize);
+	BaseOutNetRTMPStream(BaseProtocol *pProtocol, uint64_t type, string name,
+			uint32_t rtmpStreamId, uint32_t chunkSize);
 public:
-	static BaseOutNetRTMPStream *GetInstance(BaseRTMPProtocol *pProtocol,
+	static BaseOutNetRTMPStream *GetInstance(BaseProtocol *pProtocol,
 			StreamsManager *pStreamsManager,
 			string name, uint32_t rtmpStreamId,
 			uint32_t chunkSize,
@@ -89,26 +94,36 @@ public:
 	void SetSendOnStatusPlayMessages(bool value);
 	virtual void GetStats(Variant &info, uint32_t namespaceId = 0);
 
-	virtual bool FeedData(uint8_t *pData, uint32_t dataLength,
-			uint32_t processedLength, uint32_t totalLength,
-			double absoluteTimestamp, bool isAudio);
-
 	virtual bool SendStreamMessage(Variant &message);
 	virtual void SignalAttachedToInStream();
 	virtual void SignalDetachedFromInStream();
 
-	virtual bool SignalPlay(double &absoluteTimestamp, double &length);
+	virtual bool SignalPlay(double &dts, double &length);
 	virtual bool SignalPause();
 	virtual bool SignalResume();
-	virtual bool SignalSeek(double &absoluteTimestamp);
+	virtual bool SignalSeek(double &dts);
 	virtual bool SignalStop();
 
 	virtual void SignalStreamCompleted();
+	virtual void SignalAudioStreamCapabilitiesChanged(
+			StreamCapabilities *pCapabilities, AudioCodecInfo *pOld,
+			AudioCodecInfo *pNew);
+	virtual void SignalVideoStreamCapabilitiesChanged(
+			StreamCapabilities *pCapabilities, VideoCodecInfo *pOld,
+			VideoCodecInfo *pNew);
+protected:
+	virtual bool InternalFeedData(uint8_t *pData, uint32_t dataLength,
+			uint32_t processedLength, uint32_t totalLength,
+			double dts, bool isAudio);
+	bool FeedAudioCodecBytes(StreamCapabilities *pCapabilities, double dts, bool isAbsolute);
+	bool FeedVideoCodecBytes(StreamCapabilities *pCapabilities, double dts, bool isAbsolute);
 private:
 	bool ChunkAndSend(uint8_t *pData, uint32_t length, IOBuffer &bucket,
 			Header &header, Channel &channel);
 	bool AllowExecution(uint32_t totalProcessed, uint32_t dataLength, bool isAudio);
 	void InternalReset();
+	void GetMetadata();
+	bool SendOnMetadata();
 };
 
 

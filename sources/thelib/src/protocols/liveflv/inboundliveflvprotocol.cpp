@@ -48,7 +48,7 @@ bool InboundLiveFLVProtocol::Initialize(Variant &parameters) {
 		_waitForMetadata = (bool)parameters["waitForMetadata"];
 	else
 		_waitForMetadata = false;
-	FINEST("_waitForMetadata: %d", _waitForMetadata);
+	//FINEST("_waitForMetadata: %d", _waitForMetadata);
 	return true;
 }
 
@@ -66,6 +66,12 @@ bool InboundLiveFLVProtocol::SignalInputData(int32_t recvAmount) {
 	ASSERT("OPERATION NOT SUPPORTED");
 	return false;
 }
+
+//#define LIVEFLV_DUMP_PTSDTS
+#ifdef LIVEFLV_DUMP_PTSDTS
+uint32_t lastPts = 0;
+uint32_t lastDts = 0;
+#endif /* LIVEFLV_DUMP_PTSDTS */
 
 bool InboundLiveFLVProtocol::SignalInputData(IOBuffer &buffer) {
 	//1. Initialize the stream
@@ -95,14 +101,14 @@ bool InboundLiveFLVProtocol::SignalInputData(IOBuffer &buffer) {
 		//4. Read the type, length and the timestamp
 		uint8_t type;
 		uint32_t length;
-		uint32_t timestamp;
+		uint32_t dts;
 		type = GETIBPOINTER(buffer)[0];
 		length = ENTOHLP((GETIBPOINTER(buffer) + 1)) >> 8; //----MARKED-LONG---
 		if (length >= 1024 * 1024) {
 			FATAL("Frame too large: %u", length);
 			return false;
 		}
-		timestamp = ENTOHAP((GETIBPOINTER(buffer) + 4)); //----MARKED-LONG---
+		dts = ENTOHAP((GETIBPOINTER(buffer) + 4)); //----MARKED-LONG---
 
 		//5. Do we have enough data? 15 bytes are the lead header and the trail length (11+4)
 		if (GETAVAILABLEBYTESCOUNT(buffer) < length + 15) {
@@ -119,7 +125,7 @@ bool InboundLiveFLVProtocol::SignalInputData(IOBuffer &buffer) {
 				//audio data
 				if (_pStream != NULL) {
 					if (!_pStream->FeedData(GETIBPOINTER(buffer), length, 0,
-							length, timestamp, true)) {
+							length, dts, dts, true)) {
 						FATAL("Unable to feed audio");
 						return false;
 					}
@@ -130,11 +136,22 @@ bool InboundLiveFLVProtocol::SignalInputData(IOBuffer &buffer) {
 			{
 				//video data
 				if (_pStream != NULL) {
+					uint32_t pts = dts + (ENTOHLP(GETIBPOINTER(buffer) + 2) >> 8);
+#ifdef LIVEFLV_DUMP_PTSDTS
+					FINEST("pts: %8.2f\tdts: %8.2f\tcts: %4"PRIu32"\tptsd: %+"PRId32"\tdtsd: %+"PRId32"\t%s",
+							(double) pts, (double) dts,
+							pts - dts,
+							pts - lastPts, dts - lastDts,
+							pts == dts ? "" : "DTS Present");
+					lastPts = pts;
+					lastDts = dts;
+#endif /* LIVEFLV_DUMP_PTSDTS */
 					if (!_pStream->FeedData(GETIBPOINTER(buffer), length, 0,
-							length, timestamp, false)) {
+							length, pts, dts, false)) {
 						FATAL("Unable to feed audio");
 						return false;
 					}
+					//FINEST("---------------------------");
 				}
 				break;
 			}
@@ -181,7 +198,7 @@ bool InboundLiveFLVProtocol::SignalInputData(IOBuffer &buffer) {
 					}
 				}
 
-				INFO("Stream metadata:\n%s", STR(parameters.ToString()));
+				//INFO("Stream metadata:\n%s", STR(parameters.ToString()));
 
 				//4. Send the notify
 				if (_pStream != NULL) {
@@ -216,8 +233,13 @@ bool InboundLiveFLVProtocol::InitializeStream(string streamName) {
 		return false;
 	}
 
-	_pStream = new InNetLiveFLVStream(this,
-			GetApplication()->GetStreamsManager(), streamName);
+	_pStream = new InNetLiveFLVStream(this, streamName);
+	if (!_pStream->SetStreamsManager(GetApplication()->GetStreamsManager())) {
+		FATAL("Unable to set the streams manager");
+		delete _pStream;
+		_pStream = NULL;
+		return false;
+	}
 
 	//6. Get the list of waiting subscribers
 	map<uint32_t, BaseOutStream *> subscribedOutStreams =

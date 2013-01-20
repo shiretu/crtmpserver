@@ -26,7 +26,7 @@
 #include "streaming/basestream.h"
 #include "application/clientapplicationmanager.h"
 #include "streaming/streamstypes.h"
-#include "vod/basevodmanager.h"
+#include "mediaformats/readers/streammetadataresolver.h"
 
 uint32_t BaseClientApplication::_idGenerator = 0;
 
@@ -52,18 +52,14 @@ BaseClientApplication::BaseClientApplication(Variant &configuration)
 	_hasStreamAliases = false;
 	if (configuration.HasKeyChain(V_BOOL, false, 1, CONF_APPLICATION_HAS_STREAM_ALIASES))
 		_hasStreamAliases = (bool)configuration[CONF_APPLICATION_HAS_STREAM_ALIASES];
-#ifdef HAS_VOD_MANAGER
-	_pVODManager = new BaseVODManager(this, configuration);
-#endif /* HAS_VOD_MANAGER */
+	_pStreamMetadataResolver = new StreamMetadataResolver();
 }
 
 BaseClientApplication::~BaseClientApplication() {
-#ifdef HAS_VOD_MANAGER
-	if (_pVODManager != NULL) {
-		delete _pVODManager;
+	if (_pStreamMetadataResolver != NULL) {
+		delete _pStreamMetadataResolver;
+		_pStreamMetadataResolver = NULL;
 	}
-	_pVODManager = NULL;
-#endif /* HAS_VOD_MANAGER */
 }
 
 uint32_t BaseClientApplication::GetId() {
@@ -89,18 +85,28 @@ bool BaseClientApplication::IsDefault() {
 StreamsManager *BaseClientApplication::GetStreamsManager() {
 	return &_streamsManager;
 }
-#ifdef HAS_VOD_MANAGER
 
-BaseVODManager *BaseClientApplication::GetVODManager() {
-	return _pVODManager;
+StreamMetadataResolver *BaseClientApplication::GetStreamMetadataResolver() {
+	return _pStreamMetadataResolver;
 }
-#endif /* HAS_VOD_MANAGER */
 
 bool BaseClientApplication::Initialize() {
-#ifdef HAS_VOD_MANAGER
-	if (_pVODManager != NULL)
-		return _pVODManager->Initialize();
-#endif /* HAS_VOD_MANAGER */
+	if (_configuration.HasKeyChain(V_STRING, false, 1, CONF_APPLICATION_MEDIAFOLDER)) {
+		WARN(CONF_APPLICATION_MEDIAFOLDER" is obsolete. Please use "CONF_APPLICATION_MEDIASTORAGE);
+		if (!_configuration.HasKeyChain(V_MAP, false, 1, CONF_APPLICATION_MEDIASTORAGE)) {
+			_configuration[CONF_APPLICATION_MEDIASTORAGE] = Variant();
+			_configuration[CONF_APPLICATION_MEDIASTORAGE].IsArray(false);
+		}
+		_configuration.GetValue(CONF_APPLICATION_MEDIASTORAGE, false)["__obsolete__mediaFolder"][CONF_APPLICATION_MEDIAFOLDER] =
+				_configuration.GetValue(CONF_APPLICATION_MEDIAFOLDER, false);
+	}
+	if (_configuration.HasKeyChain(V_MAP, false, 1, CONF_APPLICATION_MEDIASTORAGE)) {
+		if (!_pStreamMetadataResolver->Initialize(_configuration.GetValue(CONF_APPLICATION_MEDIASTORAGE, false))) {
+			FATAL("Unable to initialize stream metadata resolver");
+			return false;
+		}
+	}
+
 	return true;
 }
 
@@ -177,7 +183,10 @@ bool BaseClientApplication::StreamNameAvailable(string streamName,
 	return _streamsManager.StreamNameAvailable(streamName);
 }
 
-BaseAppProtocolHandler *BaseClientApplication::GetProtocolHandler(BaseProtocol *pProtocol) {
+BaseAppProtocolHandler *BaseClientApplication::GetProtocolHandler(
+		BaseProtocol *pProtocol) {
+	if (pProtocol == NULL)
+		return NULL;
 	return GetProtocolHandler(pProtocol->GetType());
 }
 
@@ -205,13 +214,10 @@ BaseAppProtocolHandler *BaseClientApplication::GetProtocolHandler(string &scheme
 #ifdef HAS_PROTOCOL_RTP
 	else if (scheme == "rtsp") {
 		pResult = GetProtocolHandler(PT_RTSP);
+	} else if (scheme == "rtp") {
+		pResult = GetProtocolHandler(PT_INBOUND_RTP);
 	}
 #endif /* HAS_PROTOCOL_RTP */
-#ifdef HAS_PROTOCOL_MMS
-	else if (scheme == "mms") {
-		pResult = GetProtocolHandler(PT_OUTBOUND_MMS);
-	}
-#endif /* HAS_PROTOCOL_MMS */
 	else {
 		WARN("scheme %s not recognized", STR(scheme));
 	}
@@ -311,7 +317,7 @@ bool BaseClientApplication::PullExternalStreams() {
 	return true;
 }
 
-bool BaseClientApplication::PullExternalStream(Variant streamConfig) {
+bool BaseClientApplication::PullExternalStream(Variant &streamConfig) {
 	//1. Minimal verification
 	if (streamConfig["uri"] != V_STRING) {
 		FATAL("Invalid uri");
@@ -341,7 +347,7 @@ bool BaseClientApplication::PullExternalStream(Variant streamConfig) {
 	return pProtocolHandler->PullExternalStream(uri, streamConfig);
 }
 
-bool BaseClientApplication::PushLocalStream(Variant streamConfig) {
+bool BaseClientApplication::PushLocalStream(Variant &streamConfig) {
 	//1. Minimal verification
 	if (streamConfig["targetUri"] != V_STRING) {
 		FATAL("Invalid uri");
@@ -496,7 +502,7 @@ string BaseClientApplication::GetStreamNameByAlias(string &streamName, bool remo
 }
 
 void BaseClientApplication::SetStreamAlias(string &streamName, string &streamAlias) {
-	if (!_hasStreamAliases)
+	if (_hasStreamAliases)
 		_streamAliases[streamAlias] = streamName;
 }
 
@@ -506,6 +512,75 @@ void BaseClientApplication::RemoveStreamAlias(string &streamAlias) {
 
 map<string, string> & BaseClientApplication::GetAllStreamAliases() {
 	return _streamAliases;
+}
+
+static const char *gStrSettings[] = {
+	"",
+	"pullSettings",
+	"pushSettings"
+};
+
+OperationType BaseClientApplication::GetOperationType(BaseProtocol *pProtocol, Variant &streamConfig) {
+	streamConfig.Reset();
+	if (pProtocol == NULL)
+		return OPERATION_TYPE_STANDARD;
+	//2. Get connection type
+	return GetOperationType(pProtocol->GetCustomParameters(), streamConfig);
+}
+
+OperationType BaseClientApplication::GetOperationType(Variant &allParameters, Variant &streamConfig) {
+	//1. Reset the streamconfig
+	streamConfig.Reset();
+
+	//2. Check the parameters and see if they are present
+	if (allParameters != V_MAP)
+		return OPERATION_TYPE_STANDARD;
+	if (!allParameters.HasKey("customParameters"))
+		return OPERATION_TYPE_STANDARD;
+	Variant customParameters = allParameters["customParameters"];
+	if (customParameters != V_MAP)
+		return OPERATION_TYPE_STANDARD;
+
+	//3. Is this a pull?
+	if (customParameters.HasKey("externalStreamConfig")) {
+		streamConfig = customParameters["externalStreamConfig"];
+		string uri = streamConfig["uri"]["fullUriWithAuth"];
+		streamConfig["uri"] = uri;
+		return OPERATION_TYPE_PULL;
+	}
+
+	//4. Is this a push?
+	if (customParameters.HasKey("localStreamConfig")) {
+		streamConfig = customParameters["localStreamConfig"];
+		string uri = streamConfig["targetUri"]["fullUriWithAuth"];
+		streamConfig["targetUri"] = uri;
+		return OPERATION_TYPE_PUSH;
+	}
+
+	//9. This is something else
+	return OPERATION_TYPE_STANDARD;
+}
+
+void BaseClientApplication::StoreConnectionType(Variant &dest, BaseProtocol *pProtocol) {
+	Variant streamConfig;
+	OperationType operationType = GetOperationType(pProtocol, streamConfig);
+	if ((operationType >= OPERATION_TYPE_PULL) && (operationType <= OPERATION_TYPE_PUSH)) {
+		dest[gStrSettings[operationType]] = streamConfig;
+	}
+	dest["connectionType"] = (uint8_t) operationType;
+}
+
+Variant &BaseClientApplication::GetStreamSettings(Variant &src) {
+	OperationType operationType;
+	if ((src.HasKeyChain(_V_NUMERIC, true, 1, "connectionType"))
+			&& ((operationType = (OperationType) ((uint8_t) src["connectionType"])) >= OPERATION_TYPE_PULL)
+			&& (operationType <= OPERATION_TYPE_PUSH)
+			&& (src.HasKeyChain(V_MAP, true, 1, gStrSettings[operationType]))
+			) {
+		return src[gStrSettings[operationType]];
+	} else {
+		return _dummy;
+	}
 }
 
 string BaseClientApplication::GetServiceInfo(IOHandler *pIOHandler) {

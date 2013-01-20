@@ -29,6 +29,7 @@ ConfigFile::ConfigFile(GetApplicationFunction_t staticGetApplicationFunction,
 		ASSERT("Invalid config file usage");
 	}
 	_isOrigin = true;
+	_logAppenders.IsArray(true);
 }
 
 ConfigFile::~ConfigFile() {
@@ -69,6 +70,10 @@ string ConfigFile::GetServicesInfo() {
 	ss << "+---+---------------+-----+-------------------------+-------------------------+";
 
 	return ss.str();
+}
+
+Variant &ConfigFile::GetApplicationsConfigurations() {
+	return _applications;
 }
 
 bool ConfigFile::LoadLuaFile(string path, bool forceDaemon) {
@@ -211,9 +216,7 @@ bool ConfigFile::ConfigLogAppender(Variant &node) {
 	if (pLogLocation != NULL) {
 		pLogLocation->SetLevel((int32_t) node[CONF_LOG_APPENDER_LEVEL]);
 		if (!Logger::AddLogLocation(pLogLocation)) {
-			FATAL("Unable to add log location to logger:\n%s", STR(node.ToString()));
 			delete pLogLocation;
-			return false;
 		}
 	}
 	return true;
@@ -244,7 +247,7 @@ bool ConfigFile::ConfigModule(Variant &node) {
 		return false;
 	}
 
-	_modules[node[CONF_APPLICATION_NAME]] = module;
+	_modules[(string) node[CONF_APPLICATION_NAME]] = module;
 
 	return true;
 }
@@ -377,20 +380,22 @@ bool ConfigFile::NormalizeApplication(Variant &node) {
 	node[CONF_APPLICATION_DIRECTORY] = appDir;
 
 	string mediaFolder = "";
-	if (node.HasKeyChain(V_STRING, false, 1, CONF_APPLICATION_MEDIAFOLDER))
+	if (node.HasKeyChain(V_STRING, false, 1, CONF_APPLICATION_MEDIAFOLDER)) {
 		mediaFolder = (string) node.GetValue(CONF_APPLICATION_MEDIAFOLDER, false);
-	if (mediaFolder == "") {
-		mediaFolder = appDir + "media";
+
+		if (mediaFolder == "") {
+			mediaFolder = appDir + "media";
+		}
+		temp = normalizePath(mediaFolder, "");
+		if (temp == "") {
+			WARN("Path not found: %s", STR(mediaFolder));
+		} else {
+			mediaFolder = temp;
+		}
+		if (mediaFolder[mediaFolder.size() - 1] != PATH_SEPARATOR)
+			mediaFolder += PATH_SEPARATOR;
+		node[CONF_APPLICATION_MEDIAFOLDER] = mediaFolder;
 	}
-	temp = normalizePath(mediaFolder, "");
-	if (temp == "") {
-		WARN("Path not found: %s", STR(mediaFolder));
-	} else {
-		mediaFolder = temp;
-	}
-	if (mediaFolder[mediaFolder.size() - 1] != PATH_SEPARATOR)
-		mediaFolder += PATH_SEPARATOR;
-	node[CONF_APPLICATION_MEDIAFOLDER] = mediaFolder;
 
 
 	string libraryPath = "";
@@ -437,40 +442,6 @@ bool ConfigFile::NormalizeApplication(Variant &node) {
 		defaultApp = (bool) node.GetValue(CONF_APPLICATION_DEFAULT, false);
 	node[CONF_APPLICATION_DEFAULT] = (bool)defaultApp;
 
-	bool generateMetaFiles = false;
-	if (node.HasKeyChain(V_BOOL, false, 1, CONF_APPLICATION_GENERATE_META_FILES))
-		generateMetaFiles = (bool) node.GetValue(CONF_APPLICATION_GENERATE_META_FILES, false);
-	node[CONF_APPLICATION_GENERATE_META_FILES] = (bool)generateMetaFiles;
-
-	bool keyFrameSeek = false;
-	if (node.HasKeyChain(V_BOOL, false, 1, CONF_APPLICATION_KEYFRAMESEEK))
-		keyFrameSeek = (bool) node.GetValue(CONF_APPLICATION_KEYFRAMESEEK, false);
-	node[CONF_APPLICATION_KEYFRAMESEEK] = (bool)keyFrameSeek;
-
-	bool renameBadFiles = false;
-	if (node.HasKeyChain(V_BOOL, false, 1, CONF_APPLICATION_RENAMEBADFILES))
-		renameBadFiles = (bool) node.GetValue(CONF_APPLICATION_RENAMEBADFILES, false);
-	node[CONF_APPLICATION_RENAMEBADFILES] = (bool)renameBadFiles;
-
-	bool externSeekGenerator = false;
-	if (node.HasKeyChain(V_BOOL, false, 1, CONF_APPLICATION_EXTERNSEEKGENERATOR))
-		externSeekGenerator = (bool) node.GetValue(CONF_APPLICATION_EXTERNSEEKGENERATOR, false);
-	node[CONF_APPLICATION_EXTERNSEEKGENERATOR] = (bool)externSeekGenerator;
-
-	int32_t seekGranularity = 1;
-	if (node.HasKeyChain(_V_NUMERIC, false, 1, CONF_APPLICATION_SEEKGRANULARITY))
-		seekGranularity = (int32_t) node.GetValue(CONF_APPLICATION_SEEKGRANULARITY, false);
-	if (seekGranularity < 0 || seekGranularity > 300)
-		seekGranularity = 1;
-	node[CONF_APPLICATION_SEEKGRANULARITY] = (uint32_t) seekGranularity;
-
-	int64_t clientSideBuffer = 5;
-	if (node.HasKeyChain(_V_NUMERIC, false, 1, CONF_APPLICATION_CLIENTSIDEBUFFER))
-		clientSideBuffer = (int64_t) node.GetValue(CONF_APPLICATION_CLIENTSIDEBUFFER, false);
-	if (seekGranularity < 0 || seekGranularity > 300)
-		seekGranularity = 5;
-	node[CONF_APPLICATION_CLIENTSIDEBUFFER] = (uint32_t) clientSideBuffer;
-
 	uint8_t rtcpDetectionInterval = 10;
 	if (node.HasKeyChain(_V_NUMERIC, false, 1, CONF_APPLICATION_RTCPDETECTIONINTERVAL))
 		rtcpDetectionInterval = (uint8_t) node.GetValue(CONF_APPLICATION_RTCPDETECTIONINTERVAL, false);
@@ -510,7 +481,7 @@ bool ConfigFile::NormalizeApplication(Variant &node) {
 				FATAL("Invalid alias value:\n%s", STR(MAP_VAL(i).ToString()));
 				return false;
 			}
-			if (MAP_HAS1(_uniqueNames, MAP_VAL(i))) {
+			if (MAP_HAS1(_uniqueNames, (string) MAP_VAL(i))) {
 				FATAL("Alias name %s already taken", STR(MAP_VAL(i)));
 				return false;
 			}
@@ -559,7 +530,7 @@ bool ConfigFile::NormalizeApplicationAcceptor(Variant &node, string baseFolder) 
 	if (node.HasKeyChain(V_STRING, false, 1, CONF_SSL_KEY))
 		sslKey = (string) node.GetValue(CONF_SSL_KEY, false);
 	if (sslKey != "") {
-		if ((sslKey[0] != PATH_SEPARATOR) && (sslKey[0] != '.')) {
+		if (!isAbsolutePath(sslKey)) {
 			sslKey = baseFolder + sslKey;
 		}
 		string temp = normalizePath(sslKey, "");
@@ -575,7 +546,7 @@ bool ConfigFile::NormalizeApplicationAcceptor(Variant &node, string baseFolder) 
 	if (node.HasKeyChain(V_STRING, false, 1, CONF_SSL_CERT))
 		sslCert = (string) node.GetValue(CONF_SSL_CERT, false);
 	if (sslCert != "") {
-		if ((sslCert[0] != PATH_SEPARATOR) && (sslCert[0] != '.')) {
+		if (!isAbsolutePath(sslCert)) {
 			sslCert = baseFolder + sslCert;
 		}
 		string temp = normalizePath(sslCert, "");

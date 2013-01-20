@@ -66,7 +66,7 @@ RunningStatus gRs;
 #ifdef COMPILE_STATIC
 BaseClientApplication *SpawnApplication(Variant configuration);
 BaseProtocolFactory *SpawnFactory(Variant configuration);
-#endif
+#endif /* COMPILE_STATIC */
 
 int main(int argc, const char **argv) {
 	SRAND();
@@ -83,8 +83,7 @@ int main(int argc, const char **argv) {
 		return -1;
 	}
 	string configFile = argv[argc - 1];
-	if (configFile.find("--") == 0)
-		configFile = "";
+	configFile = normalizePath(configFile, "");
 	NormalizeCommandLine(configFile);
 
 	if ((bool)gRs.commandLine["arguments"]["--help"]) {
@@ -95,6 +94,11 @@ int main(int argc, const char **argv) {
 	if ((bool)gRs.commandLine["arguments"]["--version"]) {
 		PrintVersion();
 		return 0;
+	}
+
+	if (configFile == "") {
+		fprintf(stderr, "Configuration file not found: `%s`\n", argv[argc - 1]);
+		return -1;
 	}
 
 	do {
@@ -168,6 +172,9 @@ bool Initialize() {
 	if (gRs.pConfigFile->IsDaemon()) {
 		if (!gRs.daemon) {
 			INFO("Daemonize...");
+			setFdCloseOnExec(STDIN_FILENO);
+			setFdCloseOnExec(STDOUT_FILENO);
+			setFdCloseOnExec(STDERR_FILENO);
 			pid_t pid = fork();
 			if (pid < 0) {
 				FATAL("Unable to start as daemon. fork() failed");
@@ -185,18 +192,6 @@ bool Initialize() {
 			if (sid < 0) {
 				FATAL("Unable to start as daemon. setsid() failed");
 				return false;
-			}
-
-			int fd = open("/dev/null", O_RDWR, 0);
-			if (fd < 0) {
-				FATAL("Unable to start as daemon. open(/dev/null) failed");
-				return false;
-			}
-			(void) dup2(fd, STDIN_FILENO);
-			(void) dup2(fd, STDOUT_FILENO);
-			(void) dup2(fd, STDERR_FILENO);
-			if (fd > 2) {
-				(void) close(fd);
 			}
 
 			gRs.daemon = true;
@@ -334,6 +329,8 @@ void PrintHelp() {
 
 void PrintVersion() {
 	fprintf(stdout, "%s\n", STR(Version::GetBanner()));
+	if (Version::GetBuilderOSUname() != "")
+		fprintf(stdout, "Compiled on machine: `%s`\n", STR(Version::GetBuilderOSUname()));
 }
 
 void NormalizeCommandLine(string configFile) {

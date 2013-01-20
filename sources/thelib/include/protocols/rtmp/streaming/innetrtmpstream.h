@@ -27,7 +27,6 @@
 
 class BaseRTMPProtocol;
 class BaseOutStream;
-class BaseOutFileStream;
 
 class DLLEXP InNetRTMPStream
 : public BaseInNetStream {
@@ -36,12 +35,14 @@ private:
 	uint32_t _chunkSize;
 	uint32_t _channelId;
 	string _clientId;
-	IOBuffer _videoCodecInit;
-	double _lastVideoTime;
-	IOBuffer _audioCodecInit;
-	double _lastAudioTime;
+	double _videoCts;
 	Variant _lastStreamMessage;
 	BaseOutStream *_pOutFileRTMPFLVStream;
+
+	bool _audioCapabilitiesInitialized;
+	uint8_t _lastAudioCodec;
+	bool _videoCapabilitiesInitialized;
+	uint8_t _lastVideoCodec;
 	StreamCapabilities _streamCapabilities;
 
 	uint64_t _audioPacketsCount;
@@ -52,9 +53,11 @@ private:
 	uint64_t _videoDroppedPacketsCount;
 	uint64_t _videoBytesCount;
 	uint64_t _videoDroppedBytesCount;
+
+	IOBuffer _aggregate;
 public:
-	InNetRTMPStream(BaseRTMPProtocol *pProtocol, StreamsManager *pStreamsManager,
-			string name, uint32_t rtmpStreamId, uint32_t channelId);
+	InNetRTMPStream(BaseProtocol *pProtocol, string name, uint32_t rtmpStreamId,
+			uint32_t chunkSize, uint32_t channelId);
 	virtual ~InNetRTMPStream();
 	virtual StreamCapabilities * GetCapabilities();
 
@@ -70,23 +73,33 @@ public:
 	virtual bool SendStreamMessage(string functionName, Variant &parameters,
 			bool persistent = true);
 	bool SendOnStatusStreamPublished();
-	bool Record(BaseOutFileStream* pOutFileStream);
+	bool RecordFLV(Variant &meta, bool append);
+	bool RecordMP4(Variant &meta);
 
 	virtual void SignalOutStreamAttached(BaseOutStream *pOutStream);
 	virtual void SignalOutStreamDetached(BaseOutStream *pOutStream);
-	virtual bool SignalPlay(double &absoluteTimestamp, double &length);
+	virtual bool SignalPlay(double &dts, double &length);
 	virtual bool SignalPause();
 	virtual bool SignalResume();
-	virtual bool SignalSeek(double &absoluteTimestamp);
+	virtual bool SignalSeek(double &dts);
 	virtual bool SignalStop();
-
+	virtual bool FeedDataAggregate(uint8_t *pData, uint32_t dataLength,
+			uint32_t processedLength, uint32_t totalLength,
+			double pts, double dts, bool isAudio);
 	virtual bool FeedData(uint8_t *pData, uint32_t dataLength,
 			uint32_t processedLength, uint32_t totalLength,
-			double absoluteTimestamp, bool isAudio);
+			double pts, double dts, bool isAudio);
+
+	static bool InitializeAudioCapabilities(BaseInStream *pStream,
+			StreamCapabilities &streamCapabilities,
+			bool &capabilitiesInitialized, uint8_t *pData, uint32_t length);
+	static bool InitializeVideoCapabilities(BaseInStream *pStream,
+			StreamCapabilities &streamCapabilities,
+			bool &capabilitiesInitialized, uint8_t *pData, uint32_t length);
+	virtual uint32_t GetInputVideoTimescale();
+	virtual uint32_t GetInputAudioTimescale();
 private:
 	BaseRTMPProtocol *GetRTMPProtocol();
-	bool InitializeAudioCapabilities(uint8_t *pData, uint32_t length);
-	bool InitializeVideoCapabilities(uint8_t *pData, uint32_t length);
 };
 
 

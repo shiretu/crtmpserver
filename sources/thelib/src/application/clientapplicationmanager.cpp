@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -36,6 +36,10 @@ void ClientApplicationManager::Shutdown() {
 }
 
 bool ClientApplicationManager::RegisterApplication(BaseClientApplication* pClientApplication) {
+	if (pClientApplication == NULL) {
+		FATAL("Try to register a NULL application");
+		return false;
+	}
 	if (MAP_HAS1(_applicationsById, pClientApplication->GetId())) {
 		FATAL("Client application with id %u already registered",
 				pClientApplication->GetId());
@@ -69,6 +73,10 @@ bool ClientApplicationManager::RegisterApplication(BaseClientApplication* pClien
 }
 
 void ClientApplicationManager::UnRegisterApplication(BaseClientApplication* pClientApplication) {
+	if (pClientApplication == NULL) {
+		WARN("Try to unregister a NULL application");
+		return;
+	}
 	if (MAP_HAS1(_applicationsById, pClientApplication->GetId()))
 		_applicationsById.erase(pClientApplication->GetId());
 	if (MAP_HAS1(_applicationsByName, pClientApplication->GetName()))

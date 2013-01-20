@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -25,6 +25,7 @@
 
 enum FILE_OPEN_MODE {
 	FILE_OPEN_MODE_READ,
+	FILE_OPEN_MODE_WRITE,
 	FILE_OPEN_MODE_TRUNCATE,
 	FILE_OPEN_MODE_APPEND
 };
@@ -36,9 +37,12 @@ private:
 	string _path;
 	bool _truncate;
 	bool _append;
+	bool _suppressLogErrorsOnInit;
 public:
 	File();
 	virtual ~File();
+
+	void SuppressLogErrorsOnInit();
 
 	//Init
 	bool Initialize(string path);

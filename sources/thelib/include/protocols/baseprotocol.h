@@ -24,6 +24,7 @@
 
 #include "common.h"
 #include "protocols/protocoltypes.h"
+#include "utils/readyforsendinterface.h"
 
 
 class IOBuffer;
@@ -34,11 +35,13 @@ class BaseClientApplication;
 	@class BaseProtocol
 	@brief The base class on which all atomic protocols must derive from.
  */
-class DLLEXP BaseProtocol {
+class DLLEXP BaseProtocol
+: public ReadyForSendInterface {
 private:
 	static uint32_t _idGenerator;
 	uint32_t _id;
 	BaseClientApplication *_pApplication;
+	uint32_t _lastKnownApplicationId;
 protected:
 	uint64_t _type;
 	BaseProtocol *_pFarProtocol;
@@ -143,6 +146,11 @@ public:
 	 */
 	BaseClientApplication * GetApplication();
 
+	/*!
+		@brief Gets the protocol's last known application. Same as GetApplication if the protocol is currently bound to any application
+	 */
+	BaseClientApplication * GetLastKnownApplication();
+
 	//This are functions for set/get the costom parameters
 	//in case of outbound protocols
 	/*!
@@ -232,13 +240,6 @@ public:
 		@brief This is invoked by the framework when the underlaying system is ready to send more data
 	 */
 	virtual void ReadyForSend();
-
-	/*!
-	 *	@brief This is invoked from various parts of the project to signal inter-protocol events.
-		@param event
-	 *   @discussion For example, you enqueue a DNS request and you want to be informed when the request is done and the results are available. It will always bubble up towards the near protocol
-	 */
-	virtual void SignalInterProtocolEvent(Variant &event);
 
 	/*!
 		@brief Sets the protocol's application

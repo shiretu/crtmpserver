@@ -114,7 +114,7 @@ void IOHandlerManager::UnRegisterIOHandler(IOHandler *pIOHandler) {
 
 int IOHandlerManager::CreateRawUDPSocket() {
 	int result = socket(AF_INET, SOCK_DGRAM, 0);
-	if (result >= 0) {
+	if ((result >= 0)&&(setFdCloseOnExec(result))) {
 		_fdStats.RegisterRawUdp();
 	} else {
 		int err = LASTSOCKETERROR;
@@ -187,6 +187,17 @@ bool IOHandlerManager::EnableTimer(IOHandler *pIOHandler, uint32_t seconds) {
 	return true;
 }
 
+bool IOHandlerManager::EnableHighGranularityTimer(IOHandler *pIOHandler, uint32_t milliseconds) {
+	uint32_t seconds = ((milliseconds % 1000) == 0) ? (milliseconds / 1000) : (milliseconds / 1000 + 1);
+	if (seconds == 0)
+		seconds = 1;
+	TimerEvent event = {0, 0, 0};
+	event.id = pIOHandler->GetId();
+	event.period = seconds;
+	_pTimersManager->AddTimer(event);
+	return true;
+}
+
 bool IOHandlerManager::DisableTimer(IOHandler *pIOHandler) {
 	_pTimersManager->RemoveTimer(pIOHandler->GetId());
 	return true;
@@ -238,7 +249,9 @@ bool IOHandlerManager::Pulse() {
 		return false;
 	}
 
-	_pTimersManager->TimeElapsed(time(NULL));
+	int32_t nextVal = _pTimersManager->TimeElapsed();
+	_timeout.tv_sec = nextVal / 1000;
+	_timeout.tv_usec = (nextVal * 1000000) % 1000000000;
 
 	if (count == 0) {
 		return true;
@@ -286,12 +299,16 @@ bool IOHandlerManager::UpdateFdSets(int32_t fd) {
 	return true;
 }
 
-void IOHandlerManager::ProcessTimer(TimerEvent &event) {
+bool IOHandlerManager::ProcessTimer(TimerEvent &event) {
 	_currentEvent.type = SET_TIMER;
 	if (MAP_HAS1(_activeIOHandlers, event.id)) {
 		if (!_activeIOHandlers[event.id]->OnEvent(_currentEvent)) {
 			EnqueueForDelete(_activeIOHandlers[event.id]);
+			return false;
 		}
+		return true;
+	} else {
+		return false;
 	}
 }
 

@@ -21,188 +21,129 @@
 #include "utils/misc/timersmanager.h"
 #include "utils/logging/logging.h"
 
+TimerEvent::operator string() {
+	return format("id: %4"PRIu32"; period: %6"PRIu32"; nextRun: %"PRIu64,
+			id, period, triggerTime);
+}
+
 TimersManager::TimersManager(ProcessTimerEvent processTimerEvent) {
 	_processTimerEvent = processTimerEvent;
-	_lastTime = time(NULL);
-	_currentSlotIndex = 0;
-	_pSlots = NULL;
-	_slotsCount = 0;
-#ifdef NET_IOCP
-	_inExecution = false;
-#endif
+	_lastTime = 0;
+	_currentTime = 0;
+	_processResult = false;
+	_processing = false;
 }
 
 TimersManager::~TimersManager() {
-	if (_pSlots != NULL)
-		delete[] _pSlots;
+
+	map<uint64_t, map<uint32_t, TimerEvent *> >::iterator i;
+	for (i = _timers.begin(); i != _timers.end(); i++) {
+
+		FOR_MAP(MAP_VAL(i), uint32_t, TimerEvent *, j) {
+			delete MAP_VAL(j);
+		}
+	}
+	_timers.clear();
 }
 
-#ifdef NET_IOCP
+void TimersManager::AddTimer(TimerEvent &evt) {
+	TimerEvent *pTemp = new TimerEvent;
+	memcpy(pTemp, &evt, sizeof (TimerEvent));
+	GETMILLISECONDS(_currentTime);
+	pTemp->triggerTime = _currentTime + pTemp->period;
+	_timers[pTemp->triggerTime][pTemp->id] = pTemp;
+}
 
 void TimersManager::RemoveTimer(uint32_t eventTimerId) {
-	for (uint32_t i = 0; i < _slotsCount; i++) {
-		if (MAP_HAS1(_pSlots[i].timers, eventTimerId)) {
-			if (_inExecution) {
-				_pSlots[i].timers[eventTimerId].pUserData = NULL;
-				ADD_VECTOR_END(_pendingForRemoval, eventTimerId);
+	map<uint64_t, map<uint32_t, TimerEvent *> >::iterator i;
+	for (i = _timers.begin(); i != _timers.end(); i++) {
+		map<uint32_t, TimerEvent *>::iterator found = MAP_VAL(i).find(eventTimerId);
+		if (found != MAP_VAL(i).end()) {
+			TimerEvent *pTemp = MAP_VAL(found);
+			if (pTemp != NULL) {
+				delete pTemp;
+			}
+			if (_processing) {
+				MAP_VAL(i)[eventTimerId] = NULL;
 			} else {
-				_pSlots[i].timers.erase(eventTimerId);
+				MAP_VAL(i).erase(found);
+				if (MAP_VAL(i).size() == 0)
+					_timers.erase(MAP_KEY(i));
+			}
+			return;
+		}
+	}
+}
+
+int32_t TimersManager::TimeElapsed() {
+	_processing = true;
+	int32_t result = 1000;
+	GETMILLISECONDS(_currentTime);
+	if (_lastTime > _currentTime) {
+		WARN("Clock skew detected. Re-adjusting the timers");
+		_lastTime = _currentTime;
+		map<uint64_t, map<uint32_t, TimerEvent *> > timers;
+		map<uint64_t, map<uint32_t, TimerEvent *> >::iterator i;
+		for (i = _timers.begin(); i != _timers.end(); i++) {
+
+			FOR_MAP(MAP_VAL(i), uint32_t, TimerEvent *, j) {
+				TimerEvent *pTemp = MAP_VAL(j);
+				if (pTemp != NULL) {
+					pTemp->triggerTime = _currentTime + pTemp->period;
+					timers[pTemp->triggerTime][pTemp->id] = pTemp;
+				}
 			}
 		}
+		_timers = timers;
+		return 1;
 	}
-}
-#else
+	_lastTime = _currentTime;
 
-void TimersManager::RemoveTimer(uint32_t eventTimerId) {
-	for (uint32_t i = 0; i < _slotsCount; i++) {
-		if (MAP_HAS1(_pSlots[i].timers, eventTimerId)) {
-			_pSlots[i].timers.erase(eventTimerId);
+	_processResult = false;
+	map<uint64_t, map<uint32_t, TimerEvent *> >::iterator i = _timers.begin();
+	while (i != _timers.end()) {
+		if (MAP_KEY(i) > _currentTime) {
+			result = (int32_t) (MAP_KEY(i) - _currentTime);
+			break;
 		}
-	}
-}
-#endif
 
-void TimersManager::AddTimer(TimerEvent& timerEvent) {
-	UpdatePeriods(timerEvent.period);
-	uint32_t min = 999999999;
-	uint32_t startIndex = 0;
-	for (uint32_t i = 0; i < _slotsCount; i++) {
-		if (min > _pSlots[i].timers.size()) {
-			startIndex = i;
-			min = (uint32_t) _pSlots[i].timers.size();
+		FOR_MAP(MAP_VAL(i), uint32_t, TimerEvent *, j) {
+			TimerEvent *pTemp = MAP_VAL(j);
+			if (pTemp != NULL) {
+				_processResult = _processTimerEvent(*pTemp);
+				if (_processResult) {
+					pTemp->triggerTime += pTemp->period;
+					_timers[pTemp->triggerTime][pTemp->id] = pTemp;
+				} else {
+					pTemp = MAP_VAL(j);
+					MAP_VAL(i)[MAP_KEY(j)] = NULL;
+					if (pTemp != NULL) {
+						delete pTemp;
+					}
+				}
+			}
 		}
+		_timers.erase(i);
+		i = _timers.begin();
 	}
-	while (!MAP_HAS1(_pSlots[startIndex % _slotsCount].timers, timerEvent.id)) {
-		_pSlots[startIndex % _slotsCount].timers[timerEvent.id] = timerEvent;
-		startIndex += timerEvent.period;
-	}
-}
-
-#ifdef NET_IOCP
-
-void TimersManager::TimeElapsed(uint64_t currentTime) {
-	_inExecution = true;
-	int64_t delta = currentTime - _lastTime;
-	_lastTime = currentTime;
-
-	if (delta <= 0 || _slotsCount == 0) {
-		_inExecution = false;
-		return;
-	}
-
-	for (int32_t i = 0; i < delta; i++) {
-
-		FOR_MAP(_pSlots[_currentSlotIndex % _slotsCount].timers, uint32_t, TimerEvent, j) {
-			_processTimerEvent(MAP_VAL(j));
-		}
-		_currentSlotIndex++;
-	}
-	_inExecution = false;
-	for (uint32_t i = 0; i < _pendingForRemoval.size(); i++) {
-		RemoveTimer(_pendingForRemoval[i]);
-	}
-	_pendingForRemoval.clear();
-}
-#else
-
-void TimersManager::TimeElapsed(uint64_t currentTime) {
-	int64_t delta = currentTime - _lastTime;
-	_lastTime = currentTime;
-
-	if (delta <= 0 || _slotsCount == 0)
-		return;
-
-	for (int32_t i = 0; i < delta; i++) {
-
-		FOR_MAP(_pSlots[_currentSlotIndex % _slotsCount].timers, uint32_t, TimerEvent, j) {
-			_processTimerEvent(MAP_VAL(j));
-		}
-		_currentSlotIndex++;
-	}
-}
-#endif
-
-void TimersManager::UpdatePeriods(uint32_t period) {
-	if (MAP_HAS1(_periodsMap, period))
-		return;
-	_periodsMap[period] = period;
-	ADD_VECTOR_END(_periodsVector, period);
-	uint32_t newSlotsCount = LCM(_periodsVector, 0);
-	if (newSlotsCount == 0)
-		newSlotsCount = period;
-	if (newSlotsCount == _slotsCount)
-		return;
-	Slot *pNewSlots = new Slot[newSlotsCount];
-	if (_slotsCount > 0) {
-		for (uint32_t i = 0; i < newSlotsCount; i++) {
-			pNewSlots[i] = _pSlots[i % _slotsCount];
-		}
-		delete[] _pSlots;
-	}
-	_pSlots = pNewSlots;
-	_slotsCount = newSlotsCount;
-}
-
-uint32_t TimersManager::GCD(uint32_t a, uint32_t b) {
-	while (b != 0) {
-		uint32_t t = b;
-		b = a % b;
-		a = t;
-	}
-	return a;
-}
-
-uint32_t TimersManager::LCM(uint32_t a, uint32_t b) {
-	if (a == 0 || b == 0)
-		return 0;
-	uint32_t result = a * b / GCD(a, b);
-	//FINEST("a: %u; b: %u; r: %u", a, b, result);
+	_processing = false;
 	return result;
 }
 
-uint32_t TimersManager::GCD(vector<uint32_t> numbers, uint32_t startIndex) {
-	if (numbers.size() <= 1)
-		return 0;
-	if (numbers.size() <= startIndex)
-		return 0;
-	if (numbers.size() - startIndex > 2) {
-		return GCD(numbers[startIndex], GCD(numbers, startIndex + 1));
-	} else {
-		return GCD(numbers[startIndex], numbers[startIndex + 1]);
+string TimersManager::DumpTimers() {
+	string result = "";
+	map<uint64_t, map<uint32_t, TimerEvent *> >::iterator i;
+	for (i = _timers.begin(); i != _timers.end(); i++) {
+		result += format("%"PRIu64"\n", MAP_KEY(i));
+
+		FOR_MAP(MAP_VAL(i), uint32_t, TimerEvent *, j) {
+			if (MAP_VAL(j) != NULL)
+				result += "\t" + MAP_VAL(j)->operator string() + "\n";
+			else
+				result += format("\tid: %4"PRIu32"; NULL\n", MAP_KEY(j));
+		}
+		if (MAP_VAL(i).size() == 0)
+			result += "\n";
 	}
+	return result;
 }
-
-uint32_t TimersManager::LCM(vector<uint32_t> numbers, uint32_t startIndex) {
-	if (numbers.size() <= 1)
-		return 0;
-	if (numbers.size() <= startIndex)
-		return 0;
-	if (numbers.size() - startIndex > 2) {
-		return LCM(numbers[startIndex], LCM(numbers, startIndex + 1));
-	} else {
-		return LCM(numbers[startIndex], numbers[startIndex + 1]);
-	}
-}
-
-
-/*
- *
- * TimersManager tm(NULL);
-	TimerEvent t1 = {2, 1, NULL};
-	TimerEvent t2 = {3, 2, NULL};
-	TimerEvent t3 = {3, 3, NULL};
-	TimerEvent t4 = {4, 4, NULL};
-	TimerEvent t5 = {3, 5, NULL};
-	TimerEvent t6 = {2, 6, NULL};
-	TimerEvent t7 = {4, 7, NULL};
-
-	tm.AddTimer(t1);
-	tm.AddTimer(t2);
-	tm.AddTimer(t3);
-	tm.AddTimer(t4);
-	tm.AddTimer(t5);
-	tm.AddTimer(t6);
-	tm.AddTimer(t7);
- *
- * */
-
