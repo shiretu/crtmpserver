@@ -41,7 +41,6 @@
             <Elem>HAS_APP_AGX</Elem>
             <Elem>HAS_APP_HTTPTESTS</Elem>
             <Elem>HAS_APP_VBRICK</Elem>
-            <Elem>HAS_LICENSE</Elem>
             <Elem>NET_KQUEUE</Elem>
             <Elem>OSX</Elem>
           </preprocessorList>

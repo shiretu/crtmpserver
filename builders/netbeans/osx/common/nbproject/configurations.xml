@@ -172,7 +172,6 @@
           <preprocessorList>
             <Elem>ASM_IOBUFFER</Elem>
             <Elem>DEBUG_MEM_POOL</Elem>
-            <Elem>HAS_LICENSE</Elem>
             <Elem>HAS_LUA</Elem>
             <Elem>HAS_SYSLOG</Elem>
             <Elem>LITTLE_ENDIAN_SHORT_ALIGNED</Elem>
