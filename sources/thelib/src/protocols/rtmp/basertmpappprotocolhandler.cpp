@@ -1024,11 +1024,11 @@ bool BaseRTMPAppProtocolHandler::ProcessInvokePlay(BaseRTMPProtocol *pFrom,
 	if (M_INVOKE_PARAM(request, 3) == V_DOUBLE)
 		length = M_INVOKE_PARAM(request, 3);
 
-	if (startTime < 0 && startTime != -2 && startTime != -1)
-		startTime = -2;
+	if (startTime < 0 && startTime != -2000 && startTime != -1000)
+		startTime = -2000;
 
-	if (length < 0 && length != -1)
-		length = -1;
+	if (length < 0 && length != -1000)
+		length = -1000;
 
 	uint32_t dummy = 0;
 
@@ -1045,7 +1045,7 @@ bool BaseRTMPAppProtocolHandler::ProcessInvokePlay(BaseRTMPProtocol *pFrom,
 	//5. bind the network outbound stream to the inbound stream
 	//depending on the type of the outbound stream
 	switch ((int32_t) startTime) {
-		case -2: //live or recorded
+		case -2000: //live or recorded
 		{
 			bool linked = false;
 
@@ -1083,7 +1083,7 @@ bool BaseRTMPAppProtocolHandler::ProcessInvokePlay(BaseRTMPProtocol *pFrom,
 			request["aliasName"] = aliasName;
 			return pBaseOutNetRTMPStream != NULL;
 		}
-		case -1: //only live
+		case -1000: //only live
 		{
 			bool linked = false;
 
@@ -1735,7 +1735,7 @@ bool BaseRTMPAppProtocolHandler::ProcessInvokeCreateStreamResult(BaseRTMPProtoco
 	Variant fcSubscribe;
 	if (NeedsToPullExternalStream(pFrom)) {
 		publishPlayRequest = StreamMessageFactory::GetInvokePlay(3, rtmpStreamId,
-				parameters["uri"]["documentWithFullParameters"], -2, -1);
+				parameters["uri"]["documentWithFullParameters"], -2000, -1000);
 		fcSubscribe = StreamMessageFactory::GetInvokeFCSubscribe(
 				parameters["uri"]["documentWithFullParameters"]);
 	} else {

@@ -143,7 +143,7 @@ bool BaseInFileStream::KeepClientBufferFull() {
 bool BaseInFileStream::StreamCompleted() {
 	if (_currentFrameIndex >= _totalFrames)
 		return true;
-	if ((_playLimit >= 0) && (((_playLimit * 1000.0) < (double) _totalSentTime)))
+	if ((_playLimit >= 0) && (_playLimit < _totalSentTime))
 		return true;
 	return false;
 }
@@ -632,7 +632,7 @@ bool BaseInFileStream::FeedRTMP(bool &dataSent) {
 
 	//FINEST("_totalSentTime: %.2f; _playLimit: %.2f", (double) _totalSentTime, _playLimit);
 	if (_playLimit >= 0) {
-		if (_playLimit * 1000 < (double) _totalSentTime) {
+		if (_playLimit < _totalSentTime) {
 			FINEST("Done streaming file");
 			_pOutStreams->info->SignalStreamCompleted();
 			_streamingState = FILE_STREAMING_STATE_FINISHED;
@@ -734,7 +734,7 @@ bool BaseInFileStream::FeedTS(bool &dataSent) {
 
 	//FINEST("_totalSentTime: %.2f; _playLimit: %.2f", (double) _totalSentTime, _playLimit);
 	if (_playLimit >= 0) {
-		if (_playLimit * 1000 < (double) _totalSentTime) {
+		if (_playLimit < _totalSentTime) {
 			FINEST("Done streaming file");
 			_pOutStreams->info->SignalStreamCompleted();
 			_streamingState = FILE_STREAMING_STATE_FINISHED;
