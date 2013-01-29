@@ -21,7 +21,6 @@
 #ifdef HAS_PROTOCOL_TS
 #include "tsappprotocolhandler.h"
 #include "application/baseclientapplication.h"
-#include "protocols/ts/tspacketpmt.h"
 #include "protocols/rtmp/sharedobjects/so.h"
 #include "protocols/rtmp/sharedobjects/somanager.h"
 #include "protocols/rtmp/basertmpappprotocolhandler.h"
