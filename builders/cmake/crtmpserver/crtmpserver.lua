@@ -105,7 +105,6 @@ configuration=
 			description="FLV Playback Sample",
 			name="flvplayback",
 			protocol="dynamiclinklibrary",
-			mediaFolder="/Volumes/Storage/media",
 			aliases=
 			{
 				"simpleLive",
@@ -156,13 +155,23 @@ configuration=
 					tcUrl="rtmp://edge01.fms.dutchview.nl/botr/bunny", --this one is usually required and should have the same value as the uri
 					emulateUserAgent="MAC 10,1,82,76",
 				}]]--
+				{
+                        uri="rtsp://animalhousenc.dvrdns.org:554/streaming/channels/0",
+                        localStreamName="PoolSide",
+                        forceTcp=true
+                },
+                {
+                        uri="rtsp://animalhousenc.dvrdns.org:556/streaming/channels/0",
+                        localStreamName="BoneYard",
+                        forceTcp=true
+                },
+                {
+                        uri="rtsp://animalhousenc.dvrdns.org:557/streaming/channels/0",
+                        localStreamName="BigPool",
+                        forceTcp=true
+                },
 			},
 			validateHandshake=false,
-			keyframeSeek=true,
-			seekGranularity=1.5, --in seconds, between 0.1 and 600
-			clientSideBuffer=12, --in seconds, between 5 and 30
-			--generateMetaFiles=true, --this will generate seek/meta files on application startup
-			--renameBadFiles=false,
 			--enableCheckBandwidth=true,
 			--[[authentication=
 			{
@@ -179,6 +188,34 @@ configuration=
 					usersFile="users.lua"
 				}
 			}, --]]
+			mediaStorage = {
+				namedStorage1={
+					--this storage contains all properties with their
+					--default values. The only mandatory property is
+					--mediaFolder
+					description="Some storage",
+					mediaFolder="/Volumes/Storage/media/",
+					metaFolder="/tmp/metadata",
+					enableStats=false,
+					clientSideBuffer=15,
+					keyframeSeek=false,
+					seekGranularity=0.1,
+				},
+				namedStorage2={
+					mediaFolder="/Volumes/Storage/media/mp4",
+					metaFolder="/tmp/metadata",
+					seekGranularity=0.2,
+					enableStats=true,
+				},
+				namedStorage3={
+					mediaFolder="/Volumes/Storage/media/flv",
+					metaFolder="/tmp/metadata",
+				},
+				{
+					--this one doesn't have a name
+					mediaFolder="/Volumes/Storage/media/mp3",
+				}
+			},
 		},
 		{
 			name="samplefactory",

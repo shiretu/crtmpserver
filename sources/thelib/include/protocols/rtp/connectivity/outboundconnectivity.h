@@ -102,8 +102,6 @@ private:
 	NATTraversalProtocol *_pAudioNATRTCP;
 	double _audioSampleRate;
 
-	uint32_t _dummyValue;
-
 	int32_t _amountSent;
 public:
 	OutboundConnectivity(bool forceTcp, RTSPProtocol *pRTSPProtocol);

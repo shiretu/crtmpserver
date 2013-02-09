@@ -40,7 +40,6 @@ private:
 	uint64_t _audioPacketsCount;
 	uint64_t _audioDroppedPacketsCount;
 	uint64_t _audioBytesCount;
-	uint64_t _audioDroppedBytesCount;
 	double _audioNTP;
 	double _audioRTP;
 	double _audioLastDts;

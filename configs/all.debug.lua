@@ -77,7 +77,6 @@ configuration=
 			-- This flag designates the default application. The default application
 			-- is responsable of analyzing the "connect" request and distribute 
 			-- the future connection to the correct application.
-			mediaFolder="./media",
 			default=true,
 			acceptors = 
 			{
@@ -104,7 +103,6 @@ configuration=
 			description="FLV Playback Sample",
 			name="flvplayback",
 			protocol="dynamiclinklibrary",
-			mediaFolder="./media",
 			aliases=
 			{
 				"simpleLive",
@@ -164,11 +162,6 @@ configuration=
 				]]--
 			},
 			validateHandshake=false,
-			keyframeSeek=true,
-			seekGranularity=1.5, --in seconds, between 0.1 and 600
-			clientSideBuffer=12, --in seconds, between 5 and 30
-			--generateMetaFiles=true, --this will generate seek/meta files on application startup
-			--renameBadFiles=false,
 			--[[authentication=
 			{
 				rtmp={
@@ -183,6 +176,34 @@ configuration=
 					usersFile="./configs/users.lua"
 				}
 			},]]--		
+			mediaStorage = {
+				namedStorage1={
+					--this storage contains all properties with their
+					--default values. The only mandatory property is
+					--mediaFolder
+					description="Some storage",
+					mediaFolder="/Volumes/Storage/media/",
+					metaFolder="/tmp/metadata",
+					enableStats=false,
+					clientSideBuffer=15,
+					keyframeSeek=false,
+					seekGranularity=0.1,
+				},
+				namedStorage2={
+					mediaFolder="/Volumes/Storage/media/mp4",
+					metaFolder="/tmp/metadata",
+					seekGranularity=0.2,
+					enableStats=true,
+				},
+				namedStorage3={
+					mediaFolder="/Volumes/Storage/media/flv",
+					metaFolder="/tmp/metadata",
+				},
+					{
+					--this one doesn't have a name
+					mediaFolder="/Volumes/Storage/media/mp3",
+				}
+			},
 		},
 		{
 			name="samplefactory",
