@@ -104,8 +104,17 @@ bool IOBuffer::ReadFromTCPFd(int32_t fd, uint32_t expected, int32_t &recvAmount)
 		SANITY_INPUT_BUFFER;
 		return true;
 	} else {
-		SANITY_INPUT_BUFFER;
-		return false;
+		int err = LASTSOCKETERROR;
+		if ((err != SOCKERROR_EAGAIN)&&(err != SOCKERROR_EINPROGRESS)) {
+			FATAL("Unable to read data. Size advertised by network layer was %"PRIu32". Permanent error: %d",
+					expected, err);
+			SANITY_INPUT_BUFFER;
+			return false;
+		}
+		//		else {
+		//			WARN("SOCKERROR_EAGAIN or SOCKERROR_EINPROGRESS encountered");
+		//		}
+		return true;
 	}
 }
 
@@ -290,10 +299,10 @@ bool IOBuffer::WriteToTCPFd(int32_t fd, uint32_t size, int32_t &sentAmount) {
 			//_published - _consumed,
 			size > _published - _consumed ? _published - _consumed : size,
 			MSG_NOSIGNAL);
-	int err = LASTSOCKETERROR;
 
 	if (sentAmount < 0) {
-		if (err != SOCKERROR_SEND_IN_PROGRESS) {
+		int err = LASTSOCKETERROR;
+		if ((err != SOCKERROR_EAGAIN)&&(err != SOCKERROR_EINPROGRESS)) {
 			FATAL("Unable to send %"PRIu32" bytes of data data. Size advertised by network layer was %"PRIu32". Permanent error: %d",
 					_published - _consumed, size, err);
 			result = false;

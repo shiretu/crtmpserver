@@ -82,8 +82,10 @@ using namespace std;
 #define WRITE_FD write
 #define SOCKET int32_t
 #define LASTSOCKETERROR					errno
-#define SOCKERROR_CONNECT_IN_PROGRESS	EINPROGRESS
-#define SOCKERROR_SEND_IN_PROGRESS		EAGAIN
+#define SOCKERROR_EINPROGRESS			EINPROGRESS
+#define SOCKERROR_EAGAIN				EAGAIN
+#define SOCKERROR_ECONNRESET			ECONNRESET
+#define SOCKERROR_ENOBUFS				ENOBUFS
 #define LIB_HANDLER void *
 #define FREE_LIBRARY(libHandler) dlclose((libHandler))
 #define LOAD_LIBRARY(file,flags) dlopen((file), (flags))

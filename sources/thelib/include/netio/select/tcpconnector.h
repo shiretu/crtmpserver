@@ -142,7 +142,7 @@ public:
 
 		if (connect(_inboundFd, (sockaddr *) & address, sizeof (address)) != 0) {
 			int err = LASTSOCKETERROR;
-			if (err != SOCKERROR_CONNECT_IN_PROGRESS) {
+			if (err != SOCKERROR_EINPROGRESS) {
 				FATAL("Unable to connect to %s:%hu %d", STR(_ip), _port, err);
 				_closeSocket = true;
 				return false;

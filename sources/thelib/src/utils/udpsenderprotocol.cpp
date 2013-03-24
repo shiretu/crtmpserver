@@ -140,9 +140,13 @@ bool UDPSenderProtocol::SendChunked(uint8_t *pData, uint32_t dataLength,
 		chunkSize = chunkSize > maxChunkSize ? maxChunkSize : chunkSize;
 		if ((uint32_t) sendto(_fd, (char *) (pData + totalSent), chunkSize, MSG_NOSIGNAL,
 				(sockaddr *) & _destAddress, sizeof (_destAddress)) != chunkSize) {
-			int err = errno;
-			FATAL("Unable to send bytes over UDP: (%d) %s", err, strerror(err));
-			return false;
+			int err = LASTSOCKETERROR;
+			if (err == SOCKERROR_ENOBUFS) {
+				WARN("SOCKERROR_ENOBUFS encountered trying to send %"PRIu32" bytes", chunkSize);
+			} else {
+				FATAL("Unable to send bytes over UDP: (%d) %s", err, strerror(err));
+				return false;
+			}
 		}
 		totalSent += chunkSize;
 		ADD_OUT_BYTES_RAWUDP(chunkSize);
