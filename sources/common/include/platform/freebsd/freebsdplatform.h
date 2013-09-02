@@ -63,6 +63,7 @@
 #include <net/if_dl.h>
 #include <ifaddrs.h>
 #include <spawn.h>
+#include <sys/resource.h>
 using namespace std;
 
 //platform defines
