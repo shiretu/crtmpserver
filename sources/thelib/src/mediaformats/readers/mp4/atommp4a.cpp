@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -22,116 +22,93 @@
 #include "mediaformats/readers/mp4/mp4document.h"
 
 AtomMP4A::AtomMP4A(MP4Document *pDocument, uint32_t type, uint64_t size, uint64_t start)
-: VersionedBoxAtom(pDocument, type, size, start) {
+: BoxAtom(pDocument, type, size, start) {
 	_pESDS = NULL;
 	_pWAVE = NULL;
 	_pCHAN = NULL;
-	_dataReferenceIndex = 0;
-	_innerVersion = 0;
-	_revisionLevel = 0;
-	_vendor = 0;
-	_numberOfChannels = 0;
-	_sampleSizeInBits = 0;
-	_compressionId = 0;
-	_packetSize = 0;
-	_sampleRate = 0;
-	_samplesPerPacket = 0;
-	_bytesPerPacket = 0;
-	_bytesPerFrame = 0;
-	_bytesPerSample = 0;
 }
 
 AtomMP4A::~AtomMP4A() {
 }
 
-bool AtomMP4A::ReadData() {
-	//qtff.pdf: General StructureofaSampleDescription (76/304)
+bool AtomMP4A::Read() {
+	//aligned(8) abstract class SampleEntry (unsigned int(32) format) extends Box(format){
+	//	const unsigned int(8)[6] reserved = 0;
+	//	unsigned int(16) data_reference_index;
+	//}
+	//class AudioSampleEntry(codingname) extends SampleEntry (codingname){
+	//	const unsigned int(16) version;
+	//	const unsigned int(16) revision_level;
+	//	const unsigned int(32) vendor;
+	//	template unsigned int(16) channelcount = 2;
+	//	template unsigned int(16) samplesize = 16;
+	//	unsigned int(16) audio_cid = 0;
+	//	const unsigned int(16) packet_size = 0 ;
+	//	template unsigned int(32) samplerate = {timescale of media}<<16;
+	//}
 
-	//TODO: there seems to be 2 kinds of DISTINCT mp4a atoms. If the size
-	// of the atom is 0x0c (size+'mp4a'+4 zeros) we should ignore it for now...
-	if (_size == 0x0c) {
-		WARN("Another strange mp4a atom....");
+	if (GetSize() == 0x0c)
 		return true;
-	}
 
-	//1. Skip reserved 6 bytes. Actually, slip the next 2, because the prev 4
-	//are already skipped by the versioned atom
-	if (!SkipBytes(2)) {
-		FATAL("Unable to skip 2 bytes");
+	if (!SkipBytes(8)) {
+		FATAL("Unable to skip 8 bytes");
 		return false;
 	}
 
-	if (!ReadUInt16(_dataReferenceIndex)) {
-		FATAL("Unable to read count");
+	uint16_t version = 0;
+	if (!ReadUInt16(version)) {
+		FATAL("Unable to read version");
 		return false;
 	}
 
-	if (!ReadUInt16(_innerVersion)) {
-		FATAL("Unable to read count");
+	if (!SkipBytes(18)) {
+		FATAL("Unable to skip 18 bytes");
 		return false;
 	}
 
-	if (!ReadUInt16(_revisionLevel)) {
-		FATAL("Unable to read count");
-		return false;
+	switch (version) {
+		case 0:
+		{
+			//standard isom
+			break;
+		}
+		case 1:
+		{
+			//QT ver1
+			//	const unsigned int(32) samples_per_frame;
+			//	const unsigned int(32) bytes_per_packet;
+			//	const unsigned int(32) bytes_per_frame;
+			//	const unsigned int(32) bytes_per_sample;
+			if (!SkipBytes(16)) {
+				FATAL("Unable to skip 16 bytes");
+				return false;
+			}
+			break;
+		}
+		case 2:
+		{
+			//QT ver2
+			FATAL("QT version 2 not supported");
+			return false;
+			//			avio_rb32(pb); /* sizeof struct only */
+			//			st->codec->sample_rate = av_int2double(avio_rb64(pb)); /* float 64 */
+			//			st->codec->channels = avio_rb32(pb);
+			//			avio_rb32(pb); /* always 0x7F000000 */
+			//			st->codec->bits_per_coded_sample = avio_rb32(pb); /* bits per channel if sound is uncompressed */
+			//			flags = avio_rb32(pb); /* lpcm format specific flag */
+			//			sc->bytes_per_frame = avio_rb32(pb); /* bytes per audio packet if constant */
+			//			sc->samples_per_frame = avio_rb32(pb); /* lpcm frames per audio packet if constant */
+			//			if (format == MKTAG('l', 'p', 'c', 'm'))
+			//				st->codec->codec_id = ff_mov_get_lpcm_codec_id(st->codec->bits_per_coded_sample, flags);
+		}
+		default:
+		{
+			FATAL("MP4A version not supported");
+			return false;
+		}
 	}
 
-	if (!ReadUInt32(_vendor)) {
-		FATAL("Unable to read count");
-		return false;
-	}
-
-	if (!ReadUInt16(_numberOfChannels)) {
-		FATAL("Unable to read count");
-		return false;
-	}
-
-	if (!ReadUInt16(_sampleSizeInBits)) {
-		FATAL("Unable to read count");
-		return false;
-	}
-
-	if (!ReadInt16(_compressionId)) {
-		FATAL("Unable to read count");
-		return false;
-	}
-
-	if (!ReadUInt16(_packetSize)) {
-		FATAL("Unable to read count");
-		return false;
-	}
-
-	if (!ReadUInt32(_sampleRate)) {
-		FATAL("Unable to read count");
-		return false;
-	}
-
-	if (_innerVersion == 0) {
-		return true;
-	}
-
-
-	if (!ReadUInt32(_samplesPerPacket)) {
-		FATAL("Unable to read count");
-		return false;
-	}
-
-	if (!ReadUInt32(_bytesPerPacket)) {
-		FATAL("Unable to read count");
-		return false;
-	}
-
-	if (!ReadUInt32(_bytesPerFrame)) {
-		FATAL("Unable to read count");
-		return false;
-	}
-
-	if (!ReadUInt32(_bytesPerSample)) {
-		FATAL("Unable to read count");
-		return false;
-	}
-
-	return true;
+	return BoxAtom::Read();
 }
 
 bool AtomMP4A::AtomCreated(BaseAtom *pAtom) {

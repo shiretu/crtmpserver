@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -31,6 +31,7 @@ class AtomDINF;
 class AtomSTBL;
 class AtomUDTA;
 class AtomMETA;
+class AtomEDTS;
 
 class AtomTRAK
 : public BoxAtom {
@@ -43,6 +44,7 @@ private:
 	AtomSTBL *_pSTBL;
 	AtomUDTA *_pUDTA;
 	AtomMETA *_pMETA;
+	AtomEDTS *_pEDTS;
 public:
 	AtomTRAK(MP4Document *pDocument, uint32_t type, uint64_t size, uint64_t start);
 	virtual ~AtomTRAK();

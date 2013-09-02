@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -43,14 +43,10 @@ public:
 	virtual ~FileLogLocation();
 
 	virtual bool Init();
-	virtual bool EvalLogLevel(int32_t level, string &fileName, uint32_t lineNumber,
-			string &functionName, string &message);
-	virtual bool EvalLogLevel(int32_t level, string fileName, uint32_t lineNumber,
-			string functionName, Variant &le);
-	virtual void Log(int32_t level, string fileName, uint32_t lineNumber,
-			string functionName, string message);
-	virtual void Log(int32_t level, string fileName, uint32_t lineNumber,
-			string functionName, Variant &le);
+	virtual bool EvalLogLevel(int32_t level, const char *pFileName,
+			uint32_t lineNumber, const char *pFunctionName);
+	virtual void Log(int32_t level, const char *pFileName, uint32_t lineNumber,
+			const char *pFunctionName, string &message);
 	virtual void SignalFork();
 private:
 	bool OpenFile();

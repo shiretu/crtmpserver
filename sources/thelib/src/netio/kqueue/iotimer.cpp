@@ -68,12 +68,6 @@ bool IOTimer::EnqueueForHighGranularityTimeEvent(uint32_t milliseconds) {
 	return IOHandlerManager::EnableHighGranularityTimer(this, milliseconds);
 }
 
-IOTimer::operator string() {
-	if (_pProtocol != NULL)
-		return STR(*_pProtocol);
-	return format("T(%d)", _inboundFd);
-}
-
 void IOTimer::GetStats(Variant &info, uint32_t namespaceId) {
 
 }

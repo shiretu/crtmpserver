@@ -860,7 +860,6 @@ bool RTMPProtocolSerializer::DeserializeSharedObject(IOBuffer &buffer, Variant &
 			case SOT_SC_STATUS:
 			{
 				NYIR;
-				break;
 			}
 			case SOT_SC_CLEAR_DATA:
 			{

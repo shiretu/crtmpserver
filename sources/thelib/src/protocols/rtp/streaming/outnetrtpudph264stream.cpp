@@ -60,13 +60,6 @@ OutNetRTPUDPH264Stream::OutNetRTPUDPH264Stream(BaseProtocol *pProtocol,
 	_audioData.MSGHDR_MSG_IOV[1].IOVEC_IOV_BASE = new IOVEC_IOV_BASE_TYPE[MAX_AUS_COUNT * 2];
 	_audioSampleRate = 0;
 
-
-	_audioPacketsCount = 0;
-	_audioDroppedPacketsCount = 0;
-	_audioBytesCount = 0;
-	_videoPacketsCount = 0;
-	_videoDroppedPacketsCount = 0;
-	_videoBytesCount = 0;
 	_auPts = -1;
 	_auCount = 0;
 
@@ -85,16 +78,6 @@ OutNetRTPUDPH264Stream::~OutNetRTPUDPH264Stream() {
 	delete[] (uint8_t *) _audioData.MSGHDR_MSG_IOV[1].IOVEC_IOV_BASE;
 	delete[] _audioData.MSGHDR_MSG_IOV;
 	memset(&_audioData, 0, sizeof (_audioData));
-}
-
-void OutNetRTPUDPH264Stream::GetStats(Variant &info, uint32_t namespaceId) {
-	BaseOutNetStream::GetStats(info, namespaceId);
-	info["audio"]["bytesCount"] = _audioBytesCount;
-	info["audio"]["packetsCount"] = _audioPacketsCount;
-	info["audio"]["droppedPacketsCount"] = _audioDroppedPacketsCount;
-	info["video"]["bytesCount"] = _videoBytesCount;
-	info["video"]["packetsCount"] = _videoPacketsCount;
-	info["video"]["droppedPacketsCount"] = _videoDroppedPacketsCount;
 }
 
 bool OutNetRTPUDPH264Stream::FinishInitialization(
@@ -121,8 +104,11 @@ bool OutNetRTPUDPH264Stream::FinishInitialization(
 
 bool OutNetRTPUDPH264Stream::PushVideoData(IOBuffer &buffer, double pts, double dts,
 		bool isKeyFrame) {
-	if (_pVideoInfo == NULL)
+	if (_pVideoInfo == NULL) {
+		_stats.video.droppedPacketsCount++;
+		_stats.video.droppedBytesCount += GETAVAILABLEBYTESCOUNT(buffer);
 		return true;
+	}
 	if ((isKeyFrame || _firstVideoFrame)
 			&&(_pVideoInfo->_type == CODEC_VIDEO_H264)
 			&&(_lastVideoPts != pts)) {
@@ -270,15 +256,19 @@ bool OutNetRTPUDPH264Stream::PushVideoData(IOBuffer &buffer, double pts, double 
 		sentAmount += chunkSize;
 		pData += chunkSize;
 	}
-
+	_stats.video.packetsCount++;
+	_stats.video.bytesCount += GETAVAILABLEBYTESCOUNT(buffer);
 	return true;
 }
 
 //#define MULTIPLE_AUS
 
 bool OutNetRTPUDPH264Stream::PushAudioData(IOBuffer &buffer, double pts, double dts) {
-	if (_pAudioInfo == NULL)
+	if (_pAudioInfo == NULL) {
+		_stats.audio.droppedPacketsCount++;
+		_stats.audio.droppedBytesCount += GETAVAILABLEBYTESCOUNT(buffer);
 		return true;
+	}
 	uint32_t dataLength = GETAVAILABLEBYTESCOUNT(buffer);
 	uint8_t *pData = GETIBPOINTER(buffer);
 #ifdef MULTIPLE_AUS
@@ -348,6 +338,9 @@ bool OutNetRTPUDPH264Stream::PushAudioData(IOBuffer &buffer, double pts, double 
 	//12. increment the number of AUs
 	_auCount++;
 
+	_stats.audio.packetsCount++;
+	_stats.audio.bytesCount += GETAVAILABLEBYTESCOUNT(buffer);
+
 	//13. Done
 	return true;
 
@@ -397,6 +390,9 @@ bool OutNetRTPUDPH264Stream::PushAudioData(IOBuffer &buffer, double pts, double 
 		FATAL("Unable to feed data");
 		return false;
 	}
+
+	_stats.audio.packetsCount++;
+	_stats.audio.bytesCount += GETAVAILABLEBYTESCOUNT(buffer);
 
 	return true;
 #endif /* MULTIPLE_AUS */

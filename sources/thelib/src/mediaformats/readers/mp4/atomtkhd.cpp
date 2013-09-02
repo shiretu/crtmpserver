@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -53,14 +53,29 @@ uint32_t AtomTKHD::GetHeight() {
 }
 
 bool AtomTKHD::ReadData() {
-	if (!ReadUInt32(_creationTime)) {
-		FATAL("Unable to read creation time");
-		return false;
-	}
+	if (_version == 1) {
+		if (!ReadUInt64(_creationTime)) {
+			FATAL("Unable to read creation time");
+			return false;
+		}
 
-	if (!ReadUInt32(_modificationTime)) {
-		FATAL("Unable to read modification time");
-		return false;
+		if (!ReadUInt64(_modificationTime)) {
+			FATAL("Unable to read modification time");
+			return false;
+		}
+	} else {
+		uint32_t temp = 0;
+		if (!ReadUInt32(temp)) {
+			FATAL("Unable to read creation time");
+			return false;
+		}
+		_creationTime = temp;
+
+		if (!ReadUInt32(temp)) {
+			FATAL("Unable to read modification time");
+			return false;
+		}
+		_modificationTime = temp;
 	}
 
 	if (!ReadUInt32(_trackId)) {
@@ -73,9 +88,18 @@ bool AtomTKHD::ReadData() {
 		return false;
 	}
 
-	if (!ReadUInt32(_duration)) {
-		FATAL("Unable to read duration");
-		return false;
+	if (_version == 1) {
+		if (!ReadUInt64(_duration)) {
+			FATAL("Unable to read duration");
+			return false;
+		}
+	} else {
+		uint32_t temp = 0;
+		if (!ReadUInt32(temp)) {
+			FATAL("Unable to read duration");
+			return false;
+		}
+		_duration = temp;
 	}
 
 	if (!ReadArray(_reserved2, 8)) {

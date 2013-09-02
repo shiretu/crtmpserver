@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -26,10 +26,10 @@
 class AtomMVHD
 : public VersionedAtom {
 private:
-	uint32_t _creationTime;
-	uint32_t _modificationTime;
+	uint64_t _creationTime;
+	uint64_t _modificationTime;
 	uint32_t _timeScale;
-	uint32_t _duration;
+	uint64_t _duration;
 	uint32_t _preferredRate;
 	uint16_t _preferredVolume;
 	uint8_t _reserved[10];

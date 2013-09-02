@@ -337,6 +337,22 @@ string hex(const uint8_t *pBuffer, uint32_t length) {
 	return result;
 }
 
+string bits(string source) {
+	if (source == "")
+		return "";
+	return bits((uint8_t *) source.data(), (uint32_t) source.length());
+}
+
+string bits(const uint8_t *pBuffer, uint32_t length) {
+	string result = "";
+	for (uint32_t i = 0; i < length; i++) {
+		for (int8_t j = 7; j >= 0; j--) {
+			result += ((pBuffer[i] >> j)&0x01) == 1 ? "1" : "0";
+		}
+	}
+	return result;
+}
+
 string unhex(string source) {
 	if (source == "")
 		return "";

@@ -25,6 +25,9 @@
 #include "protocols/rtmp/streaming/baseoutnetrtmpstream.h"
 #include "protocols/rtmp/streaming/outfilertmpflvstream.h"
 #include "streaming/streamstypes.h"
+#include "application/baseclientapplication.h"
+#include "recording/flv/outfileflv.h"
+#include "application/clientapplicationmanager.h"
 
 InNetRTMPStream::InNetRTMPStream(BaseProtocol *pProtocol, string name,
 		uint32_t rtmpStreamId, uint32_t chunkSize, uint32_t channelId)
@@ -34,28 +37,13 @@ InNetRTMPStream::InNetRTMPStream(BaseProtocol *pProtocol, string name,
 	_channelId = channelId;
 	_clientId = format("%d_%d_%"PRIz"u", _pProtocol->GetId(), _rtmpStreamId, (size_t)this);
 	_videoCts = 0;
-	_pOutFileRTMPFLVStream = NULL;
 
-	_audioPacketsCount = 0;
-	_audioDroppedPacketsCount = 0;
-	_audioBytesCount = 0;
-	_audioDroppedBytesCount = 0;
-	_videoPacketsCount = 0;
-	_videoDroppedPacketsCount = 0;
-	_videoBytesCount = 0;
-	_videoDroppedBytesCount = 0;
-
-	_audioCapabilitiesInitialized = false;
+	_dummy = false;
 	_lastAudioCodec = 0;
-	_videoCapabilitiesInitialized = false;
 	_lastVideoCodec = 0;
 }
 
 InNetRTMPStream::~InNetRTMPStream() {
-	if (_pOutFileRTMPFLVStream != NULL) {
-		delete _pOutFileRTMPFLVStream;
-		_pOutFileRTMPFLVStream = NULL;
-	}
 }
 
 StreamCapabilities * InNetRTMPStream::GetCapabilities() {
@@ -72,18 +60,6 @@ bool InNetRTMPStream::IsCompatibleWithType(uint64_t type) {
 			|| TAG_KIND_OF(type, ST_OUT_NET_RTP)
 			|| TAG_KIND_OF(type, ST_OUT_FILE_RTMP_FLV);
 
-}
-
-void InNetRTMPStream::GetStats(Variant &info, uint32_t namespaceId) {
-	BaseInNetStream::GetStats(info, namespaceId);
-	info["audio"]["packetsCount"] = _audioPacketsCount;
-	info["audio"]["droppedPacketsCount"] = (uint64_t) 0;
-	info["audio"]["bytesCount"] = _audioBytesCount;
-	info["audio"]["droppedBytesCount"] = (uint64_t) 0;
-	info["video"]["packetsCount"] = _videoPacketsCount;
-	info["video"]["droppedPacketsCount"] = (uint64_t) 0;
-	info["video"]["bytesCount"] = _videoBytesCount;
-	info["video"]["droppedBytesCount"] = (uint64_t) 0;
 }
 
 uint32_t InNetRTMPStream::GetRTMPStreamId() {
@@ -195,45 +171,41 @@ bool InNetRTMPStream::SendOnStatusStreamPublished() {
 	return true;
 }
 
-bool InNetRTMPStream::RecordFLV(Variant &meta, bool append) {
-	//	string fileName = "";
-	//
-	//	if (meta.HasKey("fullPath", false))
-	//		fileName = (string) meta["fullPath"];
-	//
-	//	if (fileName == "") {
-	//		fileName = (string) meta[META_SERVER_MEDIA_DIR];
-	//		fileName += (string) meta[META_SERVER_FILE_NAME];
-	//	}
-	//
-	//	//2. Delete the old file
-	//	if (append) {
-	//		WARN("append not supported yet. File will be overwritten");
-	//		return false;
-	//	}
-	//	deleteFile(fileName);
-	//
-	//	//3. Create the out file
-	//	string localStreamName = (string) meta[META_SERVER_FILE_NAME];
-	//
-	//	if (localStreamName == "")
-	//		localStreamName = fileName;
-	//
-	//	_pOutFileRTMPFLVStream = new OutFileRTMPFLVStream(_pProtocol,
-	//			localStreamName, fileName);
-	//	if (!_pOutFileRTMPFLVStream->SetStreamsManager(_pStreamsManager)) {
-	//		FATAL("Unable to set the streams manager");
-	//		delete _pOutFileRTMPFLVStream;
-	//		_pOutFileRTMPFLVStream = NULL;
-	//		return false;
-	//	}
-	//
-	//	//4. Link it
-	//	return _pOutFileRTMPFLVStream->Link(this);
-	NYIR;
+bool InNetRTMPStream::RecordFLV(Metadata &meta, bool append) {
+	//1. Get the target file name
+	string fileName = GetRecordedFileName(meta);
+	if (fileName == "") {
+		WARN("Unable to record stream %s", STR(*this));
+		return true;
+	}
+
+	//2. create the settings
+	Variant settings;
+	settings["waitForIDR"] = (bool)false;
+	settings["chunkLength"] = (uint32_t) 0;
+	settings["computedPathToFile"] = fileName;
+
+	//2. Create the stream
+	OutFileFLV *pOutStream = new OutFileFLV(_pProtocol, fileName, settings);
+	if (!pOutStream->SetStreamsManager(
+			GetProtocol()->GetApplication()->GetStreamsManager())) {
+		WARN("Unable to record stream %s", STR(*this));
+		delete pOutStream;
+		pOutStream = NULL;
+		return false;
+	}
+
+	if (!Link(pOutStream)) {
+		WARN("Unable to record stream %s", STR(*this));
+		delete pOutStream;
+		pOutStream = NULL;
+		return false;
+	}
+
+	return true;
 }
 
-bool InNetRTMPStream::RecordMP4(Variant &meta) {
+bool InNetRTMPStream::RecordMP4(Metadata &meta) {
 	NYIR;
 }
 
@@ -250,8 +222,6 @@ void InNetRTMPStream::SignalOutStreamAttached(BaseOutStream *pOutStream) {
 }
 
 void InNetRTMPStream::SignalOutStreamDetached(BaseOutStream *pOutStream) {
-	//FINEST("outbound stream %u detached from inbound stream %u",
-	//		pOutStream->GetUniqueId(), GetUniqueId());
 }
 
 bool InNetRTMPStream::SignalPlay(double &dts, double &length) {
@@ -332,37 +302,40 @@ bool InNetRTMPStream::FeedDataAggregate(uint8_t *pData, uint32_t dataLength,
 bool InNetRTMPStream::FeedData(uint8_t *pData, uint32_t dataLength,
 		uint32_t processedLength, uint32_t totalLength,
 		double pts, double dts, bool isAudio) {
+	//	if ((!isAudio)&&(processedLength == 0)) {
+	//		printf("%s\n", STR(hex(pData, dataLength >= 64 ? 64 : dataLength)));
+	//	}
+	//	if (processedLength == 0) {
+	//		printf("%c %.2f: %s\n",
+	//				isAudio ? 'A' : 'V',
+	//				dts,
+	//				STR(hex(pData, dataLength >= 64 ? 64 : dataLength)));
+	//	}
 	if (isAudio) {
-		_audioPacketsCount++;
-		_audioBytesCount += dataLength;
+		_stats.audio.packetsCount++;
+		_stats.audio.bytesCount += dataLength;
 		if (
-				(processedLength == 0)
-				&&(dataLength >= 2)
-				&&(
-				(!_audioCapabilitiesInitialized)
-				|| (_lastAudioCodec != (pData[0] >> 4))
-				|| (((pData[0] >> 4) == 0x0a)&&(pData[1] == 0)))
+				(processedLength == 0) //start of the packet
+				&&(dataLength >= 2) //enough data
+				&&((_lastAudioCodec != (pData[0] >> 4)) || ((pData[1] == 0)&&((pData[0] >> 4) == 0x0a))) //different codec or this is a new AAC codec
 				) {
 			if (!InitializeAudioCapabilities(this, _streamCapabilities,
-					_audioCapabilitiesInitialized, pData, dataLength)) {
+					_dummy, pData, dataLength)) {
 				FATAL("Unable to initialize audio capabilities");
 				return false;
 			}
 			_lastAudioCodec = (pData[0] >> 4);
 		}
 	} else {
-		_videoPacketsCount++;
-		_videoBytesCount += dataLength;
+		_stats.video.packetsCount++;
+		_stats.video.bytesCount += dataLength;
 		if (
-				(processedLength == 0)
-				&&(dataLength >= 2)
-				&&(
-				(!_videoCapabilitiesInitialized)
-				|| (_lastVideoCodec != (pData[0]&0x0f))
-				|| (((pData[0]&0x0f) == 0x07)&&(pData[1] == 0)))
+				(processedLength == 0) //start of the packet
+				&&(dataLength >= 2) //enough data
+				&&((_lastVideoCodec != (pData[0]&0x0f)) || ((pData[1] == 0)&&(pData[0] == 0x17))) //different codec or this is a new h264 codec
 				) {
 			if (!InitializeVideoCapabilities(this, _streamCapabilities,
-					_videoCapabilitiesInitialized, pData, dataLength)) {
+					_dummy, pData, dataLength)) {
 				FATAL("Unable to initialize video capabilities");
 				return false;
 			}
@@ -371,6 +344,7 @@ bool InNetRTMPStream::FeedData(uint8_t *pData, uint32_t dataLength,
 
 		if ((processedLength == 0) && ((pData[0]&0x0f) == 7) && (dataLength >= 6)) {
 			_videoCts = (ENTOHLP(pData + 2) >> 8);
+			_videoCts = ((_videoCts & 0x00800000) == 0x00800000) ? (_videoCts | 0xff000000) : _videoCts;
 		}
 		pts = dts + _videoCts;
 	}
@@ -415,6 +389,23 @@ uint32_t InNetRTMPStream::GetInputVideoTimescale() {
 
 uint32_t InNetRTMPStream::GetInputAudioTimescale() {
 	return 1000;
+}
+
+string InNetRTMPStream::GetRecordedFileName(Metadata &meta) {
+	BaseProtocol *pProtocol = NULL;
+	BaseClientApplication *pApplication = NULL;
+	StreamMetadataResolver *pSM = NULL;
+	string recordedStreamsStorage = "";
+	if ((meta.computedCompleteFileName() == "")
+			|| ((pProtocol = GetProtocol()) == NULL)
+			|| ((pApplication = pProtocol->GetApplication()) == NULL)
+			|| ((pSM = pApplication->GetStreamMetadataResolver()) == NULL)
+			|| ((recordedStreamsStorage = pSM->GetRecordedStreamsStorage()) == "")
+			) {
+		FATAL("Unable to compute the destination file path");
+		return "";
+	}
+	return recordedStreamsStorage + meta.computedCompleteFileName();
 }
 
 BaseRTMPProtocol *InNetRTMPStream::GetRTMPProtocol() {
@@ -535,6 +526,12 @@ bool InNetRTMPStream::InitializeAudioCapabilities(
 				FATAL("Invalid length");
 				return false;
 			}
+			if (pData[1] != 0) {
+				WARN("stream: %s; this is not an AAC codec setup request. Ignore it: %02"PRIx8"%02"PRIx8,
+						(pStream != NULL) ? (STR(pStream->GetName())) : "",
+						pData[0], pData[1]);
+				return true;
+			}
 			pCodecInfo = streamCapabilities.AddTrackAudioAAC(
 					pData + 2, (uint8_t) (length - 2), true,
 					pStream);
@@ -634,7 +631,8 @@ bool InNetRTMPStream::InitializeVideoCapabilities(
 				return false;
 			}
 			if (((pData[0] >> 4) != 1) || (pData[1] != 0)) {
-				FINEST("this is not a key frame or not a codec setup. Ignore it: %02"PRIu8"%02"PRIu8,
+				WARN("stream: %s; this is not a key frame or not a H264 codec setup request. Ignore it: %02"PRIx8"%02"PRIx8,
+						(pStream != NULL) ? (STR(pStream->GetName())) : "",
 						pData[0], pData[1]);
 				return true;
 			}
@@ -645,7 +643,7 @@ bool InNetRTMPStream::InitializeVideoCapabilities(
 				return false;
 			}
 			uint32_t ppsLength = ENTOHSP(pData + 11 + 2 + spsLength + 1);
-			if (length != 11 + 2 + spsLength + 1 + 2 + ppsLength) {
+			if (length < 11 + 2 + spsLength + 1 + 2 + ppsLength) {
 				FATAL("Invalid AVC codec packet length for an input RTMP stream. Wanted: %"PRIu32"; Got: %"PRIu32,
 						11 + 2 + spsLength + 1 + 2 + ppsLength, length);
 				return false;

@@ -23,6 +23,7 @@
 #include "streaming/streamcapabilities.h"
 #include "streaming/codectypes.h"
 #include "streaming/nalutypes.h"
+#include "streaming/baseinstream.h"
 
 BaseAVContext::BaseAVContext() {
 	InternalReset();
@@ -39,6 +40,12 @@ void BaseAVContext::Reset() {
 void BaseAVContext::DropPacket() {
 	_bucket.IgnoreAll();
 	_droppedPacketsCount++;
+}
+
+BaseInStream *BaseAVContext::GetInStream() {
+	if (_pEventsSink == NULL)
+		return NULL;
+	return _pEventsSink->GetInStream();
 }
 
 bool BaseAVContext::FeedData(uint8_t *pData, uint32_t dataLength, double pts,
@@ -130,13 +137,71 @@ bool H264AVContext::HandleData() {
 	return true;
 }
 
+void H264AVContext::EmptyBackBuffers() {
+
+	FOR_VECTOR(_backBuffers, i) {
+		ADD_VECTOR_END(_backBuffersCache, _backBuffers[i]);
+	}
+	_backBuffers.clear();
+}
+
+void H264AVContext::DiscardBackBuffers() {
+	_backBuffersPts = -1;
+	_backBuffersDts = -1;
+
+	FOR_VECTOR(_backBuffers, i) {
+		delete _backBuffers[i];
+	}
+	_backBuffers.clear();
+
+	FOR_VECTOR(_backBuffersCache, i) {
+		delete _backBuffersCache[i];
+	}
+	_backBuffersCache.clear();
+}
+
+void H264AVContext::InsertBackBuffer(uint8_t *pBuffer, int32_t length) {
+	IOBuffer *pTemp = NULL;
+	if (_backBuffersCache.size() > 0) {
+		pTemp = _backBuffersCache[0];
+		_backBuffersCache.erase(_backBuffersCache.begin());
+	} else {
+		pTemp = new IOBuffer();
+	}
+	pTemp->IgnoreAll();
+	pTemp->ReadFromBuffer(pBuffer, length);
+	ADD_VECTOR_END(_backBuffers, pTemp);
+}
+
 bool H264AVContext::ProcessNal(uint8_t *pBuffer, int32_t length, double pts, double dts) {
 	if ((pBuffer == NULL) || (length <= 0))
 		return true;
 	if (_pStreamCapabilities != NULL) {
 		InitializeCapabilities(pBuffer, length);
 		if (_pStreamCapabilities->GetVideoCodecType() != CODEC_VIDEO_H264) {
+			if (_backBuffersPts != pts) {
+				EmptyBackBuffers();
+				_backBuffersPts = pts;
+				_backBuffersDts = dts;
+			}
+			InsertBackBuffer(pBuffer, length);
 			return true;
+		} else {
+			if (_backBuffersPts >= 0) {
+
+				FOR_VECTOR(_backBuffers, i) {
+					if (!FeedData(
+							GETIBPOINTER(*_backBuffers[i]),
+							GETAVAILABLEBYTESCOUNT(*_backBuffers[i]),
+							_backBuffersPts,
+							_backBuffersDts,
+							false)) {
+						DiscardBackBuffers();
+						return false;
+					}
+				}
+				DiscardBackBuffers();
+			}
 		}
 	}
 
@@ -183,6 +248,7 @@ void H264AVContext::InitializeCapabilities(uint8_t *pData, uint32_t length) {
 void H264AVContext::InternalReset() {
 	_SPS.IgnoreAll();
 	_PPS.IgnoreAll();
+	DiscardBackBuffers();
 }
 
 AACAVContext::AACAVContext()
@@ -199,36 +265,71 @@ void AACAVContext::Reset() {
 	InternalReset();
 }
 
+#define TS_MAX_ADTS_DETECTION_COUNT 1024
+
 bool AACAVContext::HandleData() {
-	if ((_pts.time < 0)
-			|| (GETAVAILABLEBYTESCOUNT(_bucket) < 2)
-			|| (GETIBPOINTER(_bucket)[0] != 0xff)
-			|| ((GETIBPOINTER(_bucket)[1] >> 4) != 0x0f)
-			) {
+	if (_pts.time < 0) {
 		_bucket.IgnoreAll();
 		return true;
 	}
 
 	_bytesCount += GETAVAILABLEBYTESCOUNT(_bucket);
 	_packetsCount++;
-	//the payload here respects this format:
-	//6.2  Audio Data Transport Stream, ADTS
-	//iso13818-7 page 26/206
-	if (_pStreamCapabilities != NULL) {
-		if (_pStreamCapabilities->GetAudioCodecType() != CODEC_AUDIO_AAC) {
-			InitializeCapabilities(GETIBPOINTER(_bucket), GETAVAILABLEBYTESCOUNT(_bucket));
-			if (_pStreamCapabilities->GetAudioCodecType() != CODEC_AUDIO_AAC) {
-				return false;
+
+	//2. Get the buffer details: length and pointer
+	uint32_t bufferLength = GETAVAILABLEBYTESCOUNT(_bucket);
+	uint8_t *pBuffer = GETIBPOINTER(_bucket);
+
+	if (!_initialMarkerFound) {
+		for (;;) {
+			bufferLength = GETAVAILABLEBYTESCOUNT(_bucket);
+			pBuffer = GETIBPOINTER(_bucket);
+			//3. Do we have at least 6 bytes to read the length?
+			if (bufferLength < 6) {
+				break;
 			}
+
+			if ((ENTOHSP(pBuffer)&0xfff0) != 0xfff0) {
+				_bucket.Ignore(1);
+				_droppedBytesCount++;
+				_markerRetryCount++;
+				//FINEST("_markerRetryCount: %"PRIu32, _markerRetryCount);
+				if (_markerRetryCount >= TS_MAX_ADTS_DETECTION_COUNT) {
+					BaseInStream *pInStream = GetInStream();
+					FATAL("Unable to reliably detect AAC ADTS headers after %"PRIu32" bytes scanned for ADTS marker. Stream %s corrupted",
+							TS_MAX_ADTS_DETECTION_COUNT,
+							pInStream != NULL ? STR(*pInStream) : "");
+					return false;
+				}
+				continue;
+			}
+
+			//the payload here respects this format:
+			//6.2  Audio Data Transport Stream, ADTS
+			//iso13818-7 page 26/206
+			if (_pStreamCapabilities != NULL) {
+				if (_pStreamCapabilities->GetAudioCodecType() != CODEC_AUDIO_AAC) {
+					InitializeCapabilities(GETIBPOINTER(_bucket), GETAVAILABLEBYTESCOUNT(_bucket));
+					if (_pStreamCapabilities->GetAudioCodecType() != CODEC_AUDIO_AAC) {
+						_pStreamCapabilities->ClearAudio();
+						_bucket.Ignore(1);
+						_droppedBytesCount++;
+						_markerRetryCount++;
+						continue;
+					}
+				}
+			}
+
+			_initialMarkerFound = true;
+			break;
 		}
 	}
 
 	uint32_t _audioPacketsCount = 0;
 
 	for (;;) {
-		//2. Get the buffer details: length and pointer
-		uint32_t bufferLength = GETAVAILABLEBYTESCOUNT(_bucket);
-		uint8_t *pBuffer = GETIBPOINTER(_bucket);
+		bufferLength = GETAVAILABLEBYTESCOUNT(_bucket);
+		pBuffer = GETIBPOINTER(_bucket);
 
 		//3. Do we have at least 6 bytes to read the length?
 		if (bufferLength < 6) {
@@ -246,8 +347,8 @@ bool AACAVContext::HandleData() {
 		//on bufferLength
 		uint32_t frameLength = ((((pBuffer[3]&0x03) << 8) | pBuffer[4]) << 3) | (pBuffer[5] >> 5);
 		if (frameLength < 8) {
-			WARN("Bogus frameLength %u. Skip one byte", frameLength);
-			FINEST("_audioBuffer:\n%s", STR(_bucket));
+			//WARN("Bogus frameLength %u. Skip one byte", frameLength);
+			//FINEST("_audioBuffer:\n%s", STR(_bucket));
 			_bucket.Ignore(1);
 			continue;
 		}
@@ -262,7 +363,7 @@ bool AACAVContext::HandleData() {
 		}
 		_lastSentTimestamp = ts;
 
-		//		//5. Feed
+		//5. Feed
 		if (!FeedData(pBuffer, frameLength, ts, ts, true)) {
 			FATAL("Unable to feed audio data");
 			return false;
@@ -271,8 +372,6 @@ bool AACAVContext::HandleData() {
 		//6. Ignore frameLength bytes
 		_bucket.Ignore(frameLength);
 	}
-
-	_bucket.IgnoreAll();
 
 	return true;
 }
@@ -291,9 +390,8 @@ void AACAVContext::InitializeCapabilities(uint8_t *pData, uint32_t length) {
 		uint8_t sampling_frequency_index = (pData[2] >> 2)&0x0f;
 		codecSetup.PutBits<uint8_t > (sampling_frequency_index, 4);
 
-		//this could be an issue... AAC from RTMP only supports stereo
-		//and we have mono in this file... Need to check out this one...
-		codecSetup.PutBits<uint8_t > (2, 4);
+		uint8_t channelsCount = ((pData[2]&0x01) << 2) | (pData[3] >> 6);
+		codecSetup.PutBits<uint8_t > (channelsCount, 4);
 
 		BaseInStream *pInStream = NULL;
 		if (_pEventsSink != NULL)
@@ -310,5 +408,7 @@ void AACAVContext::InitializeCapabilities(uint8_t *pData, uint32_t length) {
 void AACAVContext::InternalReset() {
 	_lastSentTimestamp = 0;
 	_samplingRate = 1;
+	_initialMarkerFound = false;
+	_markerRetryCount = 0;
 }
 #endif	/* HAS_MEDIA_TS */

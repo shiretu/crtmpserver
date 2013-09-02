@@ -27,6 +27,7 @@
 #include "protocols/protocolmanager.h"
 #include "protocols/rtmp/amf0serializer.h"
 #include "streaming/codectypes.h"
+#include "protocols/passthrough/passthroughprotocol.h"
 
 #define FLV_TAG_AUDIO		0x08
 #define FLV_TAG_VIDEO		0x09
@@ -36,6 +37,45 @@ OutFileFLV::OutFileFLV(BaseProtocol *pProtocol, string name, Variant &settings)
 : BaseOutRecording(pProtocol, ST_OUT_FILE_RTMP_FLV, name, settings) {
 	_pFile = NULL;
 	_prevTagSize = 0;
+	_chunkLength = 0;
+	_waitForIDR = false;
+	_lastVideoDts = -1;
+	_lastAudioDts = -1;
+	_chunkCount = 0;
+}
+
+OutFileFLV* OutFileFLV::GetInstance(
+		BaseClientApplication *pApplication, string name, Variant &settings) {
+
+	//1. Create a dummy protocol
+	PassThroughProtocol *pDummyProtocol = new PassThroughProtocol();
+
+	//2. create the parameters
+	Variant parameters;
+	parameters["customParameters"]["recordConfig"] = settings;
+
+	//3. Initialize the protocol
+	if (!pDummyProtocol->Initialize(parameters)) {
+		FATAL("Unable to initialize passthrough protocol");
+		pDummyProtocol->EnqueueForDelete();
+		return NULL;
+	}
+
+	//4. Set the application
+	pDummyProtocol->SetApplication(pApplication);
+
+	//5. Create the HLS stream
+	OutFileFLV *pOutFileFLV = new OutFileFLV(pDummyProtocol, name, settings);
+	if (!pOutFileFLV->SetStreamsManager(pApplication->GetStreamsManager())) {
+		FATAL("Unable to set the streams manager");
+		delete pOutFileFLV;
+		pOutFileFLV = NULL;
+		return NULL;
+	}
+	pDummyProtocol->SetDummyStream(pOutFileFLV);
+
+	//6. Done
+	return pOutFileFLV;
 }
 
 OutFileFLV::~OutFileFLV() {
@@ -69,6 +109,13 @@ bool OutFileFLV::FinishInitialization(
 	//misc setup
 	pGenericProcessDataSetup->_timeBase = 0;
 	pGenericProcessDataSetup->_maxFrameSize = 8 * 1024 * 1024;
+	_waitForIDR = (bool) _settings["waitForIDR"];
+	uint32_t length = (uint32_t) _settings["chunkLength"];
+	//	if ((length > 0) && (length < 15)) {
+	//		length = 15;
+	//	}
+	_chunkLength = double (length) * 1000.0; //convert seconds to milliseconds
+	//FINEST("---- waitForIDR=%d, chunkLength=%d", (uint8_t) _waitForIDR, (uint32_t) _chunkLength);
 
 	if (!InitializeFLVFile(pGenericProcessDataSetup)) {
 		FATAL("Unable to initialize FLV file");
@@ -87,6 +134,11 @@ bool OutFileFLV::PushVideoData(IOBuffer &buffer, double pts, double dts, bool is
 		FATAL("FLV File not opened for writing");
 		return false;
 	}
+
+	if (_lastVideoDts < 0)
+		_lastVideoDts = dts;
+	dts -= _lastVideoDts;
+
 	uint32_t bufferLength = GETAVAILABLEBYTESCOUNT(buffer);
 	EHTONLP(_tagHeader, bufferLength);
 	_tagHeader[0] = FLV_TAG_VIDEO;
@@ -104,6 +156,13 @@ bool OutFileFLV::PushVideoData(IOBuffer &buffer, double pts, double dts, bool is
 		return false;
 	}
 
+	if ((_chunkLength > 0) && //enabled
+			(dts > 0) && //valid
+			(dts > _chunkLength) &&
+			((!_waitForIDR) || (_waitForIDR && isKeyFrame))) {
+		SplitFile();
+	}
+
 	return true;
 }
 
@@ -112,6 +171,11 @@ bool OutFileFLV::PushAudioData(IOBuffer &buffer, double pts, double dts) {
 		FATAL("FLV File not opened for writing");
 		return false;
 	}
+
+	if (_lastAudioDts < 0)
+		_lastAudioDts = dts;
+	dts -= _lastAudioDts;
+
 	uint32_t bufferLength = GETAVAILABLEBYTESCOUNT(buffer);
 	EHTONLP(_tagHeader, bufferLength);
 	_tagHeader[0] = FLV_TAG_AUDIO;
@@ -129,6 +193,12 @@ bool OutFileFLV::PushAudioData(IOBuffer &buffer, double pts, double dts) {
 		return false;
 	}
 
+	if ((_chunkLength > 0) && //enabled
+			(dts > 0) && //valid
+			(dts > _chunkLength)) {
+		SplitFile();
+	}
+
 	return true;
 }
 
@@ -138,25 +208,42 @@ bool OutFileFLV::IsCodecSupported(uint64_t codec) {
 			;
 }
 
-bool OutFileFLV::InitializeFLVFile(GenericProcessDataSetup *pGenericProcessDataSetup) {
+bool OutFileFLV::WriteFLVHeader(bool hasAudio, bool hasVideo) {
 	if (_pFile != NULL) {
 		delete _pFile;
 		_pFile = NULL;
 	}
+
 	_pFile = new File();
 	string filePath = (string) _settings["computedPathToFile"];
+	if (_chunkLength > 0) {
+		if (_chunkCount > 0) {
+			string newSuffix = format("_%03d.flv", _chunkCount);
+			replace(filePath, ".flv", newSuffix);
+		}
+		_chunkCount++;
+	}
+	//FINEST("---- filePath=%s, chunkCount=%d", STR(filePath), _chunkCount);
 	if (!_pFile->Initialize(filePath, FILE_OPEN_MODE_TRUNCATE)) {
 		FATAL("Unable to open file %s", STR(filePath));
 		return false;
 	}
 
 	uint8_t _flvHeader[] = {'F', 'L', 'V', 1, 0, 0, 0, 0, 9, 0, 0, 0, 0};
-	if (pGenericProcessDataSetup->_hasAudio)
+	if (hasAudio)
 		_flvHeader[4] |= 0x04;
-	if (pGenericProcessDataSetup->_hasVideo)
+	if (hasVideo)
 		_flvHeader[4] |= 0x01;
 	if (!_pFile->WriteBuffer(_flvHeader, sizeof (_flvHeader))) {
 		FATAL("Unable to write flv header");
+		return false;
+	}
+	return true;
+}
+
+bool OutFileFLV::InitializeFLVFile(GenericProcessDataSetup *pGenericProcessDataSetup) {
+	if (!WriteFLVHeader(pGenericProcessDataSetup->_hasAudio,
+			pGenericProcessDataSetup->_hasVideo)) {
 		return false;
 	}
 
@@ -173,38 +260,91 @@ bool OutFileFLV::InitializeFLVFile(GenericProcessDataSetup *pGenericProcessDataS
 	return true;
 }
 
-bool OutFileFLV::WriteMetaData(GenericProcessDataSetup *pGenericProcessDataSetup) {
-	IOBuffer buff;
-
-	buff.ReadFromRepeat(0, 11);
-
-	Variant metadata;
-	pGenericProcessDataSetup->_pStreamCapabilities->GetRTMPMetadata(metadata);
-
-	metadata.IsArray(true);
-	time_t now = getutctime();
-	Timestamp *pTm = gmtime(&now);
-	metadata["creationdate"] = Variant(*pTm);
-	metadata["duration"] = (double) 0;
+bool OutFileFLV::WriteFLVMetaData() {
+	_buff.IgnoreAll();
+	_buff.ReadFromRepeat(0, 11);
+	_metadata.IsArray(true);
+	_metadata["creationdate"] = Variant::Now();
+	_metadata["duration"] = (double) 0;
 
 	// Instantiate the AMF serializer and a buffer that will contain the data
 	AMF0Serializer amf;
 
 	// Serialize it
 	string temp = "onMetaData";
-	amf.WriteShortString(buff, temp, true);
-	amf.Write(buff, metadata);
+	amf.WriteShortString(_buff, temp, true);
+	amf.Write(_buff, _metadata);
 
 	// Get total length of metadata
-	uint32_t dataLength = GETAVAILABLEBYTESCOUNT(buff) - 11;
-	EHTONLP(GETIBPOINTER(buff), dataLength);
-	GETIBPOINTER(buff)[0] = FLV_TAG_METADATA;
+	uint32_t dataLength = GETAVAILABLEBYTESCOUNT(_buff) - 11;
+	EHTONLP(GETIBPOINTER(_buff), dataLength);
+	GETIBPOINTER(_buff)[0] = FLV_TAG_METADATA;
 
-	buff.ReadFromRepeat(0, 4);
-	EHTONLP(GETIBPOINTER(buff) + GETAVAILABLEBYTESCOUNT(buff) - 4, dataLength + 11);
+	_buff.ReadFromRepeat(0, 4);
+	EHTONLP(GETIBPOINTER(_buff) + GETAVAILABLEBYTESCOUNT(_buff) - 4, dataLength + 11);
 
 	// Write metadata to file
-	return _pFile->WriteBuffer(GETIBPOINTER(buff), GETAVAILABLEBYTESCOUNT(buff));
+	return _pFile->WriteBuffer(GETIBPOINTER(_buff), GETAVAILABLEBYTESCOUNT(_buff));
+}
+
+bool OutFileFLV::WriteMetaData(GenericProcessDataSetup *pGenericProcessDataSetup) {
+
+	pGenericProcessDataSetup->_pStreamCapabilities->GetRTMPMetadata(_metadata);
+
+	return WriteFLVMetaData();
+}
+
+bool OutFileFLV::WriteFLVCodecAudio(AudioCodecInfoAAC *pInfoAudio) {
+	if (pInfoAudio == NULL)
+		return false;
+
+	IOBuffer &temp = pInfoAudio->GetRTMPRepresentation();
+	uint32_t packetLength = GETAVAILABLEBYTESCOUNT(temp);
+	memset(_tagHeader, 0, sizeof (_tagHeader));
+	EHTONLP(_tagHeader, packetLength);
+
+	_tagHeader[0] = FLV_TAG_AUDIO;
+
+	if (!_pFile->WriteBuffer(_tagHeader, 11)) {
+		FATAL("Unable to write FLV content");
+		return false;
+	}
+
+	if (!_pFile->WriteBuffer(GETIBPOINTER(temp), packetLength)) {
+		FATAL("Unable to write FLV content");
+		return false;
+	}
+	if (!_pFile->WriteUI32(packetLength + 11, true)) {
+		FATAL("Unable to write FLV content");
+		return false;
+	}
+
+	return true;
+}
+
+bool OutFileFLV::WriteFLVCodecVideo(VideoCodecInfoH264 *pInfoVideo) {
+	if (pInfoVideo == NULL)
+		return false;
+
+	IOBuffer &temp = pInfoVideo->GetRTMPRepresentation();
+	uint32_t packetLength = GETAVAILABLEBYTESCOUNT(temp);
+	memset(_tagHeader, 0, sizeof (_tagHeader));
+	EHTONLP(_tagHeader, packetLength);
+	_tagHeader[0] = FLV_TAG_VIDEO;
+	if (!_pFile->WriteBuffer(_tagHeader, 11)) {
+		FATAL("Unable to write FLV content");
+		return false;
+	}
+	if (!_pFile->WriteBuffer(GETIBPOINTER(temp), packetLength)) {
+		FATAL("Unable to write FLV content");
+		return false;
+	}
+	if (!_pFile->WriteUI32(packetLength + 11, true)) {
+		FATAL("Unable to write FLV content");
+		return false;
+	}
+
+	return true;
 }
 
 bool OutFileFLV::WriteCodecSetupBytes(GenericProcessDataSetup *pGenericProcessDataSetup) {
@@ -212,51 +352,21 @@ bool OutFileFLV::WriteCodecSetupBytes(GenericProcessDataSetup *pGenericProcessDa
 		FATAL("FLV File not opened for writing");
 		return false;
 	}
-	if ((pGenericProcessDataSetup->_hasAudio)
-			&& (pGenericProcessDataSetup->_pStreamCapabilities->GetAudioCodecType() == CODEC_AUDIO_AAC)) {
-		AudioCodecInfoAAC *pInfo = pGenericProcessDataSetup->_pStreamCapabilities->GetAudioCodec<AudioCodecInfoAAC > ();
-		IOBuffer &temp = pInfo->GetRTMPRepresentation();
-		uint32_t packetLength = GETAVAILABLEBYTESCOUNT(temp);
-		memset(_tagHeader, 0, sizeof (_tagHeader));
-		EHTONLP(_tagHeader, packetLength);
 
-		_tagHeader[0] = FLV_TAG_AUDIO;
-
-		if (!_pFile->WriteBuffer(_tagHeader, 11)) {
-			FATAL("Unable to write FLV content");
+	AudioCodecInfoAAC *pInfoAudio = NULL;
+	if (pGenericProcessDataSetup->_hasAudio &&
+			(pGenericProcessDataSetup->_pStreamCapabilities->GetAudioCodecType() == CODEC_AUDIO_AAC)) {
+		pInfoAudio = pGenericProcessDataSetup->_pStreamCapabilities->GetAudioCodec<AudioCodecInfoAAC > ();
+		if (!WriteFLVCodecAudio(pInfoAudio))
 			return false;
-		}
-
-		if (!_pFile->WriteBuffer(GETIBPOINTER(temp), packetLength)) {
-			FATAL("Unable to write FLV content");
-			return false;
-		}
-		if (!_pFile->WriteUI32(packetLength + 11, true)) {
-			FATAL("Unable to write FLV content");
-			return false;
-		}
 	}
 
-	if ((pGenericProcessDataSetup->_hasVideo)
-			&& (pGenericProcessDataSetup->_pStreamCapabilities->GetVideoCodecType() == CODEC_VIDEO_H264)) {
-		VideoCodecInfoH264 *pInfo = pGenericProcessDataSetup->_pStreamCapabilities->GetVideoCodec<VideoCodecInfoH264 > ();
-		IOBuffer &temp = pInfo->GetRTMPRepresentation();
-		uint32_t packetLength = GETAVAILABLEBYTESCOUNT(temp);
-		memset(_tagHeader, 0, sizeof (_tagHeader));
-		EHTONLP(_tagHeader, packetLength);
-		_tagHeader[0] = FLV_TAG_VIDEO;
-		if (!_pFile->WriteBuffer(_tagHeader, 11)) {
-			FATAL("Unable to write FLV content");
+	VideoCodecInfoH264 *pInfoVideo = NULL;
+	if (pGenericProcessDataSetup->_hasVideo &&
+			(pGenericProcessDataSetup->_pStreamCapabilities->GetVideoCodecType() == CODEC_VIDEO_H264)) {
+		pInfoVideo = pGenericProcessDataSetup->_pStreamCapabilities->GetVideoCodec<VideoCodecInfoH264 > ();
+		if (!WriteFLVCodecVideo(pInfoVideo))
 			return false;
-		}
-		if (!_pFile->WriteBuffer(GETIBPOINTER(temp), packetLength)) {
-			FATAL("Unable to write FLV content");
-			return false;
-		}
-		if (!_pFile->WriteUI32(packetLength + 11, true)) {
-			FATAL("Unable to write FLV content");
-			return false;
-		}
 	}
 
 	return true;
@@ -267,6 +377,7 @@ void OutFileFLV::UpdateDuration() {
 		return;
 	string path = _pFile->GetPath();
 	_pFile->Close();
+
 	if (!_pFile->Initialize(path, FILE_OPEN_MODE_WRITE))
 		return;
 
@@ -326,3 +437,36 @@ void OutFileFLV::UpdateDuration() {
 	}
 }
 
+bool OutFileFLV::SplitFile() {
+
+	_lastVideoDts = -1;
+	_lastAudioDts = -1;
+
+	UpdateDuration();
+
+	StreamCapabilities * pStreamCapabilities = BaseOutStream::GetCapabilities();
+	if (pStreamCapabilities == NULL) {
+		return false;
+	}
+
+	bool hasAudioAAC = (CODEC_AUDIO_AAC == pStreamCapabilities->GetAudioCodecType());
+	AudioCodecInfoAAC *pInfoAudio = NULL;
+	if (hasAudioAAC) {
+		pInfoAudio = pStreamCapabilities->GetAudioCodec<AudioCodecInfoAAC > ();
+	}
+
+	bool hasVideoH264 = (CODEC_VIDEO_H264 == pStreamCapabilities->GetVideoCodecType());
+	VideoCodecInfoH264 *pInfoVideo = NULL;
+	if (hasVideoH264) {
+		pInfoVideo = pStreamCapabilities->GetVideoCodec<VideoCodecInfoH264 > ();
+	}
+
+	if (!WriteFLVHeader(hasAudioAAC, hasVideoH264) ||
+			!WriteFLVMetaData() ||
+			(hasAudioAAC && !WriteFLVCodecAudio(pInfoAudio)) ||
+			(hasVideoH264 && !WriteFLVCodecVideo(pInfoVideo))) {
+		return false;
+	}
+
+	return true;
+}

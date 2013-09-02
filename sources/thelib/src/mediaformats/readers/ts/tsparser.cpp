@@ -26,6 +26,7 @@
 #include "mediaformats/readers/ts/tspacketpat.h"
 #include "mediaformats/readers/ts/tspacketpmt.h"
 #include "mediaformats/readers/ts/tsparsereventsink.h"
+#include "streaming/baseinstream.h"
 
 TSParser::TSParser(TSParserEventsSink *pEventSink) {
 	_pEventSink = pEventSink;
@@ -122,6 +123,8 @@ bool TSParser::ProcessPacket(uint32_t packetHeader, IOBuffer &buffer,
 			return ProcessPidTypePAT(packetHeader, *pPIDDescriptor, pBuffer, cursor, maxCursor);
 		}
 		case PID_TYPE_NIT:
+		case PID_TYPE_CAT:
+		case PID_TYPE_TSDT:
 		{
 			//			FINEST("%s", STR(IOBuffer::DumpBuffer(pBuffer + cursor,
 			//					_chunkSize - cursor)));
@@ -446,6 +449,16 @@ bool TSParser::ProcessPidTypeAV(PIDDescriptor *pPIDDescriptor, uint8_t *pData,
 			return false;
 		}
 		if (length >= 8) {
+			if (((pData[3]&0xE0) != 0xE0)&&((pData[3]&0xC0) != 0xC0)) {
+				BaseInStream *pTemp = pPIDDescriptor->pAVContext->GetInStream();
+				WARN("PID %"PRIu16" from %s is not h264/aac. The type is 0x%02"PRIx8,
+						pPIDDescriptor->pid,
+						pTemp != NULL ? STR(*pTemp) : "",
+						pData[3]);
+				pPIDDescriptor->type = PID_TYPE_NULL;
+				return true;
+			}
+
 			uint32_t pesHeaderLength = pData[8];
 			if (pesHeaderLength + 9 > length) {
 				WARN("Not enough data");

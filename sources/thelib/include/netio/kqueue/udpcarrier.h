@@ -42,13 +42,11 @@ public:
 
 	virtual bool OnEvent(struct kevent &event);
 	virtual bool SignalOutputData();
-	virtual operator string();
 	virtual void GetStats(Variant &info, uint32_t namespaceId = 0);
 
 	Variant &GetParameters();
 	void SetParameters(Variant parameters);
 	bool StartAccept();
-	bool EnableWriteEvents();
 
 	string GetFarEndpointAddress();
 	uint16_t GetFarEndpointPort();

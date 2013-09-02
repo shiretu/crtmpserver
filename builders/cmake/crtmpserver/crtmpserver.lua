@@ -132,12 +132,12 @@ configuration=
 					port=7654,
 					protocol="inboundRawHttpStream",
 					crossDomainFile="/tmp/crossdomain.xml"
-				},
+				},]]--
 				{
 					ip="0.0.0.0",
-					port=554,
+					port=5544,
 					protocol="inboundRtsp"
-				},]]--
+				},
 			},
 			externalStreams = 
 			{
@@ -155,21 +155,6 @@ configuration=
 					tcUrl="rtmp://edge01.fms.dutchview.nl/botr/bunny", --this one is usually required and should have the same value as the uri
 					emulateUserAgent="MAC 10,1,82,76",
 				}]]--
-				{
-                        uri="rtsp://animalhousenc.dvrdns.org:554/streaming/channels/0",
-                        localStreamName="PoolSide",
-                        forceTcp=true
-                },
-                {
-                        uri="rtsp://animalhousenc.dvrdns.org:556/streaming/channels/0",
-                        localStreamName="BoneYard",
-                        forceTcp=true
-                },
-                {
-                        uri="rtsp://animalhousenc.dvrdns.org:557/streaming/channels/0",
-                        localStreamName="BigPool",
-                        forceTcp=true
-                },
 			},
 			validateHandshake=false,
 			--enableCheckBandwidth=true,

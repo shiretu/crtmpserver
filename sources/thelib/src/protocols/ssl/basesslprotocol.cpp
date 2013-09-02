@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -225,7 +225,7 @@ string BaseSSLProtocol::DumpBIO(BIO *pBIO) {
 	formatString += "references: %d\n";
 	formatString += "num_read: %"PRId64"\n";
 	formatString += "num_write: %"PRId64;
-	return format(formatString,
+	return format(STR(formatString),
 			pBIO->method,
 			pBIO->callback,
 			pBIO->cb_arg,

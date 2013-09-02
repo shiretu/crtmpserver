@@ -114,11 +114,6 @@ UDPSenderProtocol *UDPSenderProtocol::GetInstance(string bindIp, uint16_t bindPo
 
 	//6. Setup the readyForSend interface and enable the protocol for write events
 	pResult->_pReadyForSend = pReadyForSend;
-	if (!pCarrier->EnableWriteEvents()) {
-		FATAL("Unable to set enable write events");
-		pResult->EnqueueForDelete();
-		return NULL;
-	}
 
 	//7. Done
 	return pResult;
@@ -141,9 +136,7 @@ bool UDPSenderProtocol::SendChunked(uint8_t *pData, uint32_t dataLength,
 		if ((uint32_t) sendto(_fd, (char *) (pData + totalSent), chunkSize, MSG_NOSIGNAL,
 				(sockaddr *) & _destAddress, sizeof (_destAddress)) != chunkSize) {
 			int err = LASTSOCKETERROR;
-			if (err == SOCKERROR_ENOBUFS) {
-				WARN("SOCKERROR_ENOBUFS encountered trying to send %"PRIu32" bytes", chunkSize);
-			} else {
+			if (err != SOCKERROR_ENOBUFS) {
 				FATAL("Unable to send bytes over UDP: (%d) %s", err, strerror(err));
 				return false;
 			}

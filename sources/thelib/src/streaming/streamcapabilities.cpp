@@ -399,13 +399,30 @@ void CodecInfo::GetRTMPMetadata(Variant &destination) {
 			break;
 		}
 		case CODEC_VIDEO_SORENSONH263:
+		{
+			destination["videocodecid"] = "FLV1";
+			if (_transferRate > 1)
+				destination["videodatarate"] = _transferRate / 1024.0;
+			break;
+		}
 		case CODEC_VIDEO_SCREENVIDEO:
 		case CODEC_VIDEO_SCREENVIDEO2:
 		case CODEC_AUDIO_PCMLE:
 		case CODEC_AUDIO_PCMBE:
 		case CODEC_AUDIO_G711A:
 		case CODEC_AUDIO_G711U:
+		{
+			break;
+		}
 		case CODEC_AUDIO_SPEEX:
+		{
+			destination["audiocodecid"] = ".spx";
+			if (_transferRate > 1)
+				destination["audiodatarate"] = _transferRate / 1024.0;
+			if (_samplingRate > 1)
+				destination["audiosamplerate"] = _samplingRate;
+			break;
+		}
 		default:
 		{
 			//WARN("RTMP metadata for codec %s not yet implemented", STR(tagToString(_type)));
@@ -675,6 +692,10 @@ bool VideoCodecInfoH264::Init(uint8_t *pSPS, uint32_t spsLength, uint8_t *pPPS,
 		bool frame_mbs_only_flag = (bool)temp["frame_mbs_only_flag"];
 		_width = ((uint32_t) temp["pic_width_in_mbs_minus1"] + 1)*16;
 		_height = ((uint32_t) temp["pic_height_in_map_units_minus1"] + 1)*16 * (frame_mbs_only_flag ? 1 : 2);
+		if ((bool)temp["frame_cropping_flag"]) {
+			_width -= 2 * (uint32_t) temp["frame_crop_left_offset"] + 2 * (uint32_t) temp["frame_crop_right_offset"];
+			_height -= 2 * (uint32_t) temp["frame_crop_top_offset"] + 2 * (uint32_t) temp["frame_crop_bottom_offset"];
+		}
 		_level = (uint8_t) temp["level_idc"];
 		_profile = (uint8_t) temp["profile_idc"];
 		if ((temp.HasKeyChain(_V_NUMERIC, true, 2, "vui_parameters", "num_units_in_tick"))
@@ -872,10 +893,10 @@ bool VideoCodecInfoSorensonH263::Init(uint8_t *pHeaders, uint32_t length) {
 		return false;
 	}
 
-	uint8_t pictureNumber = ba.ReadBits<uint8_t > (8);
-	if (pictureNumber != 0) {
-		WARN("This is not the first picture from a Sorenson H.263 stream: %"PRIx8, pictureNumber);
-	}
+	/*uint8_t pictureNumber =*/ ba.ReadBits<uint8_t > (8);
+	//	if (pictureNumber != 0) {
+	//		WARN("This is not the first picture from a Sorenson H.263 stream: %"PRIx8, pictureNumber);
+	//	}
 
 	uint8_t format2 = ba.ReadBits<uint8_t > (3);
 
@@ -928,7 +949,7 @@ bool VideoCodecInfoSorensonH263::Init(uint8_t *pHeaders, uint32_t length) {
 
 void VideoCodecInfoSorensonH263::GetRTMPMetadata(Variant &destination) {
 	VideoCodecInfo::GetRTMPMetadata(destination);
-	NYI;
+	//NYI;
 }
 
 VideoCodecInfoVP6::VideoCodecInfoVP6()
@@ -1234,24 +1255,19 @@ bool AudioCodecInfoAAC::Init(uint8_t *pCodecBytes, uint8_t codecBytesLength,
 		_codecBytesLength = 2;
 	}
 
+	//ISO-IEC-14496-3_2005_MPEG4_Audio page 49/1172
 	//2. Read the audio object type
 	if (ba.AvailableBits() < 5) {
 		FATAL("Not enough bits available for reading AAC config");
 		return false;
 	}
 	_audioObjectType = ba.ReadBits<uint8_t > (5);
-	if ((_audioObjectType != 1)
-			&& (_audioObjectType != 2)
-			&& (_audioObjectType != 3)
-			&& (_audioObjectType != 4)
-			&& (_audioObjectType != 6)
-			&& (_audioObjectType != 17)
-			&& (_audioObjectType != 19)
-			&& (_audioObjectType != 20)
-			&& (_audioObjectType != 23)
-			&& (_audioObjectType != 39)) {
-		FATAL("Invalid _audioObjectType: %"PRIu8, _audioObjectType);
-		return false;
+	if (_audioObjectType == 31) {
+		if (ba.AvailableBits() < 6) {
+			FATAL("Not enough bits available for reading AAC config");
+			return false;
+		}
+		_audioObjectType = 32 + ba.ReadBits<uint8_t > (6);
 	}
 
 	//3. Read the sample rate index
@@ -1260,27 +1276,32 @@ bool AudioCodecInfoAAC::Init(uint8_t *pCodecBytes, uint8_t codecBytesLength,
 		return false;
 	}
 	_sampleRateIndex = ba.ReadBits<uint8_t > (4);
-	if ((_sampleRateIndex == 13)
-			|| (_sampleRateIndex == 14)) {
-		FATAL("Invalid sample rate: %"PRIu8, _sampleRateIndex);
-		return false;
-	}
-	if (_sampleRateIndex == 15) {
-		if (codecBytesLength < 5) {
-			FATAL("Invalid length: %"PRIu32, codecBytesLength);
+	switch (_sampleRateIndex) {
+		case 13:
+		case 14: //we only have 13 values in the table.
+		{
+			FATAL("Invalid sample rate: %"PRIu8, _sampleRateIndex);
 			return false;
 		}
-		if (ba.AvailableBits() < 24) {
-			FATAL("Not enough bits available for reading AAC config");
-			return false;
+		case 15: //this is a special value telling us the freq directly
+		{
+			if (ba.AvailableBits() < 24) {
+				FATAL("Not enough bits available for reading AAC config");
+				return false;
+			}
+			_samplingRate = ba.ReadBits<uint32_t > (24);
+			break;
 		}
-		_samplingRate = ba.ReadBits<uint32_t > (24);
-	} else {
-		uint32_t rates[] = {
-			96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000,
-			12000, 11025, 8000, 7350
-		};
-		_samplingRate = rates[_sampleRateIndex];
+		default: //get it from the table
+		{
+
+			uint32_t rates[] = {
+				96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000,
+				12000, 11025, 8000, 7350
+			};
+			_samplingRate = rates[_sampleRateIndex];
+			break;
+		}
 	}
 
 	//4. read the channel configuration index
@@ -1395,7 +1416,7 @@ bool AudioCodecInfoAAC::Compare(uint8_t *pCodecBytes, uint8_t codecBytesLength, 
 			&&(codecBytesLength == _codecBytesLength)
 			&&(pCodecBytes != NULL)
 			&&(_pCodecBytes != NULL)
-			&&(memcpy(_pCodecBytes, pCodecBytes, codecBytesLength) == 0);
+			&&(memcmp(_pCodecBytes, pCodecBytes, codecBytesLength) == 0);
 }
 
 StreamCapabilities::StreamCapabilities() {
@@ -1406,12 +1427,12 @@ StreamCapabilities::StreamCapabilities() {
 
 StreamCapabilities::~StreamCapabilities() {
 	Clear();
-	ClearVideo();
-	ClearAudio();
 }
 
 void StreamCapabilities::Clear() {
 	_transferRate = -1;
+	ClearVideo();
+	ClearAudio();
 }
 
 void StreamCapabilities::ClearVideo() {

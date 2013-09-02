@@ -90,6 +90,8 @@ public:
 		}
 		_success = true;
 
+		INFO("Outbound connection established: %s", STR(*pProtocol));
+
 		_closeSocket = false;
 		return true;
 	}
@@ -151,10 +153,6 @@ public:
 
 		_closeSocket = false;
 		return true;
-	}
-
-	operator string() {
-		return format("CN(%d)", _inboundFd);
 	}
 
 	virtual void GetStats(Variant &info, uint32_t namespaceId = 0) {

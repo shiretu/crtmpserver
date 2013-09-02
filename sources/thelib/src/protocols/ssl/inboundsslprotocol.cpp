@@ -83,6 +83,27 @@ bool InboundSSLProtocol::InitGlobalContext(Variant &parameters) {
 		//6. disable client certificate authentication
 		SSL_CTX_set_verify(_pGlobalSSLContext, SSL_VERIFY_NONE, NULL);
 
+		string cipherSuite = "";
+		if (parameters.HasKeyChain(V_STRING, false, 1, CONF_SSL_CIPHERSUITE))
+			cipherSuite = (string) parameters[CONF_SSL_CIPHERSUITE];
+		trim(cipherSuite);
+		if (cipherSuite != "") {
+			INFO("Apply cipher suite `%s` on %s %s:%"PRIu16,
+					STR(cipherSuite),
+					STR(parameters[CONF_PROTOCOL]),
+					STR(parameters[CONF_IP]),
+					(uint16_t) parameters[CONF_PORT]
+					);
+			if (SSL_CTX_set_cipher_list(_pGlobalSSLContext, STR(cipherSuite)) == 0) {
+				FATAL("Unable to apply cipher suite `%s`: Error was: `%s`",
+						STR(cipherSuite),
+						STR(GetSSLErrors()));
+				SSL_CTX_free(_pGlobalSSLContext);
+				_pGlobalSSLContext = NULL;
+				return false;
+			}
+		}
+
 		//7. Store the global context for later usage
 		_pGlobalContexts[hash] = _pGlobalSSLContext;
 		INFO("SSL server context initialized");

@@ -67,6 +67,8 @@
 #include "mediaformats/readers/mp4/atomasrt.h"
 #include "mediaformats/readers/mp4/atomafrt.h"
 #include "mediaformats/readers/mp4/atomuuid.h"
+#include "mediaformats/readers/mp4/atomedts.h"
+#include "mediaformats/readers/mp4/atomelst.h"
 
 //TODO: See how the things are impemented inside mp4v2. Good source
 //for looking at the avcC atom format for exampl
@@ -263,6 +265,12 @@ BaseAtom * MP4Document::ReadAtom(BaseAtom *pParentAtom) {
 		case A_AFRT:
 			pAtom = new AtomAFRT(this, type, size, currentPos);
 			break;
+		case A_EDTS:
+			pAtom = new AtomEDTS(this, type, size, currentPos);
+			break;
+		case A_ELST:
+			pAtom = new AtomELST(this, type, size, currentPos);
+			break;
 			//		case A_UUID:
 			//			pAtom = new AtomUUID(this, type, size, currentPos);
 			//			break;
@@ -359,7 +367,8 @@ BaseAtom * MP4Document::ReadAtom(BaseAtom *pParentAtom) {
 					currentPos, pAtom->GetSize(), _mediaFile.Cursor());
 			return NULL;
 		} else {
-			WARN("wasted space inside atom! atom start: %"PRIu64"; Atom size: %"PRIu64"; currentPos: %"PRIu64,
+			WARN("wasted space inside atom %s! atom start: %"PRIu64"; Atom size: %"PRIu64"; currentPos: %"PRIu64,
+					STR(pAtom->GetTypeString()),
 					currentPos, pAtom->GetSize(), _mediaFile.Cursor());
 			if (!_mediaFile.SeekTo(pAtom->GetStart() + pAtom->GetSize())) {
 				FATAL("Unable to skip atom");
@@ -388,6 +397,15 @@ bool MP4Document::ParseDocument() {
 		BaseAtom *pAtom = ReadAtom(NULL);
 		if (pAtom == NULL) {
 			FATAL("Unable to read atom");
+			if (_pMOOV != NULL) {
+				WARN("Garbage found at the end of file");
+				_mediaFile.Close();
+				if (!GetFile(_mediaFilePath, 4 * 1024 * 1024, _mediaFile)) {
+					FATAL("Unable to open media file: %s", STR(_mediaFilePath));
+					return false;
+				}
+				return true;
+			}
 			return false;
 		}
 		if (!pAtom->IsIgnored()) {

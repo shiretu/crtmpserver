@@ -259,6 +259,7 @@ bool AtomESDS::ReadDecoderConfigDescriptorTag() {
 			FATAL("Visual objectTypeIndication 0x%02"PRIx8" not implemented yet", objectTypeIndication);
 			return false;
 		}
+		case 0x6b: //Audio ISO/IEC 11172-3
 		case 0x69: //Audio ISO/IEC 13818-3 MP3
 		{
 			if (!SkipRead(false)) {
@@ -291,7 +292,6 @@ bool AtomESDS::ReadDecoderConfigDescriptorTag() {
 		case 0x66: //Audio ISO/IEC 13818-7 Main Profile
 		case 0x67: //Audio ISO/IEC 13818-7 LowComplexity Profile
 		case 0x68: //Audio ISO/IEC 13818-7 Scalable Sampling Rate Profile
-		case 0x6b: //Audio ISO/IEC 11172-3
 		{
 			FATAL("Audio objectTypeIndication 0x%02"PRIx8" not implemented yet", objectTypeIndication);
 			return false;

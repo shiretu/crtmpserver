@@ -96,8 +96,8 @@ bool BaseMediaDocument::Process() {
 	moveFile(_seekFilePath + ".tmp", _seekFilePath);
 	moveFile(_metaFilePath + ".tmp", _metaFilePath);
 
-	chmod(STR(_seekFilePath), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
-	chmod(STR(_metaFilePath), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+	Chmod(STR(_seekFilePath), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+	Chmod(STR(_metaFilePath), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 
 	return true;
 }

@@ -31,22 +31,22 @@ TSPacketPMT::~TSPacketPMT() {
 
 TSPacketPMT::operator string() {
 	string result = "";
-	result += format("tableId:                %hhu\n", _tableId);
-	result += format("sectionSyntaxIndicator: %hhu\n", _sectionSyntaxIndicator);
-	result += format("reserved1:              %hhu\n", _reserved1);
-	result += format("reserved2:              %hhu\n", _reserved2);
-	result += format("sectionLength:          %hu\n", _sectionLength);
-	result += format("programNumber:          %hu\n", _programNumber);
-	result += format("reserved3:              %hhu\n", _reserved3);
-	result += format("versionNumber:          %hhu\n", _versionNumber);
-	result += format("currentNextIndicator:   %hhu\n", _currentNextIndicator);
-	result += format("sectionNumber:          %hhu\n", _sectionNumber);
-	result += format("lastSectionNumber:      %hhu\n", _lastSectionNumber);
-	result += format("reserved4:              %hhu\n", _reserved4);
-	result += format("pcrPid:                 %hu\n", _pcrPid);
-	result += format("reserved5:              %hhu\n", _reserved5);
-	result += format("programInfoLength:      %hu\n", _programInfoLength);
-	result += format("crc:                    %x\n", _crc);
+	result += format("tableId:                %"PRIu8"\n", _tableId);
+	result += format("sectionSyntaxIndicator: %"PRIu8"\n", (uint8_t) _sectionSyntaxIndicator);
+	result += format("reserved1:              %"PRIu8"\n", (uint8_t) _reserved1);
+	result += format("reserved2:              %"PRIu8"\n", _reserved2);
+	result += format("sectionLength:          %"PRIu16"\n", _sectionLength);
+	result += format("programNumber:          %"PRIu16"\n", _programNumber);
+	result += format("reserved3:              %"PRIu8"\n", _reserved3);
+	result += format("versionNumber:          %"PRIu8"\n", _versionNumber);
+	result += format("currentNextIndicator:   %"PRIu8"\n", (uint8_t) _currentNextIndicator);
+	result += format("sectionNumber:          %"PRIu8"\n", _sectionNumber);
+	result += format("lastSectionNumber:      %"PRIu8"\n", _lastSectionNumber);
+	result += format("reserved4:              %"PRIu8"\n", _reserved4);
+	result += format("pcrPid:                 %"PRIu16"\n", _pcrPid);
+	result += format("reserved5:              %"PRIu8"\n", _reserved5);
+	result += format("programInfoLength:      %"PRIu16"\n", _programInfoLength);
+	result += format("crc:                    0x%08"PRIx32"\n", _crc);
 	result += format("descriptors count:      %"PRIz"u\n", _programInfoDescriptors.size());
 	for (uint32_t i = 0; i < _programInfoDescriptors.size(); i++) {
 		result += format("\t%s", STR(_programInfoDescriptors[i]));
@@ -56,7 +56,7 @@ TSPacketPMT::operator string() {
 	result += format("streams count:          %"PRIz"u\n", _streams.size());
 
 	FOR_MAP(_streams, uint16_t, TSStreamInfo, i) {
-		result += format("\t%hu: %s\n", MAP_KEY(i), STR(MAP_VAL(i).toString(1)));
+		result += format("\t%"PRIu16": %s\n", MAP_KEY(i), STR(MAP_VAL(i).toString(1)));
 	}
 	return result;
 }

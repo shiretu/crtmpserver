@@ -53,22 +53,25 @@ TCPCarrier::TCPCarrier(int32_t fd)
 	memset(&_nearAddress, 0, sizeof (sockaddr_in));
 	_nearIp = "";
 	_nearPort = 0;
-	socklen_t sz = sizeof (int);
-	_sendBufferSize = 0;
-	if (getsockopt(fd, SOL_SOCKET, SO_SNDBUF, (char *) &_sendBufferSize, &sz) != 0) {
-		ASSERT("Unable to determine the send buffer size");
-	}
-	_recvBufferSize = 0;
-	if (getsockopt(fd, SOL_SOCKET, SO_RCVBUF, (char *) &_recvBufferSize, &sz) != 0) {
-		ASSERT("Unable to determine the recv buffer size");
-	}
+	_sendBufferSize = 1024 * 1024 * 8;
+	_recvBufferSize = 1024 * 256;
 	GetEndpointsInfo();
 	_rx = 0;
 	_tx = 0;
 	_ioAmount = 0;
+	_lastRecvError = 0;
+	_lastSendError = 0;
+
+	Variant stats;
+	GetStats(stats);
+	EventLogger::GetDefaultLogger()->LogCarrierCreated(stats);
 }
 
 TCPCarrier::~TCPCarrier() {
+	Variant stats;
+	GetStats(stats);
+	EventLogger::GetDefaultLogger()->LogCarrierClosed(stats);
+
 	CLOSE_SOCKET(_inboundFd);
 }
 
@@ -80,26 +83,30 @@ bool TCPCarrier::OnEvent(select_event &event) {
 			IOBuffer *pInputBuffer = _pProtocol->GetInputBuffer();
 			o_assert(pInputBuffer != NULL);
 			if (!pInputBuffer->ReadFromTCPFd(_inboundFd,
-					_recvBufferSize, _ioAmount)) {
-				FATAL("Unable to read data. %s:%hu -> %s:%hu",
-						STR(_farIp), _farPort,
-						STR(_nearIp), _nearPort);
+					_recvBufferSize, _ioAmount, _lastRecvError)) {
+				FATAL("Unable to read data from connection: %s. Error was (%d): %s",
+						(_pProtocol != NULL) ? STR(*_pProtocol) : "", _lastRecvError,
+						strerror(_lastRecvError));
 				return false;
 			}
 			_rx += _ioAmount;
 			ADD_IN_BYTES_MANAGED(_type, _ioAmount);
-			return _pProtocol->SignalInputData(_ioAmount);
+			if (!_pProtocol->SignalInputData(_ioAmount)) {
+				FATAL("Unable to read data from connection: %s. Signaling upper protocols failed",
+						(_pProtocol != NULL) ? STR(*_pProtocol) : "");
+				return false;
+			}
+			return true;
 		}
 		case SET_WRITE:
 		{
 			IOBuffer *pOutputBuffer = NULL;
-
 			while ((pOutputBuffer = _pProtocol->GetOutputBuffer()) != NULL) {
 				if (!pOutputBuffer->WriteToTCPFd(_outboundFd,
-						_sendBufferSize, _ioAmount)) {
-					FATAL("Unable to send data. %s:%hu -> %s:%hu",
-							STR(_farIp), _farPort,
-							STR(_nearIp), _nearPort);
+						_sendBufferSize, _ioAmount, _lastSendError)) {
+					FATAL("Unable to write data on connection: %s. Error was (%d): %s",
+							(_pProtocol != NULL) ? STR(*_pProtocol) : "", _lastSendError,
+							strerror(_lastSendError));
 					IOHandlerManager::EnqueueForDelete(this);
 					return false;
 				}
@@ -117,7 +124,8 @@ bool TCPCarrier::OnEvent(select_event &event) {
 		}
 		default:
 		{
-			ASSERT("Invalid state: %hhu", event.type);
+			FATAL("Unable to read/write data from/to connection: %s. Invalid event type: %d",
+					(_pProtocol != NULL) ? STR(*_pProtocol) : "", event.type);
 			return false;
 		}
 	}
@@ -126,12 +134,6 @@ bool TCPCarrier::OnEvent(select_event &event) {
 bool TCPCarrier::SignalOutputData() {
 	ENABLE_WRITE_DATA;
 	return true;
-}
-
-TCPCarrier::operator string() {
-	if (_pProtocol != NULL)
-		return STR(*_pProtocol);
-	return format("TCP(%d)", _inboundFd);
 }
 
 void TCPCarrier::GetStats(Variant &info, uint32_t namespaceId) {

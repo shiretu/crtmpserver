@@ -24,9 +24,55 @@
 #include "mediaformats/readers/mp3/mp3document.h"
 #include "mediaformats/readers/ts/tsdocument.h"
 #include "streaming/streamcapabilities.h"
+#include "protocols/protocolmanager.h"
 
 #define SILENCE_FATAL(...) if(!_silence) FATAL(__VA_ARGS__)
 #define SILENCE_WARN(...) if(!_silence) WARN(__VA_ARGS__)
+
+StreamMetadataResolverTimer::StreamMetadataResolverTimer(
+		StreamMetadataResolver *pResolver) {
+	_pResolver = pResolver;
+	_pAcceptQueue = &_operations1;
+	_pWorkQueue = &_operations2;
+}
+
+StreamMetadataResolverTimer::~StreamMetadataResolverTimer() {
+}
+
+void StreamMetadataResolverTimer::ResetStreamManager() {
+	_pResolver = NULL;
+}
+
+bool StreamMetadataResolverTimer::TimePeriodElapsed() {
+
+	FOR_VECTOR(*_pWorkQueue, i) {
+		if (_pResolver == NULL)
+			continue;
+		//		FINEST("mediaFullPath: %s statsFile: %s operation: %d value: %"PRIu64,
+		//				STR((*_pWorkQueue)[i].mediaFullPath),
+		//				STR((*_pWorkQueue)[i].statsFile),
+		//				(*_pWorkQueue)[i].operation,
+		//				(*_pWorkQueue)[i].value);
+		_pResolver->UpdateStats((*_pWorkQueue)[i].mediaFullPath,
+				(*_pWorkQueue)[i].statsFile,
+				(*_pWorkQueue)[i].operation,
+				(*_pWorkQueue)[i].value);
+	}
+
+	_pWorkQueue->clear();
+
+	vector<statsOperation> *pTemp = _pWorkQueue;
+	_pWorkQueue = _pAcceptQueue;
+	_pAcceptQueue = pTemp;
+
+	return true;
+}
+
+void StreamMetadataResolverTimer::EnqueueOperation(string &mediaFullPath,
+		string &statsFile, StatsOperation operation, uint64_t value) {
+	statsOperation so = {mediaFullPath, statsFile, operation, value};
+	_pAcceptQueue->push_back(so);
+}
 
 StreamMetadataResolver::StreamMetadataResolver() {
 	_pCapabilities = new StreamCapabilities();
@@ -44,6 +90,11 @@ StreamMetadataResolver::~StreamMetadataResolver() {
 		delete _storagesByOrder[i];
 	}
 	_storagesByOrder.clear();
+	StreamMetadataResolverTimer *pTemp = (StreamMetadataResolverTimer *) ProtocolManager::GetProtocol(_statsTimerId);
+	if (pTemp != NULL) {
+		pTemp->ResetStreamManager();
+		pTemp->EnqueueForDelete();
+	}
 }
 
 void StreamMetadataResolver::SetSilence(bool silence) {
@@ -53,10 +104,27 @@ void StreamMetadataResolver::SetSilence(bool silence) {
 bool StreamMetadataResolver::Initialize(Variant &configuration) {
 	Storage dummy;
 
+	bool hasTimers = true;
+	if (configuration.HasKeyChain(V_BOOL, false, 1, "hasTimers")) {
+		hasTimers = (bool)configuration.GetValue("hasTimers", false);
+		configuration.RemoveKey("hasTimers", false);
+	}
+
 	FOR_MAP(configuration, string, Variant, i) {
-		if (!InitializeStorage(MAP_KEY(i), MAP_VAL(i), dummy)) {
-			WARN("Storage failed to initialize storage %s", STR(MAP_KEY(i)));
+		if ((lowerCase(MAP_KEY(i)) == "recordedstreamsstorage")
+				&&(MAP_VAL(i) == V_STRING)) {
+			SetRecordedSteramsStorage(MAP_VAL(i));
+		} else {
+			if (!InitializeStorage(MAP_KEY(i), MAP_VAL(i), dummy)) {
+				WARN("Storage failed to initialize storage %s", STR(MAP_KEY(i)));
+			}
 		}
+	}
+
+	if (hasTimers) {
+		StreamMetadataResolverTimer *pTimer = new StreamMetadataResolverTimer(this);
+		_statsTimerId = pTimer->GetId();
+		pTimer->EnqueueForTimeEvent(1);
 	}
 	return true;
 }
@@ -124,14 +192,16 @@ bool StreamMetadataResolver::InitializeStorage(string name, Variant &config,
 	}
 
 	//clientSideBuffer
-	int32_t clientSideBuffer = 0;
+	uint32_t clientSideBuffer = 0;
 	if (config.HasKeyChain(_V_NUMERIC, false, 1, CONF_APPLICATION_CLIENTSIDEBUFFER)) {
-		clientSideBuffer = (int32_t) config.GetValue(CONF_APPLICATION_CLIENTSIDEBUFFER, false);
+		clientSideBuffer = (uint32_t) config.GetValue(CONF_APPLICATION_CLIENTSIDEBUFFER, false);
 	}
-	if (clientSideBuffer <= 0)
-		clientSideBuffer = 15;
-	if (clientSideBuffer > 3600)
-		clientSideBuffer = 3600;
+	if (clientSideBuffer != 0xffffffff) {
+		if (clientSideBuffer == 0)
+			clientSideBuffer = 15;
+		if (clientSideBuffer > 3600)
+			clientSideBuffer = 3600;
+	}
 
 	//seekGranularity
 	int32_t seekGranularity = 0;
@@ -165,6 +235,24 @@ bool StreamMetadataResolver::InitializeStorage(string name, Variant &config,
 	//FINEST("\n%s", STR(pStorage->ToString()));
 	_storagesByMediaFolder[mediaFolder] = pStorage;
 	ADD_VECTOR_END(_storagesByOrder, pStorage);
+
+	vector<string> files;
+	if (!listFolder(pStorage->metaFolder(), files, true, false, true)) {
+		WARN("Unable to list folder %s", STR(pStorage->metaFolder()));
+	}
+
+	FOR_VECTOR(files, i) {
+		//X.stats.tmp
+		uint32_t minSize = 1 + MEDIA_TYPE_STATS_LEN + 4;
+		if (files[i].size()<(1 + minSize))
+			continue;
+		string fullFile = files[i];
+		if (fullFile.substr(fullFile.size() - minSize) == "."MEDIA_TYPE_STATS".tmp") {
+			string statsFile = fullFile.substr(0, fullFile.size() - 4);
+			WARN("Moving opened stats file %s -> %s", STR(fullFile), STR(statsFile));
+			moveFile(fullFile, statsFile);
+		}
+	}
 
 	result = *pStorage;
 	_storages.Reset();
@@ -386,6 +474,138 @@ Variant &StreamMetadataResolver::GetAllStorages() {
 	return _storages;
 }
 
+void StreamMetadataResolver::UpdateStats(string mediaFullPath, string statsFile,
+		StatsOperation operation, uint64_t value) {
+	if (statsFile == "")
+		return;
+	if (MAP_HAS1(_badStatsFiles, statsFile))
+		return;
+	string tempStatsFile = statsFile + ".tmp";
+	if (fileExists(statsFile)) {
+		if (!moveFile(statsFile, tempStatsFile)) {
+			EnqueueStatsOperation(mediaFullPath, statsFile, operation, value);
+			return;
+		}
+		MetadataStats stats;
+		stats.Init();
+		if (!Variant::DeserializeFromXmlFile(tempStatsFile, stats)) {
+			string damagedStatsFile = statsFile + "." + generateRandomString(8);
+			WARN("Stats file damaged: %s. Will move it to: %s", STR(statsFile), STR(damagedStatsFile));
+			if (!moveFile(tempStatsFile, damagedStatsFile)) {
+				WARN("Unable to move stats file %s -> %s", STR(tempStatsFile),
+						STR(damagedStatsFile));
+				_badStatsFiles[statsFile] = true;
+				return;
+			}
+			stats.Reset();
+			stats.Init();
+			stats.mediaFullPath(mediaFullPath);
+			if (!stats.SerializeToXmlFile(tempStatsFile)) {
+				WARN("Unable to write stats file: %s. Will permanently give up on this file",
+						STR(tempStatsFile));
+				_badStatsFiles[statsFile] = true;
+				return;
+			}
+			if (!moveFile(tempStatsFile, statsFile)) {
+				WARN("Unable to move stats file %s -> %s", STR(tempStatsFile),
+						STR(statsFile));
+				_badStatsFiles[statsFile] = true;
+				return;
+			}
+		}
+		UpdateStats(stats, operation, value);
+		if (!stats.SerializeToXmlFile(tempStatsFile)) {
+			WARN("Unable to update stats file %s", STR(tempStatsFile));
+			_badStatsFiles[statsFile] = true;
+		}
+		if (!moveFile(tempStatsFile, statsFile)) {
+			WARN("Unable to move stats file %s -> %s", STR(tempStatsFile), STR(statsFile));
+			_badStatsFiles[statsFile] = true;
+		}
+	} else {
+		if (!fileExists(tempStatsFile)) {
+			MetadataStats stats;
+			stats.Init();
+			stats.mediaFullPath(mediaFullPath);
+			if (!stats.SerializeToXmlFile(tempStatsFile)) {
+				WARN("Unable to write stats file: %s. Will permanently give up on this file",
+						STR(tempStatsFile));
+				_badStatsFiles[statsFile] = true;
+				return;
+			}
+			if (!moveFile(tempStatsFile, statsFile)) {
+				WARN("Unable to move stats file %s -> %s", STR(tempStatsFile),
+						STR(statsFile));
+				_badStatsFiles[statsFile] = true;
+				return;
+			}
+			UpdateStats(mediaFullPath, statsFile, operation, value);
+		} else {
+			EnqueueStatsOperation(mediaFullPath, statsFile, operation, value);
+		}
+	}
+}
+
+string StreamMetadataResolver::GetRecordedStreamsStorage() {
+	return _recordedStreamsStorage;
+}
+
+void StreamMetadataResolver::SetRecordedSteramsStorage(Variant &value) {
+	if (value != V_STRING)
+		return;
+	string strValue = (string) value;
+	string normalizedValue = normalizePath(strValue, "");
+	if (normalizedValue == "") {
+		WARN("the location value for the recorded streams is incorrect: %s", STR(strValue));
+		return;
+	}
+	if (normalizedValue[normalizedValue.length() - 1] != PATH_SEPARATOR)
+		normalizedValue += PATH_SEPARATOR;
+	File testFile;
+	string testFileName = normalizedValue + generateRandomString(16);
+	testFile.SuppressLogErrorsOnInit();
+	if (!testFile.Initialize(testFileName, FILE_OPEN_MODE_TRUNCATE)) {
+		WARN("the location value for the recorded streams is not write-able: %s", STR(normalizedValue));
+		return;
+	}
+	testFile.Close();
+	deleteFile(testFileName);
+	_recordedStreamsStorage = normalizedValue;
+}
+
+void StreamMetadataResolver::UpdateStats(MetadataStats &stats,
+		StatsOperation operation, uint64_t value) {
+	switch (operation) {
+		case STATS_OPERATION_INCREMENT_OPEN_COUNT:
+		{
+			value = stats.openCount() + 1;
+			stats.openCount(value);
+			stats.lastAccessTime(Variant::Now());
+			break;
+		}
+		case STATS_OPERATION_INCREMENT_SERVED_BYTES_COUNT:
+		{
+			value += stats.servedBytesCount();
+			stats.servedBytesCount(value);
+			break;
+		}
+		default:
+		{
+			WARN("Stats operation %"PRIu32" not implemented", (uint32_t) operation);
+			break;
+		}
+	}
+}
+
+void StreamMetadataResolver::EnqueueStatsOperation(string &mediaFullPath,
+		string &statsFile, StatsOperation operation, uint64_t value) {
+	StreamMetadataResolverTimer *pTimer = (StreamMetadataResolverTimer *)
+			ProtocolManager::GetProtocol(_statsTimerId);
+	if (pTimer == NULL)
+		return;
+	pTimer->EnqueueOperation(mediaFullPath, statsFile, operation, value);
+}
+
 bool StreamMetadataResolver::ResolveStorage(Metadata &result) {
 	//1. get the computed complete file name. By complete we understand
 	//that the extension is also computed if missing. This is not the
@@ -513,11 +733,6 @@ bool StreamMetadataResolver::ComputeSeekMeta(Metadata &result) {
 		pDocument = new MP3Document(result);
 	}
 #endif /* HAS_MEDIA_MP4 */
-#ifdef HAS_MEDIA_TS
-	else if (type == MEDIA_TYPE_TS) {
-		pDocument = new TSDocument(result);
-	}
-#endif /* HAS_MEDIA_MP4 */
 
 	if (pDocument == NULL) {
 		SILENCE_FATAL("Media file type %s not supported", STR(type));
@@ -548,20 +763,14 @@ bool StreamMetadataResolver::LoadSeekMeta(Metadata &result) {
 	if ((getFileModificationDate(result.metaFileFullPath()) < getFileModificationDate(result.mediaFullPath()))
 			|| (getFileModificationDate(result.seekFileFullPath()) < getFileModificationDate(result.mediaFullPath()))) {
 		WARN("seek/meta files for media %s obsolete. Delete them", STR(result.mediaFullPath()));
-		if (!deleteFile(result.metaFileFullPath()))
-			WARN("Unable to delete file %s", STR(result.metaFileFullPath()));
-		if (!deleteFile(result.seekFileFullPath()))
-			WARN("Unable to delete file %s", STR(result.seekFileFullPath()));
+		DeleteAllMetaFiles(result);
 		return false;
 	}
 
 	PublicMetadata publicMetadata;
 	if (!PublicMetadata::DeserializeFromXmlFile(result.metaFileFullPath(), publicMetadata)) {
 		WARN("meta file for media %s corrupted. Delete it and regenerate", STR(result.mediaFullPath()));
-		if (!deleteFile(result.metaFileFullPath()))
-			WARN("Unable to delete file %s", STR(result.metaFileFullPath()));
-		if (!deleteFile(result.seekFileFullPath()))
-			WARN("Unable to delete file %s", STR(result.seekFileFullPath()));
+		DeleteAllMetaFiles(result);
 		return false;
 	}
 	publicMetadata.RemoveKey("mediaFullPath");
@@ -569,14 +778,28 @@ bool StreamMetadataResolver::LoadSeekMeta(Metadata &result) {
 	string temp = result.seekFileFullPath();
 	if (!_pCapabilities->Deserialize(temp, NULL)) {
 		WARN("seek file for media %s corrupted. Delete it and regenerate", STR(result.mediaFullPath()));
-		if (!deleteFile(result.metaFileFullPath()))
-			WARN("Unable to delete file %s", STR(result.metaFileFullPath()));
-		if (!deleteFile(result.seekFileFullPath()))
-			WARN("Unable to delete file %s", STR(result.seekFileFullPath()));
+		DeleteAllMetaFiles(result);
 		return false;
 	}
 
 	result.publicMetadata(publicMetadata);
 
 	return true;
+}
+
+void StreamMetadataResolver::DeleteAllMetaFiles(Metadata &result) {
+	if (fileExists(result.metaFileFullPath()))
+		deleteFile(result.metaFileFullPath());
+	if (fileExists(result.metaFileFullPath() + ".tmp"))
+		deleteFile(result.metaFileFullPath() + ".tmp");
+
+	if (fileExists(result.seekFileFullPath()))
+		deleteFile(result.seekFileFullPath());
+	if (fileExists(result.seekFileFullPath() + ".tmp"))
+		deleteFile(result.seekFileFullPath() + ".tmp");
+
+	if (fileExists(result.statsFileFullPath()))
+		deleteFile(result.statsFileFullPath());
+	if (fileExists(result.statsFileFullPath() + ".tmp"))
+		deleteFile(result.statsFileFullPath() + ".tmp");
 }

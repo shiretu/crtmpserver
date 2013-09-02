@@ -60,10 +60,8 @@ public:
 
 	static void Init();
 	static void Free(bool freeAppenders);
-	static void Log(int32_t level, string fileName, uint32_t lineNumber,
-			string functionName, string formatString, ...);
-	static void LogProd(int32_t level, string fileName, uint32_t lineNumber,
-			string functionName, Variant &le);
+	static void Log(int32_t level, const char *pFileName, uint32_t lineNumber,
+			const char *pFunctionName, const char *pFormatString, ...);
 	static bool AddLogLocation(BaseLogLocation *pLogLocation);
 	static void SignalFork();
 	static void SetLevel(int32_t level);

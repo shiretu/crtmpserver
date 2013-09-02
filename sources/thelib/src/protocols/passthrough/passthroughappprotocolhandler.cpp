@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -17,28 +17,25 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifdef NET_EPOLL
-#ifndef _INBOUNDNAMEDPIPECARRIER_H
-#define	_INBOUNDNAMEDPIPECARRIER_H
+#include "protocols/passthrough/passthroughappprotocolhandler.h"
+#include "protocols/passthrough/passthroughprotocol.h"
+#include "application/baseclientapplication.h"
+#include "streaming/streamstypes.h"
+#include "streaming/basestream.h"
+#include "streaming/baseinstream.h"
 
-#include "netio/epoll/iohandler.h"
+PassThroughAppProtocolHandler::PassThroughAppProtocolHandler(Variant& configuration)
+: BaseAppProtocolHandler(configuration) {
 
-class InboundNamedPipeCarrier
-: public IOHandler {
-private:
-	string _path;
-public:
-	InboundNamedPipeCarrier(int32_t fd, string path);
-	virtual ~InboundNamedPipeCarrier();
+}
 
-	static InboundNamedPipeCarrier *Create(string path, uint16_t mode);
+PassThroughAppProtocolHandler::~PassThroughAppProtocolHandler() {
+}
 
-	virtual bool SignalOutputData();
-	virtual bool OnEvent(struct epoll_event &event);
-	virtual operator string();
-	virtual void GetStats(Variant &info, uint32_t namespaceId = 0);
-};
+void PassThroughAppProtocolHandler::RegisterProtocol(BaseProtocol *pProtocol) {
 
-#endif	/* _INBOUNDNAMEDPIPECARRIER_H */
-#endif /* NET_EPOLL */
+}
 
+void PassThroughAppProtocolHandler::UnRegisterProtocol(BaseProtocol *pProtocol) {
+
+}

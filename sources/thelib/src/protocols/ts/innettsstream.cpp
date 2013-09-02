@@ -31,17 +31,9 @@ InNetTSStream::InNetTSStream(BaseProtocol *pProtocol, string name,
 : BaseInNetStream(pProtocol, ST_IN_NET_TS, name) {
 	//audio section
 	_hasAudio = false;
-	_audioPacketsCount = 0;
-	_audioDroppedPacketsCount = 0;
-	_audioBytesCount = 0;
-	_audioDroppedBytesCount = 0;
 
 	//video section
 	_hasVideo = false;
-	_videoPacketsCount = 0;
-	_videoDroppedPacketsCount = 0;
-	_videoBytesCount = 0;
-	_videoDroppedBytesCount = 0;
 
 	_streamCapabilities.SetTransferRate(bandwidthHint);
 	_enabled = false;
@@ -81,20 +73,20 @@ bool InNetTSStream::FeedData(uint8_t *pData, uint32_t dataLength,
 			|| ((_hasVideo)&&(_streamCapabilities.GetVideoCodecType() != CODEC_VIDEO_H264))
 			|| (!_enabled)) {
 		if (isAudio) {
-			_audioDroppedBytesCount += dataLength;
-			_audioDroppedPacketsCount++;
+			_stats.audio.droppedBytesCount += dataLength;
+			_stats.audio.droppedPacketsCount++;
 		} else {
-			_videoDroppedBytesCount += dataLength;
-			_videoDroppedPacketsCount++;
+			_stats.video.droppedBytesCount += dataLength;
+			_stats.video.droppedPacketsCount++;
 		}
 		return true;
 	}
 	if (isAudio) {
-		_audioBytesCount += dataLength;
-		_audioPacketsCount++;
+		_stats.audio.packetsCount++;
+		_stats.audio.bytesCount += dataLength;
 	} else {
-		_videoBytesCount += dataLength;
-		_videoPacketsCount++;
+		_stats.video.packetsCount++;
+		_stats.video.bytesCount += dataLength;
 	}
 	LinkedListNode<BaseOutStream *> *pTemp = _pOutStreams;
 	while (pTemp != NULL) {
@@ -148,18 +140,6 @@ bool InNetTSStream::SignalSeek(double &dts) {
 
 bool InNetTSStream::SignalStop() {
 	return true;
-}
-
-void InNetTSStream::GetStats(Variant &info, uint32_t namespaceId) {
-	BaseInNetStream::GetStats(info, namespaceId);
-	info["audio"]["packetsCount"] = _audioPacketsCount;
-	info["audio"]["droppedPacketsCount"] = _audioDroppedPacketsCount;
-	info["audio"]["bytesCount"] = _audioBytesCount;
-	info["audio"]["droppedBytesCount"] = _audioDroppedBytesCount;
-	info["video"]["packetsCount"] = _videoPacketsCount;
-	info["video"]["droppedPacketsCount"] = _videoDroppedPacketsCount;
-	info["video"]["bytesCount"] = _videoBytesCount;
-	info["video"]["droppedBytesCount"] = _videoDroppedBytesCount;
 }
 
 #endif	/* defined HAS_PROTOCOL_TS && defined HAS_MEDIA_TS */

@@ -55,6 +55,7 @@
 #define	A_DISK	(0x6469736b)
 #define	A_DREF	(0x64726566)
 #define	A_EDTS	(0x65647473)
+#define	A_ELST	(0x656c7374)
 #define	A_ESDS	(0x65736473)
 #define	A_FREE	(0x66726565)
 #define	A_FTYP	(0x66747970)

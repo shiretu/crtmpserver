@@ -25,6 +25,7 @@
 
 class StreamCapabilities;
 class TSParserEventsSink;
+class BaseInStream;
 
 class BaseAVContext {
 public:
@@ -50,6 +51,7 @@ public:
 	virtual bool HandleData() = 0;
 	bool FeedData(uint8_t *pData, uint32_t dataLength, double pts, double dts,
 			bool isAudio);
+	BaseInStream *GetInStream();
 private:
 	void InternalReset();
 };
@@ -59,12 +61,19 @@ class H264AVContext
 private:
 	IOBuffer _SPS;
 	IOBuffer _PPS;
+	vector<IOBuffer *> _backBuffers;
+	vector<IOBuffer *> _backBuffersCache;
+	double _backBuffersPts;
+	double _backBuffersDts;
 public:
 	H264AVContext();
 	virtual ~H264AVContext();
 	virtual void Reset();
 	virtual bool HandleData();
 private:
+	void EmptyBackBuffers();
+	void DiscardBackBuffers();
+	void InsertBackBuffer(uint8_t *pBuffer, int32_t length);
 	bool ProcessNal(uint8_t *pBuffer, int32_t length, double pts, double dts);
 	void InitializeCapabilities(uint8_t *pData, uint32_t length);
 	void InternalReset();
@@ -75,6 +84,8 @@ class AACAVContext
 private:
 	double _lastSentTimestamp;
 	double _samplingRate;
+	bool _initialMarkerFound;
+	uint32_t _markerRetryCount;
 public:
 	AACAVContext();
 	virtual ~AACAVContext();

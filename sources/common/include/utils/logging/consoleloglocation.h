@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -32,10 +32,8 @@ public:
 	ConsoleLogLocation(Variant &configuration);
 	virtual ~ConsoleLogLocation();
 	virtual bool Init();
-	virtual void Log(int32_t level, string fileName, uint32_t lineNumber,
-			string functionName, string message);
-	virtual void Log(int32_t level, string fileName, uint32_t lineNumber,
-			string functionName, Variant &le);
+	virtual void Log(int32_t level, const char *pFileName, uint32_t lineNumber,
+			const char *pFunctionName, string &message);
 	virtual void SignalFork();
 };
 

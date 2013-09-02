@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -47,13 +47,8 @@ void BaseLogLocation::SetName(string name) {
 	_name = name;
 }
 
-bool BaseLogLocation::EvalLogLevel(int32_t level, string &fileName, uint32_t lineNumber,
-		string &functionName, string &message) {
-	return EvalLogLevel(level);
-}
-
-bool BaseLogLocation::EvalLogLevel(int32_t level, string fileName, uint32_t lineNumber,
-		string functionName, Variant &le) {
+bool BaseLogLocation::EvalLogLevel(int32_t level, const char *pFileName,
+		uint32_t lineNumber, const char *pFunctionName) {
 	return EvalLogLevel(level);
 }
 

@@ -120,7 +120,12 @@ typedef long int int32_t;
 typedef long long int int64_t;*/
 #define atoll atol
 
+#ifdef COMPILE_STATIC
+#define DLLEXP /*COMPILE_STATIC*/
+#else
 #define DLLEXP __declspec(dllexport)
+#endif /* COMPILE_STATIC */
+
 #define __func__ __FUNCTION__
 #define COLOR_TYPE WORD
 #define FATAL_COLOR FOREGROUND_INTENSITY | FOREGROUND_RED
@@ -136,7 +141,7 @@ typedef long long int int64_t;*/
 #define MSG_NOSIGNAL 0
 #define READ_FD _read
 #define WRITE_FD _write
-#define CLOSE_SOCKET(fd) do{ if(fd>=0) closesocket(fd);fd=(SOCKET)-1;}while(0)
+#define CLOSE_SOCKET(fd) do{ if(((int)fd)>=0) closesocket(fd);fd=(SOCKET)-1;}while(0)
 #define LASTSOCKETERROR WSAGetLastError()
 #define SOCKERROR_EINPROGRESS			WSAEINPROGRESS
 #define SOCKERROR_EAGAIN				WSAEWOULDBLOCK
@@ -166,6 +171,10 @@ typedef long long int int64_t;*/
 #define snprintf sprintf_s
 #define pid_t DWORD
 #define PIOFFT __int64
+#define GetPid _getpid
+#define PutEnv _putenv
+#define TzSet _tzset
+#define Chmod _chmod
 
 #define gmtime_r(_p_time_t, _p_struct_tm) *(_p_struct_tm) = *gmtime(_p_time_t);
 
@@ -218,18 +227,19 @@ typedef struct _select_event {
 #define IOVEC_IOV_LEN len
 #define IOVEC_IOV_BASE_TYPE CHAR
 #define SENDMSG(s,msg,flags,sent) WSASendMsg(s,msg,flags,(LPDWORD)(sent),NULL,NULL)
+#define sleep(x) Sleep((x)*1000)
 
 #define ftell64 _ftelli64
 #define fseek64 _fseeki64
 
-DLLEXP string format(string fmt, ...);
-DLLEXP string vFormat(string fmt, va_list args);
+DLLEXP string GetEnvVariable(const char *pEnvVarName);
 DLLEXP void replace(string &target, string search, string replacement);
 DLLEXP bool fileExists(string path);
 DLLEXP string lowerCase(string value);
 DLLEXP string upperCase(string value);
 DLLEXP string changeCase(string &value, bool lowerCase);
 DLLEXP string tagToString(uint64_t tag);
+DLLEXP bool setMaxFdCount(uint32_t &current, uint32_t &max);
 DLLEXP bool setFdJoinMulticast(SOCKET sock, string bindIp, uint16_t bindPort, string ssmIp);
 DLLEXP bool setFdCloseOnExec(int fd);
 DLLEXP bool setFdNonBlock(SOCKET fd);
@@ -240,7 +250,9 @@ DLLEXP bool setFdReuseAddress(SOCKET fd);
 DLLEXP bool setFdTTL(SOCKET fd, uint8_t ttl);
 DLLEXP bool setFdMulticastTTL(SOCKET fd, uint8_t ttl);
 DLLEXP bool setFdTOS(SOCKET fd, uint8_t tos);
+DLLEXP bool setFdMaxSndRcvBuff(SOCKET fd);
 DLLEXP bool setFdOptions(SOCKET fd, bool isUdp);
+DLLEXP void killProcess(pid_t pid);
 DLLEXP bool deleteFile(string path);
 DLLEXP bool deleteFolder(string path, bool force);
 DLLEXP bool createFolder(string path, bool recursive);
@@ -277,5 +289,7 @@ DLLEXP int inet_aton(const char *pStr, struct in_addr *pRes);
 #define getutctime() time(NULL)
 DLLEXP time_t getlocaltime();
 DLLEXP time_t gettimeoffset();
+DLLEXP void GetFinishedProcesses(vector<pid_t> &pids, bool &noMorePids);
+DLLEXP bool LaunchProcess(string fullBinaryPath, vector<string> &arguments, vector<string> &envVars, pid_t &pid);
 #endif /* _WIN32PLATFORM_H */
 #endif /* WIN32 */

@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -21,36 +21,20 @@
 #ifndef _ATOMAVC1_H
 #define _ATOMAVC1_H
 
-#include "mediaformats/readers/mp4/versionedboxatom.h"
+#include "mediaformats/readers/mp4/boxatom.h"
 
 class AtomAVCC;
 
 class AtomAVC1
-: public VersionedBoxAtom {
+: public BoxAtom {
 private:
 	AtomAVCC *_pAVCC;
-	uint16_t _reserved;
-	uint16_t _referenceIndex;
-	uint16_t _qtVideoEncodingVersion;
-	uint16_t _qtVideoEncodingRevisionLevel;
-	uint32_t _qtVideoEncodingVendor;
-	uint32_t _qtVideoTemporalQuality;
-	uint32_t _qtVideoSpatialQuality;
-	uint32_t _videoFramePixelSize;
-	uint32_t _horizontalDpi;
-	uint32_t _verticalDpi;
-	uint32_t _qtVideoDataSize;
-	uint16_t _videoFrameCount;
-	uint8_t _videoEncoderNameLength;
-	string _videoEncoderName;
-	uint16_t _videoPixelDepth;
-	uint16_t _qtVideoColorTableId;
 public:
 	AtomAVC1(MP4Document *pDocument, uint32_t type, uint64_t size, uint64_t start);
 	virtual ~AtomAVC1();
 
 protected:
-	virtual bool ReadData();
+	virtual bool Read();
 	virtual bool AtomCreated(BaseAtom *pAtom);
 };
 

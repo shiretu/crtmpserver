@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -26,11 +26,11 @@
 class AtomTKHD
 : public VersionedAtom {
 private:
-	uint32_t _creationTime;
-	uint32_t _modificationTime;
+	uint64_t _creationTime;
+	uint64_t _modificationTime;
 	uint32_t _trackId;
 	uint8_t _reserved1[4];
-	uint32_t _duration;
+	uint64_t _duration;
 	uint8_t _reserved2[8];
 	uint16_t _layer;
 	uint16_t _alternateGroup;

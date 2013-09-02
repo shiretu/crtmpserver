@@ -33,9 +33,14 @@ UDPCarrier::UDPCarrier(int32_t fd)
 	_rx = 0;
 	_tx = 0;
 	_ioAmount = 0;
+
+	Variant stats;
+	GetStats(stats);
 }
 
 UDPCarrier::~UDPCarrier() {
+	Variant stats;
+	GetStats(stats);
 	CLOSE_SOCKET(_inboundFd);
 }
 
@@ -71,12 +76,6 @@ bool UDPCarrier::SignalOutputData() {
 	NYIR;
 }
 
-UDPCarrier::operator string() {
-	if (_pProtocol != NULL)
-		return STR(*_pProtocol);
-	return format("UDP(%d)", _inboundFd);
-}
-
 void UDPCarrier::GetStats(Variant &info, uint32_t namespaceId) {
 	if (!GetEndpointsInfo()) {
 		FATAL("Unable to get endpoints info");
@@ -99,10 +98,6 @@ void UDPCarrier::SetParameters(Variant parameters) {
 
 bool UDPCarrier::StartAccept() {
 	return IOHandlerManager::EnableReadData(this);
-}
-
-bool UDPCarrier::EnableWriteEvents() {
-	return true;
 }
 
 string UDPCarrier::GetFarEndpointAddress() {
@@ -155,58 +150,61 @@ UDPCarrier* UDPCarrier::Create(string bindIp, uint16_t bindPort, uint16_t ttl,
 		}
 	}
 
-	//3. bind if necessary
+	//3. Bind
+	if (bindIp == "") {
+		bindIp = "0.0.0.0";
+		bindPort = 0;
+	}
+
 	sockaddr_in bindAddress;
 	memset(&bindAddress, 0, sizeof (bindAddress));
-	if (bindIp != "") {
-		bindAddress.sin_family = PF_INET;
-		bindAddress.sin_addr.s_addr = inet_addr(STR(bindIp));
-		bindAddress.sin_port = EHTONS(bindPort); //----MARKED-SHORT----
-		if (bindAddress.sin_addr.s_addr == INADDR_NONE) {
-			FATAL("Unable to bind on address %s:%hu", STR(bindIp), bindPort);
-			CLOSE_SOCKET(sock);
-			return NULL;
-		}
-		uint32_t testVal = EHTONL(bindAddress.sin_addr.s_addr);
-		if ((testVal > 0xe0000000) && (testVal < 0xefffffff)) {
-			INFO("Subscribe to multicast %s:%"PRIu16, STR(bindIp), bindPort);
-			int activateBroadcast = 1;
-			if (setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &activateBroadcast,
-					sizeof (activateBroadcast)) != 0) {
-				int err = errno;
-				FATAL("Unable to activate SO_BROADCAST on the socket: (%d) %s",
-						err, strerror(err));
-				return NULL;
-			}
-			if (ttl <= 255) {
-				if (!setFdMulticastTTL(sock, (uint8_t) ttl)) {
-					FATAL("Unable to set ttl");
-					CLOSE_SOCKET(sock);
-					return NULL;
-				}
-			}
-		} else {
-			if (ttl <= 255) {
-				if (!setFdTTL(sock, (uint8_t) ttl)) {
-					FATAL("Unable to set ttl");
-					CLOSE_SOCKET(sock);
-					return NULL;
-				}
-			}
-		}
-		if (bind(sock, (sockaddr *) & bindAddress, sizeof (sockaddr)) != 0) {
+	bindAddress.sin_family = PF_INET;
+	bindAddress.sin_addr.s_addr = inet_addr(STR(bindIp));
+	bindAddress.sin_port = EHTONS(bindPort); //----MARKED-SHORT----
+	if (bindAddress.sin_addr.s_addr == INADDR_NONE) {
+		FATAL("Unable to bind on address %s:%hu", STR(bindIp), bindPort);
+		CLOSE_SOCKET(sock);
+		return NULL;
+	}
+	uint32_t testVal = EHTONL(bindAddress.sin_addr.s_addr);
+	if ((testVal > 0xe0000000) && (testVal < 0xefffffff)) {
+		INFO("Subscribe to multicast %s:%"PRIu16, STR(bindIp), bindPort);
+		int activateBroadcast = 1;
+		if (setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &activateBroadcast,
+				sizeof (activateBroadcast)) != 0) {
 			int err = errno;
-			FATAL("Unable to bind on address: udp://%s:%"PRIu16"; Error was: (%d) %s",
-					STR(bindIp), bindPort, err, strerror(err));
-			CLOSE_SOCKET(sock);
+			FATAL("Unable to activate SO_BROADCAST on the socket: (%d) %s",
+					err, strerror(err));
 			return NULL;
 		}
-		if ((testVal > 0xe0000000) && (testVal < 0xefffffff)) {
-			if (!setFdJoinMulticast(sock, bindIp, bindPort, ssmIp)) {
-				FATAL("Adding multicast failed");
+		if (ttl <= 255) {
+			if (!setFdMulticastTTL(sock, (uint8_t) ttl)) {
+				FATAL("Unable to set ttl");
 				CLOSE_SOCKET(sock);
 				return NULL;
 			}
+		}
+	} else {
+		if (ttl <= 255) {
+			if (!setFdTTL(sock, (uint8_t) ttl)) {
+				FATAL("Unable to set ttl");
+				CLOSE_SOCKET(sock);
+				return NULL;
+			}
+		}
+	}
+	if (bind(sock, (sockaddr *) & bindAddress, sizeof (sockaddr)) != 0) {
+		int err = errno;
+		FATAL("Unable to bind on address: udp://%s:%"PRIu16"; Error was: (%d) %s",
+				STR(bindIp), bindPort, err, strerror(err));
+		CLOSE_SOCKET(sock);
+		return NULL;
+	}
+	if ((testVal > 0xe0000000) && (testVal < 0xefffffff)) {
+		if (!setFdJoinMulticast(sock, bindIp, bindPort, ssmIp)) {
+			FATAL("Adding multicast failed");
+			CLOSE_SOCKET(sock);
+			return NULL;
 		}
 	}
 

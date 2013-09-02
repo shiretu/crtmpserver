@@ -96,20 +96,20 @@ bool InboundJSONCLIProtocol::ParseCommand(string &command) {
 	//2. Replace the '\ ' escape sequence
 	replace(command, "\\ ", "_#space#_");
 
-	//2. Replace the '\=' escape sequence
+	//3. Replace the '\=' escape sequence
 	replace(command, "\\=", "_#equal#_");
 
-	//2. Replace the '\,' escape sequence
+	//4. Replace the '\,' escape sequence
 	replace(command, "\\,", "_#coma#_");
 
-	//3. Append "cmd=" in front of the command
+	//5. Append "cmd=" in front of the command
 	command = "cmd=" + command;
 	//INFO("command: `%s`", STR(command));
 
-	//4. create the map
+	//6. create the map
 	map<string, string> rawMap = mapping(command, " ", "=", true);
 
-	//5. Create the variant
+	//7. Create the variant
 	Variant message;
 	message["command"] = rawMap["cmd"];
 	rawMap.erase("cmd");

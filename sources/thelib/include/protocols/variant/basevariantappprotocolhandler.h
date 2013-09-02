@@ -58,14 +58,11 @@ public:
 			VariantSerializer serializer = VariantSerializer_XML);
 
 	//opens an OUTBOUNDHTTPXMLVARIANT or an OUTBOUNDHTTPBINVARIANT
-	//and sends the variant
-	bool Send(string url, Variant &variant,
-			VariantSerializer serializer = VariantSerializer_XML);
-
-	//opens an OUTBOUNDHTTPXMLVARIANT or an OUTBOUNDHTTPBINVARIANT
 	//and sends the variant (with optional client certificate setting)
-	bool Send(string url, string caFilename, string certificate, string key,
-			Variant &variant, VariantSerializer serializer = VariantSerializer_XML);
+	bool Send(string url, Variant &variant,
+			VariantSerializer serializer = VariantSerializer_XML,
+			string serverCertificate = "", string clientCertificate = "",
+			string clientCertificateKey = "");
 
 	//used internally
 	static bool SignalProtocolCreated(BaseProtocol *pProtocol, Variant &parameters);
@@ -83,4 +80,3 @@ private:
 
 #endif	/* _BASEVARIANTAPPPROTOCOLHANDLER_H */
 #endif	/* HAS_PROTOCOL_VAR */
-

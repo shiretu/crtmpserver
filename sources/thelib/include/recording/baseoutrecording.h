@@ -26,14 +26,6 @@ class BaseClientApplication;
 
 class DLLEXP BaseOutRecording
 : public BaseOutFileStream {
-private:
-	//audio
-	uint64_t _audioBytesCount;
-	uint64_t _audioPacketsCount;
-
-	//video
-	uint64_t _videoBytesCount;
-	uint64_t _videoPacketsCount;
 protected:
 	Variant _settings;
 public:

@@ -30,17 +30,9 @@ class DLLEXP InNetTSStream
 private:
 	//audio section
 	bool _hasAudio;
-	uint64_t _audioPacketsCount;
-	uint64_t _audioDroppedPacketsCount;
-	uint64_t _audioBytesCount;
-	uint64_t _audioDroppedBytesCount;
 
 	//video section
 	bool _hasVideo;
-	uint64_t _videoPacketsCount;
-	uint64_t _videoDroppedPacketsCount;
-	uint64_t _videoBytesCount;
-	uint64_t _videoDroppedBytesCount;
 
 	StreamCapabilities _streamCapabilities;
 	bool _enabled;
@@ -67,7 +59,6 @@ public:
 	virtual bool SignalResume();
 	virtual bool SignalSeek(double &dts);
 	virtual bool SignalStop();
-	virtual void GetStats(Variant &info, uint32_t namespaceId = 0);
 };
 
 

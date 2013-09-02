@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configurationDescriptor version="88">
+<configurationDescriptor version="89">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
     <logicalFolder name="include" displayName="include" projectFiles="true">
       <logicalFolder name="application" displayName="application" projectFiles="true">
@@ -36,6 +36,8 @@
             <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomdata.h</itemPath>
             <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomdinf.h</itemPath>
             <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomdref.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomedts.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomelst.h</itemPath>
             <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomesds.h</itemPath>
             <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomftyp.h</itemPath>
             <itemPath>../../../../sources/thelib/include/mediaformats/readers/mp4/atomhdlr.h</itemPath>
@@ -103,7 +105,6 @@
       </logicalFolder>
       <logicalFolder name="netio" displayName="netio" projectFiles="true">
         <logicalFolder name="epoll" displayName="epoll" projectFiles="true">
-          <itemPath>../../../../sources/thelib/include/netio/epoll/inboundnamedpipecarrier.h</itemPath>
           <itemPath>../../../../sources/thelib/include/netio/epoll/iohandler.h</itemPath>
           <itemPath>../../../../sources/thelib/include/netio/epoll/iohandlermanager.h</itemPath>
           <itemPath>../../../../sources/thelib/include/netio/epoll/iohandlermanagertoken.h</itemPath>
@@ -115,7 +116,6 @@
           <itemPath>../../../../sources/thelib/include/netio/epoll/udpcarrier.h</itemPath>
         </logicalFolder>
         <logicalFolder name="kqueue" displayName="kqueue" projectFiles="true">
-          <itemPath>../../../../sources/thelib/include/netio/kqueue/inboundnamedpipecarrier.h</itemPath>
           <itemPath>../../../../sources/thelib/include/netio/kqueue/iohandler.h</itemPath>
           <itemPath>../../../../sources/thelib/include/netio/kqueue/iohandlermanager.h</itemPath>
           <itemPath>../../../../sources/thelib/include/netio/kqueue/iohandlermanagertoken.h</itemPath>
@@ -127,7 +127,6 @@
           <itemPath>../../../../sources/thelib/include/netio/kqueue/udpcarrier.h</itemPath>
         </logicalFolder>
         <logicalFolder name="select" displayName="select" projectFiles="true">
-          <itemPath>../../../../sources/thelib/include/netio/select/inboundnamedpipecarrier.h</itemPath>
           <itemPath>../../../../sources/thelib/include/netio/select/iohandler.h</itemPath>
           <itemPath>../../../../sources/thelib/include/netio/select/iohandlermanager.h</itemPath>
           <itemPath>../../../../sources/thelib/include/netio/select/iotimer.h</itemPath>
@@ -148,8 +147,6 @@
           <itemPath>../../../../sources/thelib/include/protocols/cli/inboundbasecliprotocol.h</itemPath>
           <itemPath>../../../../sources/thelib/include/protocols/cli/inboundjsoncliprotocol.h</itemPath>
         </logicalFolder>
-        <logicalFolder name="dns" displayName="dns" projectFiles="true">
-        </logicalFolder>
         <logicalFolder name="http" displayName="http" projectFiles="true">
           <itemPath>../../../../sources/thelib/include/protocols/http/basehttpprotocol.h</itemPath>
           <itemPath>../../../../sources/thelib/include/protocols/http/basehttpprotocolhandler.h</itemPath>
@@ -162,11 +159,13 @@
           <itemPath>../../../../sources/thelib/include/protocols/liveflv/inboundliveflvprotocol.h</itemPath>
           <itemPath>../../../../sources/thelib/include/protocols/liveflv/innetliveflvstream.h</itemPath>
         </logicalFolder>
-        <logicalFolder name="mms" displayName="mms" projectFiles="true">
-        </logicalFolder>
-        <logicalFolder name="rawhttpstream"
-                       displayName="rawhttpstream"
-                       projectFiles="true">
+        <logicalFolder name="passthrough" displayName="passthrough" projectFiles="true">
+          <logicalFolder name="streaming" displayName="streaming" projectFiles="true">
+            <itemPath>../../../../sources/thelib/include/protocols/passthrough/streaming/innetpassthroughstream.h</itemPath>
+            <itemPath>../../../../sources/thelib/include/protocols/passthrough/streaming/outnetpassthroughstream.h</itemPath>
+          </logicalFolder>
+          <itemPath>../../../../sources/thelib/include/protocols/passthrough/passthroughappprotocolhandler.h</itemPath>
+          <itemPath>../../../../sources/thelib/include/protocols/passthrough/passthroughprotocol.h</itemPath>
         </logicalFolder>
         <logicalFolder name="rtmp" displayName="rtmp" projectFiles="true">
           <logicalFolder name="messagefactories"
@@ -210,6 +209,7 @@
           <itemPath>../../../../sources/thelib/include/protocols/rtmp/monitorrtmpprotocol.h</itemPath>
           <itemPath>../../../../sources/thelib/include/protocols/rtmp/outboundrtmpprotocol.h</itemPath>
           <itemPath>../../../../sources/thelib/include/protocols/rtmp/rtmpeprotocol.h</itemPath>
+          <itemPath>../../../../sources/thelib/include/protocols/rtmp/rtmpoutputchecks.h</itemPath>
           <itemPath>../../../../sources/thelib/include/protocols/rtmp/rtmpprotocolserializer.h</itemPath>
         </logicalFolder>
         <logicalFolder name="rtp" displayName="rtp" projectFiles="true">
@@ -246,12 +246,6 @@
           <itemPath>../../../../sources/thelib/include/protocols/ts/basetsappprotocolhandler.h</itemPath>
           <itemPath>../../../../sources/thelib/include/protocols/ts/inboundtsprotocol.h</itemPath>
           <itemPath>../../../../sources/thelib/include/protocols/ts/innettsstream.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/protocols/ts/pidtypes.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/protocols/ts/streamdescriptors.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/protocols/ts/tsboundscheck.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/protocols/ts/tspacketheader.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/protocols/ts/tspacketpat.h</itemPath>
-          <itemPath>../../../../sources/thelib/include/protocols/ts/tspacketpmt.h</itemPath>
         </logicalFolder>
         <logicalFolder name="variant" displayName="variant" projectFiles="true">
           <itemPath>../../../../sources/thelib/include/protocols/variant/basevariantappprotocolhandler.h</itemPath>
@@ -293,8 +287,6 @@
         <itemPath>../../../../sources/thelib/include/utils/readyforsendinterface.h</itemPath>
         <itemPath>../../../../sources/thelib/include/utils/udpsenderprotocol.h</itemPath>
       </logicalFolder>
-      <logicalFolder name="vod" displayName="vod" projectFiles="true">
-      </logicalFolder>
     </logicalFolder>
     <logicalFolder name="src" displayName="src" projectFiles="true">
       <logicalFolder name="application" displayName="application" projectFiles="true">
@@ -331,6 +323,8 @@
             <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomdata.cpp</itemPath>
             <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomdinf.cpp</itemPath>
             <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomdref.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomedts.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomelst.cpp</itemPath>
             <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomesds.cpp</itemPath>
             <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomftyp.cpp</itemPath>
             <itemPath>../../../../sources/thelib/src/mediaformats/readers/mp4/atomhdlr.cpp</itemPath>
@@ -390,7 +384,6 @@
       </logicalFolder>
       <logicalFolder name="netio" displayName="netio" projectFiles="true">
         <logicalFolder name="epoll" displayName="epoll" projectFiles="true">
-          <itemPath>../../../../sources/thelib/src/netio/epoll/inboundnamedpipecarrier.cpp</itemPath>
           <itemPath>../../../../sources/thelib/src/netio/epoll/iohandler.cpp</itemPath>
           <itemPath>../../../../sources/thelib/src/netio/epoll/iohandlermanager.cpp</itemPath>
           <itemPath>../../../../sources/thelib/src/netio/epoll/iotimer.cpp</itemPath>
@@ -400,7 +393,6 @@
           <itemPath>../../../../sources/thelib/src/netio/epoll/udpcarrier.cpp</itemPath>
         </logicalFolder>
         <logicalFolder name="kqueue" displayName="kqueue" projectFiles="true">
-          <itemPath>../../../../sources/thelib/src/netio/kqueue/inboundnamedpipecarrier.cpp</itemPath>
           <itemPath>../../../../sources/thelib/src/netio/kqueue/iohandler.cpp</itemPath>
           <itemPath>../../../../sources/thelib/src/netio/kqueue/iohandlermanager.cpp</itemPath>
           <itemPath>../../../../sources/thelib/src/netio/kqueue/iotimer.cpp</itemPath>
@@ -410,7 +402,6 @@
           <itemPath>../../../../sources/thelib/src/netio/kqueue/udpcarrier.cpp</itemPath>
         </logicalFolder>
         <logicalFolder name="select" displayName="select" projectFiles="true">
-          <itemPath>../../../../sources/thelib/src/netio/select/inboundnamedpipecarrier.cpp</itemPath>
           <itemPath>../../../../sources/thelib/src/netio/select/iohandler.cpp</itemPath>
           <itemPath>../../../../sources/thelib/src/netio/select/iohandlermanager.cpp</itemPath>
           <itemPath>../../../../sources/thelib/src/netio/select/iotimer.cpp</itemPath>
@@ -428,8 +419,6 @@
           <itemPath>../../../../sources/thelib/src/protocols/cli/inboundbasecliprotocol.cpp</itemPath>
           <itemPath>../../../../sources/thelib/src/protocols/cli/inboundjsoncliprotocol.cpp</itemPath>
         </logicalFolder>
-        <logicalFolder name="dns" displayName="dns" projectFiles="true">
-        </logicalFolder>
         <logicalFolder name="http" displayName="http" projectFiles="true">
           <itemPath>../../../../sources/thelib/src/protocols/http/basehttpappprotocolhandler.cpp</itemPath>
           <itemPath>../../../../sources/thelib/src/protocols/http/basehttpprotocol.cpp</itemPath>
@@ -442,11 +431,13 @@
           <itemPath>../../../../sources/thelib/src/protocols/liveflv/inboundliveflvprotocol.cpp</itemPath>
           <itemPath>../../../../sources/thelib/src/protocols/liveflv/innetliveflvstream.cpp</itemPath>
         </logicalFolder>
-        <logicalFolder name="mms" displayName="mms" projectFiles="true">
-        </logicalFolder>
-        <logicalFolder name="rawhttpstream"
-                       displayName="rawhttpstream"
-                       projectFiles="true">
+        <logicalFolder name="passthrough" displayName="passthrough" projectFiles="true">
+          <logicalFolder name="streaming" displayName="streaming" projectFiles="true">
+            <itemPath>../../../../sources/thelib/src/protocols/passthrough/streaming/innetpassthroughstream.cpp</itemPath>
+            <itemPath>../../../../sources/thelib/src/protocols/passthrough/streaming/outnetpassthroughstream.cpp</itemPath>
+          </logicalFolder>
+          <itemPath>../../../../sources/thelib/src/protocols/passthrough/passthroughappprotocolhandler.cpp</itemPath>
+          <itemPath>../../../../sources/thelib/src/protocols/passthrough/passthroughprotocol.cpp</itemPath>
         </logicalFolder>
         <logicalFolder name="rtmp" displayName="rtmp" projectFiles="true">
           <logicalFolder name="messagefactories"
@@ -486,6 +477,7 @@
           <itemPath>../../../../sources/thelib/src/protocols/rtmp/monitorrtmpprotocol.cpp</itemPath>
           <itemPath>../../../../sources/thelib/src/protocols/rtmp/outboundrtmpprotocol.cpp</itemPath>
           <itemPath>../../../../sources/thelib/src/protocols/rtmp/rtmpeprotocol.cpp</itemPath>
+          <itemPath>../../../../sources/thelib/src/protocols/rtmp/rtmpoutputchecks.cpp</itemPath>
           <itemPath>../../../../sources/thelib/src/protocols/rtmp/rtmpprotocolserializer.cpp</itemPath>
         </logicalFolder>
         <logicalFolder name="rtp" displayName="rtp" projectFiles="true">
@@ -521,10 +513,6 @@
           <itemPath>../../../../sources/thelib/src/protocols/ts/basetsappprotocolhandler.cpp</itemPath>
           <itemPath>../../../../sources/thelib/src/protocols/ts/inboundtsprotocol.cpp</itemPath>
           <itemPath>../../../../sources/thelib/src/protocols/ts/innettsstream.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/protocols/ts/pidtypes.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/protocols/ts/streamdescriptors.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/protocols/ts/tspacketpat.cpp</itemPath>
-          <itemPath>../../../../sources/thelib/src/protocols/ts/tspacketpmt.cpp</itemPath>
         </logicalFolder>
         <logicalFolder name="variant" displayName="variant" projectFiles="true">
           <itemPath>../../../../sources/thelib/src/protocols/variant/basevariantappprotocolhandler.cpp</itemPath>
@@ -562,8 +550,6 @@
       <logicalFolder name="utils" displayName="utils" projectFiles="true">
         <itemPath>../../../../sources/thelib/src/utils/udpsenderprotocol.cpp</itemPath>
       </logicalFolder>
-      <logicalFolder name="vod" displayName="vod" projectFiles="true">
-      </logicalFolder>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -581,6 +567,8 @@
       <toolsSet>
         <remote-sources-mode>LOCAL_SOURCES</remote-sources-mode>
         <compilerSet>GNU|GNU</compilerSet>
+        <dependencyChecking>true</dependencyChecking>
+        <rebuildPropChanged>false</rebuildPropChanged>
       </toolsSet>
       <compileType>
         <ccTool>
@@ -588,6 +576,7 @@
             <pElem>/opt/local/include</pElem>
             <pElem>../../../../sources/common/include</pElem>
             <pElem>../../../../sources/thelib/include</pElem>
+            <pElem>../../../../../ffmpeg_bin/include</pElem>
           </incDir>
           <preprocessorList>
             <Elem>GLOBALLY_ACCOUNT_BYTES</Elem>
@@ -598,15 +587,25 @@
             <Elem>HAS_MEDIA_MP3</Elem>
             <Elem>HAS_MEDIA_MP4</Elem>
             <Elem>HAS_MEDIA_TS</Elem>
+            <Elem>HAS_MEDIA_VOD</Elem>
             <Elem>HAS_PROTOCOL_CLI</Elem>
+            <Elem>HAS_PROTOCOL_EXTERNAL</Elem>
+            <Elem>HAS_PROTOCOL_HDS</Elem>
+            <Elem>HAS_PROTOCOL_HLS</Elem>
             <Elem>HAS_PROTOCOL_HTTP</Elem>
+            <Elem>HAS_PROTOCOL_HTTP2</Elem>
+            <Elem>HAS_PROTOCOL_HTTP_VER2</Elem>
             <Elem>HAS_PROTOCOL_LIVEFLV</Elem>
+            <Elem>HAS_PROTOCOL_MMS</Elem>
+            <Elem>HAS_PROTOCOL_RAWHTTPSTREAM</Elem>
+            <Elem>HAS_PROTOCOL_RPC</Elem>
+            <Elem>HAS_PROTOCOL_RTMFP</Elem>
             <Elem>HAS_PROTOCOL_RTMP</Elem>
             <Elem>HAS_PROTOCOL_RTP</Elem>
             <Elem>HAS_PROTOCOL_TS</Elem>
             <Elem>HAS_PROTOCOL_VAR</Elem>
+            <Elem>HAS_STREAM_DEBUG</Elem>
             <Elem>HAS_SYSLOG</Elem>
-            <Elem>HAS_VOD_MANAGER</Elem>
             <Elem>LITTLE_ENDIAN_BYTE_ALIGNED</Elem>
             <Elem>NET_KQUEUE</Elem>
             <Elem>OSX</Elem>
@@ -737,6 +736,16 @@
             flavor2="0">
       </item>
       <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomdref.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomedts.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomelst.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -1026,11 +1035,6 @@
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/thelib/include/netio/epoll/inboundnamedpipecarrier.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
       <item path="../../../../sources/thelib/include/netio/epoll/iohandler.h"
             ex="false"
             tool="3"
@@ -1086,11 +1090,6 @@
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/thelib/include/netio/kqueue/inboundnamedpipecarrier.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
       <item path="../../../../sources/thelib/include/netio/kqueue/iohandler.h"
             ex="false"
             tool="3"
@@ -1137,11 +1136,6 @@
             flavor2="0">
       </item>
       <item path="../../../../sources/thelib/include/netio/netio.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/thelib/include/netio/select/inboundnamedpipecarrier.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -1257,6 +1251,26 @@
             flavor2="0">
       </item>
       <item path="../../../../sources/thelib/include/protocols/liveflv/innetliveflvstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/passthrough/passthroughappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/passthrough/passthroughprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/passthrough/streaming/innetpassthroughstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/passthrough/streaming/outnetpassthroughstream.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -1382,6 +1396,11 @@
             flavor2="0">
       </item>
       <item path="../../../../sources/thelib/include/protocols/rtmp/rtmpeprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/rtmpoutputchecks.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -1542,36 +1561,6 @@
             flavor2="0">
       </item>
       <item path="../../../../sources/thelib/include/protocols/ts/innettsstream.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/thelib/include/protocols/ts/pidtypes.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/thelib/include/protocols/ts/streamdescriptors.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/thelib/include/protocols/ts/tsboundscheck.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/thelib/include/protocols/ts/tspacketheader.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/thelib/include/protocols/ts/tspacketpat.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/thelib/include/protocols/ts/tspacketpmt.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -1787,6 +1776,16 @@
             flavor2="0">
       </item>
       <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomdref.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomedts.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomelst.cpp"
             ex="false"
             tool="1"
             flavor2="0">
@@ -2041,11 +2040,6 @@
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/thelib/src/netio/epoll/inboundnamedpipecarrier.cpp"
-            ex="false"
-            tool="1"
-            flavor2="0">
-      </item>
       <item path="../../../../sources/thelib/src/netio/epoll/iohandler.cpp"
             ex="false"
             tool="1"
@@ -2086,11 +2080,6 @@
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/thelib/src/netio/kqueue/inboundnamedpipecarrier.cpp"
-            ex="false"
-            tool="1"
-            flavor2="0">
-      </item>
       <item path="../../../../sources/thelib/src/netio/kqueue/iohandler.cpp"
             ex="false"
             tool="1"
@@ -2122,11 +2111,6 @@
             flavor2="0">
       </item>
       <item path="../../../../sources/thelib/src/netio/kqueue/udpcarrier.cpp"
-            ex="false"
-            tool="1"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/thelib/src/netio/select/inboundnamedpipecarrier.cpp"
             ex="false"
             tool="1"
             flavor2="0">
@@ -2241,6 +2225,26 @@
             tool="1"
             flavor2="0">
       </item>
+      <item path="../../../../sources/thelib/src/protocols/passthrough/passthroughappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/passthrough/passthroughprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/passthrough/streaming/innetpassthroughstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/passthrough/streaming/outnetpassthroughstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
       <item path="../../../../sources/thelib/src/protocols/protocolfactorymanager.cpp"
             ex="false"
             tool="1"
@@ -2337,6 +2341,11 @@
             flavor2="0">
       </item>
       <item path="../../../../sources/thelib/src/protocols/rtmp/rtmpeprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/rtmpoutputchecks.cpp"
             ex="false"
             tool="1"
             flavor2="0">
@@ -2496,26 +2505,6 @@
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/thelib/src/protocols/ts/pidtypes.cpp"
-            ex="false"
-            tool="1"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/thelib/src/protocols/ts/streamdescriptors.cpp"
-            ex="false"
-            tool="1"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/thelib/src/protocols/ts/tspacketpat.cpp"
-            ex="false"
-            tool="1"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/thelib/src/protocols/ts/tspacketpmt.cpp"
-            ex="false"
-            tool="1"
-            flavor2="0">
-      </item>
       <item path="../../../../sources/thelib/src/protocols/udpprotocol.cpp"
             ex="false"
             tool="1"
@@ -2616,6 +2605,8 @@
       <toolsSet>
         <remote-sources-mode>LOCAL_SOURCES</remote-sources-mode>
         <compilerSet>GNU|GNU</compilerSet>
+        <dependencyChecking>true</dependencyChecking>
+        <rebuildPropChanged>false</rebuildPropChanged>
       </toolsSet>
       <compileType>
         <cTool>
@@ -2629,23 +2620,16 @@
             <pElem>../../../../sources/thelib/include</pElem>
           </incDir>
           <preprocessorList>
-            <Elem>GLOBALLY_ACCOUNT_BYTES</Elem>
-            <Elem>HAS_LUA</Elem>
             <Elem>HAS_MEDIA_FLV</Elem>
-            <Elem>HAS_MEDIA_MKV</Elem>
-            <Elem>HAS_MEDIA_MKV</Elem>
             <Elem>HAS_MEDIA_MP3</Elem>
             <Elem>HAS_MEDIA_MP4</Elem>
             <Elem>HAS_MEDIA_TS</Elem>
-            <Elem>HAS_PROTOCOL_CLI</Elem>
             <Elem>HAS_PROTOCOL_HTTP</Elem>
             <Elem>HAS_PROTOCOL_LIVEFLV</Elem>
             <Elem>HAS_PROTOCOL_RTMP</Elem>
             <Elem>HAS_PROTOCOL_RTP</Elem>
             <Elem>HAS_PROTOCOL_TS</Elem>
             <Elem>HAS_PROTOCOL_VAR</Elem>
-            <Elem>HAS_SYSLOG</Elem>
-            <Elem>HAS_VOD_MANAGER</Elem>
             <Elem>LITTLE_ENDIAN_BYTE_ALIGNED</Elem>
             <Elem>NET_KQUEUE</Elem>
             <Elem>OSX</Elem>
@@ -2783,6 +2767,16 @@
             tool="3"
             flavor2="0">
       </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomedts.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomelst.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
       <item path="../../../../sources/thelib/include/mediaformats/readers/mp4/atomesds.h"
             ex="false"
             tool="3"
@@ -3068,11 +3062,6 @@
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/thelib/include/netio/epoll/inboundnamedpipecarrier.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
       <item path="../../../../sources/thelib/include/netio/epoll/iohandler.h"
             ex="false"
             tool="3"
@@ -3128,11 +3117,6 @@
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/thelib/include/netio/kqueue/inboundnamedpipecarrier.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
       <item path="../../../../sources/thelib/include/netio/kqueue/iohandler.h"
             ex="false"
             tool="3"
@@ -3179,11 +3163,6 @@
             flavor2="0">
       </item>
       <item path="../../../../sources/thelib/include/netio/netio.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/thelib/include/netio/select/inboundnamedpipecarrier.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -3299,6 +3278,26 @@
             flavor2="0">
       </item>
       <item path="../../../../sources/thelib/include/protocols/liveflv/innetliveflvstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/passthrough/passthroughappprotocolhandler.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/passthrough/passthroughprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/passthrough/streaming/innetpassthroughstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/passthrough/streaming/outnetpassthroughstream.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -3424,6 +3423,11 @@
             flavor2="0">
       </item>
       <item path="../../../../sources/thelib/include/protocols/rtmp/rtmpeprotocol.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/include/protocols/rtmp/rtmpoutputchecks.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -3584,36 +3588,6 @@
             flavor2="0">
       </item>
       <item path="../../../../sources/thelib/include/protocols/ts/innettsstream.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/thelib/include/protocols/ts/pidtypes.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/thelib/include/protocols/ts/streamdescriptors.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/thelib/include/protocols/ts/tsboundscheck.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/thelib/include/protocols/ts/tspacketheader.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/thelib/include/protocols/ts/tspacketpat.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/thelib/include/protocols/ts/tspacketpmt.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -3829,6 +3803,16 @@
             flavor2="0">
       </item>
       <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomdref.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomedts.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/mediaformats/readers/mp4/atomelst.cpp"
             ex="false"
             tool="1"
             flavor2="0">
@@ -4083,11 +4067,6 @@
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/thelib/src/netio/epoll/inboundnamedpipecarrier.cpp"
-            ex="false"
-            tool="1"
-            flavor2="0">
-      </item>
       <item path="../../../../sources/thelib/src/netio/epoll/iohandler.cpp"
             ex="false"
             tool="1"
@@ -4128,11 +4107,6 @@
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/thelib/src/netio/kqueue/inboundnamedpipecarrier.cpp"
-            ex="false"
-            tool="1"
-            flavor2="0">
-      </item>
       <item path="../../../../sources/thelib/src/netio/kqueue/iohandler.cpp"
             ex="false"
             tool="1"
@@ -4164,11 +4138,6 @@
             flavor2="0">
       </item>
       <item path="../../../../sources/thelib/src/netio/kqueue/udpcarrier.cpp"
-            ex="false"
-            tool="1"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/thelib/src/netio/select/inboundnamedpipecarrier.cpp"
             ex="false"
             tool="1"
             flavor2="0">
@@ -4283,6 +4252,26 @@
             tool="1"
             flavor2="0">
       </item>
+      <item path="../../../../sources/thelib/src/protocols/passthrough/passthroughappprotocolhandler.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/passthrough/passthroughprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/passthrough/streaming/innetpassthroughstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/passthrough/streaming/outnetpassthroughstream.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
       <item path="../../../../sources/thelib/src/protocols/protocolfactorymanager.cpp"
             ex="false"
             tool="1"
@@ -4379,6 +4368,11 @@
             flavor2="0">
       </item>
       <item path="../../../../sources/thelib/src/protocols/rtmp/rtmpeprotocol.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/thelib/src/protocols/rtmp/rtmpoutputchecks.cpp"
             ex="false"
             tool="1"
             flavor2="0">
@@ -4534,26 +4528,6 @@
             flavor2="0">
       </item>
       <item path="../../../../sources/thelib/src/protocols/ts/innettsstream.cpp"
-            ex="false"
-            tool="1"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/thelib/src/protocols/ts/pidtypes.cpp"
-            ex="false"
-            tool="1"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/thelib/src/protocols/ts/streamdescriptors.cpp"
-            ex="false"
-            tool="1"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/thelib/src/protocols/ts/tspacketpat.cpp"
-            ex="false"
-            tool="1"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/thelib/src/protocols/ts/tspacketpmt.cpp"
             ex="false"
             tool="1"
             flavor2="0">

@@ -34,6 +34,7 @@ class DLLEXP BaseRTSPAppProtocolHandler
 protected:
 	Variant _realms;
 	string _usersFile;
+	bool _authenticatePlay;
 	double _lastUsersFileUpdate;
 	map<string, uint32_t> _httpSessions;
 public:
@@ -55,6 +56,8 @@ public:
 	virtual bool HandleRTSPRequest(RTSPProtocol *pFrom, Variant &requestHeaders,
 			string &requestContent);
 	virtual bool HandleRTSPResponse(RTSPProtocol *pFrom, Variant &responseHeaders,
+			string &responseContent);
+	virtual bool HandleHTTPResponse(RTSPProtocol *pFrom, Variant &responseHeaders,
 			string &responseContent);
 protected:
 	//handle requests routines
@@ -80,8 +83,27 @@ protected:
 			Variant &requestHeaders, string &requestContent);
 	virtual bool HandleRTSPRequestRecord(RTSPProtocol *pFrom,
 			Variant &requestHeaders, string &requestContent);
+	virtual bool HandleRTSPRequestSetParameter(RTSPProtocol *pFrom,
+			Variant &requestHeaders, string &requestContent);
+	virtual bool HandleRTSPRequestGetParameter(RTSPProtocol *pFrom,
+			Variant &requestHeaders, string &requestContent);
 
 	//handle response routines
+	virtual bool HandleHTTPResponse(RTSPProtocol *pFrom, Variant &requestHeaders,
+			string &requestContent, Variant &responseHeaders,
+			string &responseContent);
+	virtual bool HandleHTTPResponse200(RTSPProtocol *pFrom, Variant &requestHeaders,
+			string &requestContent, Variant &responseHeaders,
+			string &responseContent);
+	virtual bool HandleHTTPResponse401(RTSPProtocol *pFrom, Variant &requestHeaders,
+			string &requestContent, Variant &responseHeaders,
+			string &responseContent);
+	virtual bool HandleHTTPResponse200Get(RTSPProtocol *pFrom, Variant &requestHeaders,
+			string &requestContent, Variant &responseHeaders,
+			string &responseContent);
+	virtual bool HandleHTTPResponse401Get(RTSPProtocol *pFrom, Variant &requestHeaders,
+			string &requestContent, Variant &responseHeaders,
+			string &responseContent);
 	virtual bool HandleRTSPResponse(RTSPProtocol *pFrom, Variant &requestHeaders,
 			string &requestContent, Variant &responseHeaders,
 			string &responseContent);
@@ -132,9 +154,6 @@ private:
 	void ParseRange(string raw, double &start, double &end);
 	double ParseNPT(string raw);
 	bool AnalyzeUri(RTSPProtocol *pFrom, string rawUri);
-	bool IsVod(RTSPProtocol *pFrom);
-	bool IsTs(RTSPProtocol *pFrom);
-	bool IsRawTs(RTSPProtocol *pFrom);
 	string GetStreamName(RTSPProtocol *pFrom);
 	OutboundConnectivity *GetOutboundConnectivity(RTSPProtocol *pFrom, bool forceTcp);
 	BaseInStream *GetInboundStream(string streamName, RTSPProtocol *pFrom);
@@ -147,7 +166,8 @@ private:
 	bool ParseUsersFile();
 	bool SendAuthenticationChallenge(RTSPProtocol *pFrom, Variant &realm);
 	string ComputeSDP(RTSPProtocol *pFrom, string localStreamName,
-			string targetStreamName, string host);
+			string targetStreamName, bool isAnnounce);
+	void EnableDisableOutput(RTSPProtocol *pFrom, bool value);
 };
 
 

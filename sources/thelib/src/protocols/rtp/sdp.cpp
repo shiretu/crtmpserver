@@ -168,6 +168,7 @@ Variant SDP::GetAudioTrack(uint32_t index, string contentBase) {
 	else
 		SDP_TRACK_BANDWIDTH(result) = (uint32_t) 0;
 
+	SDP_TRACK_CLOCKRATE(result) = track[SDP_A].GetValue("rtpmap", false)["clockRate"];
 	//3. Done
 	return result;
 }
@@ -356,7 +357,10 @@ bool SDP::ParseSDPLine(Variant &result, string &line) {
 		case 'o':
 		{
 			FORBID_DUPLICATE(SDP_O);
-			return ParseSDPLineO(result[SDP_O], line.substr(2));
+			if (!ParseSDPLineO(result[SDP_O], line.substr(2))) {
+				WARN("SDP line parsing failed: `%s`", STR(line));
+			}
+			return true;
 		}
 		case 'p':
 		{

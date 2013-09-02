@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -32,6 +32,7 @@ AtomTRAK::AtomTRAK(MP4Document *pDocument, uint32_t type, uint64_t size, uint64_
 	_pDINF = NULL;
 	_pSTBL = NULL;
 	_pUDTA = NULL;
+	_pEDTS = NULL;
 }
 
 AtomTRAK::~AtomTRAK() {
@@ -68,6 +69,9 @@ bool AtomTRAK::AtomCreated(BaseAtom *pAtom) {
 			return true;
 		case A_META:
 			_pMETA = (AtomMETA *) pAtom;
+			return true;
+		case A_EDTS:
+			_pEDTS = (AtomEDTS *) pAtom;
 			return true;
 		default:
 		{

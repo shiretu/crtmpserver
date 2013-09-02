@@ -33,6 +33,152 @@ o_assert((_published - _consumed - index) > 0);
 #define SANITY_INPUT_BUFFER_INDEX
 #endif
 
+//#define TRACK_ALLOCATIONS
+
+/*
+	#include <execinfo.h>
+	void *array[100]; \
+	int arraySize = backtrace(array, 100); \
+	char **messages = backtrace_symbols(array, arraySize); \
+	for (int i = 0; i < arraySize && messages != NULL; ++i) \
+	{ \
+		fprintf(stderr, "[bt]: (%d) %s\n", i, messages[i]); \
+	} \
+
+
+map<DWORD,pair<uint32_t,string> > gBackTrace;
+PVOID *gpTrace=NULL;
+#include <Dbghelp.h>
+void CaptureBacktrace(){
+	if(gpTrace==NULL){
+		SymSetOptions ( SYMOPT_DEFERRED_LOADS | SYMOPT_INCLUDE_32BIT_MODULES | SYMOPT_UNDNAME );
+		if (!::SymInitialize( ::GetCurrentProcess(), "http://msdl.microsoft.com/download/symbols", TRUE ))
+			return;
+		gpTrace=new PVOID[65536];
+	}
+	DWORD hash;
+	DWORD captured=CaptureStackBackTrace(1,65535,gpTrace,&hash);
+	map<DWORD,pair<uint32_t,string> >::iterator found=gBackTrace.find(hash);
+	if(found!=gBackTrace.end()){
+			found->second.first++;
+			if((found->second.first%1000)==0){
+				fprintf(stderr,"--------------------------\n");
+				fprintf(stderr,"%"PRIu32"\n",found->second.first);
+				fprintf(stderr,"%"PRIu32"\n%s\n",found->first,STR(found->second.second));
+			}
+	} else {
+		string stack="";
+		for(DWORD i=0;i<captured&&i<65536;i++){
+			IMAGEHLP_LINE64 fileLine={0};
+			ULONG64 buffer[ (sizeof( SYMBOL_INFO ) + 1024 + sizeof( ULONG64 ) - 1) / sizeof( ULONG64 ) ] = { 0 };
+			SYMBOL_INFO *info = (SYMBOL_INFO *)buffer;
+			info->SizeOfStruct = sizeof( SYMBOL_INFO );
+			info->MaxNameLen = 1024;
+			DWORD64 displacement1 = 0;
+			DWORD displacement2 = 0;
+			if ((SymFromAddr( ::GetCurrentProcess(), (DWORD64)gpTrace[ i ], &displacement1, info ))
+				&&(SymGetLineFromAddr64( ::GetCurrentProcess(), (DWORD64)gpTrace[ i ], &displacement2,&fileLine))){
+					stack+=string(info->Name,info->NameLen);
+					stack+=format(" %s:%"PRIu32"\n",fileLine.FileName,fileLine.LineNumber);
+			}
+		}
+		if(stack.find("le_ba.cpp")==string::npos){
+			pair<uint32_t,string> p=pair<uint32_t,string>(1,stack);
+			gBackTrace[hash]=p;
+		}
+	}
+}
+ */
+
+#ifdef TRACK_ALLOCATIONS
+uint64_t gAllocated = 0;
+uint64_t gDeallocated = 0;
+uint64_t gAllocationCount = 0;
+uint64_t gDeallocationCount = 0;
+uint64_t gIOBuffConstructorCount = 0;
+uint64_t gIOBuffDestructorCount = 0;
+uint64_t gLastAllocatedSize = 0;
+uint64_t gLastDeallocatedSize = 0;
+uint64_t gMaxSize = 0;
+uint64_t gMemcpySize = 0;
+uint64_t gMemcpyCount = 0;
+uint64_t gSmartCopy = 0;
+uint64_t gNormalCopy = 0;
+#define DUMP_ALLOCATIONS_TRACKING(kind, pointer) \
+do { \
+	fprintf(stderr,"%p %s A/D Amounts (MB): %.2f/%.2f (%.2f); %"PRIu64"/%"PRIu64" (%"PRIu64"); %"PRIu64"/%"PRIu64" (%"PRIu64") A/D/M %"PRIu64"/%"PRIu64"/%"PRIu64" %.2f(%"PRIu64") %"PRIu64"/%"PRIu64"\n", \
+		pointer, \
+		kind, \
+		(double)gAllocated/(1024.0*1024.0), \
+		(double)gDeallocated/(1024.0*1024.0), \
+		(double)(gAllocated-gDeallocated)/(1024.0*1024.0), \
+		gAllocationCount, \
+		gDeallocationCount, \
+		gAllocationCount-gDeallocationCount, \
+		gIOBuffConstructorCount, \
+		gIOBuffDestructorCount, \
+		gIOBuffConstructorCount-gIOBuffDestructorCount, \
+		gLastAllocatedSize, \
+		gLastDeallocatedSize, \
+		gMaxSize, \
+		(double)gMemcpySize/(1024.0*1024.0), \
+		gMemcpyCount, \
+		gSmartCopy, \
+		gNormalCopy \
+		); \
+	fflush(stderr); \
+}while(0)
+#define TRACK_NEW(size,pointer) \
+do { \
+	gAllocated+=(size); \
+	gAllocationCount++; \
+	gLastAllocatedSize=(size); \
+	gMaxSize=gMaxSize<(size)?(size):gMaxSize; \
+	DUMP_ALLOCATIONS_TRACKING("   new",pointer); \
+}while(0)
+#define TRACK_DELETE(size,pointer) \
+do { \
+	gDeallocated+=(size); \
+	gDeallocationCount++; \
+	gLastDeallocatedSize=(size); \
+	DUMP_ALLOCATIONS_TRACKING("delete",pointer); \
+}while(0)
+#define TRACK_IOBUFFER_CONSTRUCTOR(pointer) \
+do { \
+	gIOBuffConstructorCount++; \
+	DUMP_ALLOCATIONS_TRACKING("constr",pointer); \
+}while(0)
+#define TRACK_IOBUFFER_DESTRUCTOR(pointer) \
+do { \
+	gIOBuffConstructorCount++; \
+	DUMP_ALLOCATIONS_TRACKING(" destr",pointer); \
+}while(0)
+#define TRACK_IOBUFFER_MEMCPY(size,pointer) \
+do { \
+	gMemcpyCount++; \
+	gMemcpySize+=(size); \
+	if((gMemcpyCount%100)==0) \
+		DUMP_ALLOCATIONS_TRACKING("memcpy",pointer); \
+}while(0)
+#define TRACK_SMART_COPY(pointer,smart) \
+do { \
+	if(smart) \
+		gSmartCopy++; \
+	else \
+		gNormalCopy++; \
+	if(((gSmartCopy+gNormalCopy)%100)==0) \
+		DUMP_ALLOCATIONS_TRACKING("  copy",pointer); \
+}while(0)
+#else /* TRACK_ALLOCATIONS */
+#define DUMP_ALLOCATIONS_TRACKING(kind, pointer)
+#define TRACK_NEW(size,pointer)
+#define TRACK_DELETE(size,pointer)
+#define TRACK_IOBUFFER_CONSTRUCTOR(pointer)
+#define TRACK_IOBUFFER_DESTRUCTOR(pointer)
+#define TRACK_IOBUFFER_MEMCPY(size,pointer)
+#define TRACK_SMART_COPY(pointer,smart)
+#endif /* TRACK_ALLOCATIONS */
+
 IOBuffer::IOBuffer() {
 	_pBuffer = NULL;
 	_size = 0;
@@ -40,13 +186,16 @@ IOBuffer::IOBuffer() {
 	_consumed = 0;
 	_minChunkSize = 4096;
 	_dummy = sizeof (sockaddr_in);
+	_sendLimit = 0xffffffff;
 	SANITY_INPUT_BUFFER;
+	TRACK_IOBUFFER_CONSTRUCTOR(this);
 }
 
 IOBuffer::~IOBuffer() {
 	SANITY_INPUT_BUFFER;
 	Cleanup();
 	SANITY_INPUT_BUFFER;
+	TRACK_IOBUFFER_DESTRUCTOR(this);
 }
 
 void IOBuffer::Initialize(uint32_t expected) {
@@ -58,39 +207,14 @@ void IOBuffer::Initialize(uint32_t expected) {
 	EnsureSize(expected);
 }
 
-bool IOBuffer::ReadFromPipe(int32_t fd, uint32_t expected, int32_t &recvAmount) {
-	//TODO: This is an UGLY hack.
-#ifndef WIN32
+bool IOBuffer::ReadFromTCPFd(int32_t fd, uint32_t expected, int32_t &recvAmount, int &err) {
 	SANITY_INPUT_BUFFER;
-	if (_published + expected > _size) {
-		if (!EnsureSize(expected)) {
-			SANITY_INPUT_BUFFER;
-			return false;
-		}
-	}
-	recvAmount = read(fd, (char *) (_pBuffer + _published), expected);
-	if (recvAmount > 0) {
-		_published += (uint32_t) recvAmount;
+	if (expected == 0) {
+		err = SOCKERROR_ECONNRESET;
 		SANITY_INPUT_BUFFER;
-		return true;
-	} else {
-		int err = errno;
-		if (err != EINPROGRESS) {
-			FATAL("Unable to read from pipe: (%d) %s", err, strerror(err));
-			SANITY_INPUT_BUFFER;
-			return false;
-		}
-		SANITY_INPUT_BUFFER;
-		return true;
+		return false;
 	}
-#else
-	NYIA;
-	return false;
-#endif
-}
 
-bool IOBuffer::ReadFromTCPFd(int32_t fd, uint32_t expected, int32_t &recvAmount) {
-	SANITY_INPUT_BUFFER;
 	if (_published + expected > _size) {
 		if (!EnsureSize(expected)) {
 			SANITY_INPUT_BUFFER;
@@ -104,16 +228,11 @@ bool IOBuffer::ReadFromTCPFd(int32_t fd, uint32_t expected, int32_t &recvAmount)
 		SANITY_INPUT_BUFFER;
 		return true;
 	} else {
-		int err = LASTSOCKETERROR;
+		err = recvAmount == 0 ? SOCKERROR_ECONNRESET : LASTSOCKETERROR;
 		if ((err != SOCKERROR_EAGAIN)&&(err != SOCKERROR_EINPROGRESS)) {
-			FATAL("Unable to read data. Size advertised by network layer was %"PRIu32". Permanent error: %d",
-					expected, err);
 			SANITY_INPUT_BUFFER;
 			return false;
 		}
-		//		else {
-		//			WARN("SOCKERROR_EAGAIN or SOCKERROR_EINPROGRESS encountered");
-		//		}
 		return true;
 	}
 }
@@ -136,7 +255,7 @@ bool IOBuffer::ReadFromUDPFd(int32_t fd, int32_t &recvAmount, sockaddr_in &peerA
 	} else {
 		int err = LASTSOCKETERROR;
 #ifdef WIN32
-		if (err == SOCKERROR_RECV_CONN_RESET) {
+		if (err == SOCKERROR_ECONNRESET) {
 			WARN("Windows is stupid enough to issue a CONNRESET on a UDP socket. See http://support.microsoft.com/?kbid=263823 for details");
 			SANITY_INPUT_BUFFER;
 			return true;
@@ -220,6 +339,7 @@ bool IOBuffer::ReadFromBuffer(const uint8_t *pBuffer, const uint32_t size) {
 		return false;
 	}
 	memcpy(_pBuffer + _published, pBuffer, size);
+	TRACK_IOBUFFER_MEMCPY(size, this);
 	_published += size;
 	SANITY_INPUT_BUFFER;
 	return true;
@@ -239,6 +359,53 @@ bool IOBuffer::ReadFromInputBuffer(const IOBuffer &buffer, uint32_t size) {
 	}
 	SANITY_INPUT_BUFFER;
 	return true;
+}
+
+bool IOBuffer::ReadFromInputBufferWithIgnore(IOBuffer &src) {
+	SANITY_INPUT_BUFFER;
+	if (((_published - _consumed) == 0)
+			&&((src._published - src._consumed) != 0)
+			&&(_sendLimit == 0xffffffff)
+			&&(src._sendLimit == 0xffffffff)
+			) {
+		uint8_t *_pTempBuffer = src._pBuffer;
+		src._pBuffer = _pBuffer;
+		_pBuffer = _pTempBuffer;
+
+		uint32_t _tempSize = src._size;
+		src._size = _size;
+		_size = _tempSize;
+
+		uint32_t _tempPublished = src._published;
+		src._published = _published;
+		_published = _tempPublished;
+
+		uint32_t _tempConsumed = src._consumed;
+		src._consumed = _consumed;
+		_consumed = _tempConsumed;
+
+		SANITY_INPUT_BUFFER;
+		TRACK_SMART_COPY(this, true);
+		return true;
+	} else {
+		if ((src._published == src._consumed) || (src._sendLimit == 0)) {
+			SANITY_INPUT_BUFFER;
+			return true;
+		}
+		if (!ReadFromBuffer(GETIBPOINTER(src), GETAVAILABLEBYTESCOUNT(src))) {
+			FATAL("Unable to copy data");
+			SANITY_INPUT_BUFFER;
+			return false;
+		}
+		if (!src.Ignore(GETAVAILABLEBYTESCOUNT(src))) {
+			FATAL("Unable to ignore data");
+			SANITY_INPUT_BUFFER;
+			return false;
+		}
+		SANITY_INPUT_BUFFER;
+		TRACK_SMART_COPY(this, false);
+		return true;
+	}
 }
 
 bool IOBuffer::ReadFromString(string binary) {
@@ -290,9 +457,12 @@ void IOBuffer::ReadFromRepeat(uint8_t byte, uint32_t size) {
 	SANITY_INPUT_BUFFER;
 }
 
-bool IOBuffer::WriteToTCPFd(int32_t fd, uint32_t size, int32_t &sentAmount) {
+bool IOBuffer::WriteToTCPFd(int32_t fd, uint32_t size, int32_t &sentAmount, int &err) {
 	SANITY_INPUT_BUFFER;
 	bool result = true;
+	if (_sendLimit != 0xffffffff) {
+		size = size > _sendLimit ? _sendLimit : size;
+	}
 	if (size == 0)
 		return true;
 	sentAmount = send(fd, (char *) (_pBuffer + _consumed),
@@ -301,14 +471,16 @@ bool IOBuffer::WriteToTCPFd(int32_t fd, uint32_t size, int32_t &sentAmount) {
 			MSG_NOSIGNAL);
 
 	if (sentAmount < 0) {
-		int err = LASTSOCKETERROR;
+		err = LASTSOCKETERROR;
 		if ((err != SOCKERROR_EAGAIN)&&(err != SOCKERROR_EINPROGRESS)) {
-			FATAL("Unable to send %"PRIu32" bytes of data data. Size advertised by network layer was %"PRIu32". Permanent error: %d",
-					_published - _consumed, size, err);
+			FATAL("Unable to send %"PRIu32" bytes of data data. Size advertised by network layer was %"PRIu32". Permanent error (%d): %s",
+					_published - _consumed, size, err, strerror(err));
 			result = false;
 		}
 	} else {
 		_consumed += sentAmount;
+		if (_sendLimit != 0xffffffff)
+			_sendLimit -= sentAmount;
 	}
 	if (result)
 		Recycle();
@@ -370,6 +542,7 @@ bool IOBuffer::Ignore(uint32_t size) {
 bool IOBuffer::IgnoreAll() {
 	SANITY_INPUT_BUFFER;
 	_consumed = _published;
+	_sendLimit = 0xffffffff;
 	Recycle();
 	SANITY_INPUT_BUFFER;
 
@@ -380,6 +553,7 @@ bool IOBuffer::MoveData() {
 	SANITY_INPUT_BUFFER;
 	if (_published - _consumed <= _consumed) {
 		memcpy(_pBuffer, _pBuffer + _consumed, _published - _consumed);
+		TRACK_IOBUFFER_MEMCPY(_published - _consumed, this);
 		_published = _published - _consumed;
 		_consumed = 0;
 	}
@@ -388,45 +562,59 @@ bool IOBuffer::MoveData() {
 	return true;
 }
 
+#define OUTSTANDING (_published - _consumed)
+#define AVAILABLE (_size - _published)
+#define TOTAL_AVAILABLE (AVAILABLE+_consumed)
+#define NEEDED (OUTSTANDING + expected)
+
 bool IOBuffer::EnsureSize(uint32_t expected) {
 	SANITY_INPUT_BUFFER;
-	//1. Do we have enough space?
-	if (_published + expected <= _size) {
+	//1. Is the trailing free space enough?
+	if (AVAILABLE >= expected) {
 		SANITY_INPUT_BUFFER;
 		return true;
 	}
 
-	//2. Apparently we don't! Try to move some data
-	MoveData();
+	//2. Is the total free space enough?
+	if (TOTAL_AVAILABLE >= expected) {
 
-	//3. Again, do we have enough space?
-	if (_published + expected <= _size) {
-		SANITY_INPUT_BUFFER;
-		return true;
+		//3. Yes, move data to consolidate free space
+		MoveData();
+
+		//4. Is the consolidated free space enough this time? (should be)
+		if (AVAILABLE >= expected) {
+			SANITY_INPUT_BUFFER;
+			return true;
+		}
 	}
 
-	//4. Nope! So, let's get busy with making a brand new buffer...
-	//First, we allocate at least 1/3 of what we have and no less than _minChunkSize
-	if ((_published + expected - _size)<(_size / 3)) {
-		expected = _size + _size / 3 - _published;
+	//5. Nope! So, let's get busy with making a brand new buffer...
+	//We are going to make the buffer at least 1.3*_size and make sure
+	//is not lower than _minChunkSize
+	if (NEEDED < (_size * 1.3)) {
+		expected = (uint32_t) (_size * 1.3) - OUTSTANDING;
+	}
+	if (NEEDED < _minChunkSize) {
+		expected = _minChunkSize - OUTSTANDING;
 	}
 
-	if (expected < _minChunkSize) {
-		expected = _minChunkSize;
-	}
+	//6. Allocate the required memory
+	uint8_t *pTempBuffer = new uint8_t[NEEDED];
+	TRACK_NEW(NEEDED, this);
 
-	//5. Allocate
-	uint8_t *pTempBuffer = new uint8_t[_published + expected];
-
-	//6. Copy existing data if necessary and switch buffers
+	//7. Copy existing data if necessary and switch buffers
 	if (_pBuffer != NULL) {
-		memcpy(pTempBuffer, _pBuffer, _published);
+		memcpy(pTempBuffer, _pBuffer + _consumed, OUTSTANDING);
+		TRACK_IOBUFFER_MEMCPY(OUTSTANDING, this);
 		delete[] _pBuffer;
+		TRACK_DELETE(_size, this);
 	}
 	_pBuffer = pTempBuffer;
 
-	//7. Update the size
-	_size = _published + expected;
+	//8. Update the size & indices
+	_size = NEEDED;
+	_published = OUTSTANDING;
+	_consumed = 0;
 	SANITY_INPUT_BUFFER;
 
 	return true;
@@ -455,6 +643,10 @@ string IOBuffer::ToString(uint32_t startIndex, uint32_t limit) {
 	ss << "Size: " << _size << endl;
 	ss << "Published: " << _published << endl;
 	ss << "Consumed: " << _consumed << endl;
+	if (_sendLimit == 0xffffffff)
+		ss << "Send limit: unlimited" << endl;
+	else
+		ss << "Send limit: " << _sendLimit << endl;
 	ss << format("Address: %p", _pBuffer) << endl;
 	if (limit != 0) {
 		ss << format("Limited to %u bytes", limit) << endl;
@@ -503,9 +695,25 @@ IOBuffer::operator string() {
 	return ToString(0, 0);
 }
 
+void IOBuffer::ReleaseDoublePointer(char ***pppPointer) {
+	char **ppPointer = *pppPointer;
+	if (ppPointer == NULL)
+		return;
+	for (uint32_t i = 0;; i++) {
+		if (ppPointer[i] == NULL)
+			break;
+		delete[] ppPointer[i];
+		ppPointer[i] = NULL;
+	}
+	delete[] ppPointer;
+	ppPointer = NULL;
+	*pppPointer = NULL;
+}
+
 void IOBuffer::Cleanup() {
 	if (_pBuffer != NULL) {
 		delete[] _pBuffer;
+		TRACK_DELETE(_size, this);
 		_pBuffer = NULL;
 	}
 	_size = 0;

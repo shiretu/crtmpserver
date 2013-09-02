@@ -41,12 +41,13 @@ private:
 	uint64_t _rx;
 	uint64_t _tx;
 	int32_t _ioAmount;
+	int _lastRecvError;
+	int _lastSendError;
 public:
 	TCPCarrier(int32_t fd);
 	virtual ~TCPCarrier();
 	virtual bool OnEvent(select_event &event);
 	virtual bool SignalOutputData();
-	virtual operator string();
 	virtual void GetStats(Variant &info, uint32_t namespaceId = 0);
 
 	sockaddr_in &GetFarEndpointAddress();

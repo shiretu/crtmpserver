@@ -23,26 +23,21 @@
 #include "utils/logging/logging.h"
 #include <Strsafe.h>
 #include <stdio.h>
+#include <TlHelp32.h>
 
 static map<uint32_t, SignalFnc> _signalHandlers;
+static vector<pid_t> _pids;
 
-string format(string fmt, ...) {
+string GetEnvVariable(const char *pEnvVarName) {
 	string result = "";
-	va_list arguments;
-	va_start(arguments, fmt);
-	result = vFormat(fmt, arguments);
-	va_end(arguments);
-	return result;
-}
-
-string vFormat(string fmt, va_list args) {
-	char *pBuffer = NULL;
-	if (vasprintf(&pBuffer, STR(fmt), args) == -1) {
-		ASSERT("vasprintf failed");
-		return "";
+	size_t len = 0;
+	char *pEnv = NULL;
+	_dupenv_s(&pEnv, &len, pEnvVarName);
+	if (pEnv != NULL) {
+		result = pEnv;
+		free(pEnv);
+		pEnv = NULL;
 	}
-	string result = pBuffer;
-	free(pBuffer);
 	return result;
 }
 
@@ -250,6 +245,23 @@ int inet_aton(const char *pStr, struct in_addr *pRes) {
 	return true;
 }
 
+bool setMaxFdCount(uint32_t &current, uint32_t &max) {
+	//1. Get the current values
+	current = (uint32_t) _getmaxstdio();
+	max = 2048;
+
+	//2. Set the current value to the max value
+	if (_setmaxstdio(2048) != 2048) {
+		int err = errno;
+		FATAL("_setmaxstdio failed: %d (%s)", err, strerror(err));
+		return false;
+	}
+
+	//3. Get back the current value
+	current = (uint32_t) _getmaxstdio();
+	return true;
+}
+
 bool setFdJoinMulticast(SOCKET sock, string bindIp, uint16_t bindPort, string ssmIp) {
 	if (ssmIp == "") {
 		struct ip_mreq group;
@@ -285,7 +297,7 @@ bool setFdJoinMulticast(SOCKET sock, string bindIp, uint16_t bindPort, string ss
 
 		INFO("Try to SSM on ip %s", STR(ssmIp));
 
-		if (setsockopt(sock, IPPROTO_IP, MCAST_JOIN_SOURCE_GROUP, (char *)&multicast,
+		if (setsockopt(sock, IPPROTO_IP, MCAST_JOIN_SOURCE_GROUP, (char *) &multicast,
 				sizeof (multicast)) < 0) {
 			int err = LASTSOCKETERROR;
 			FATAL("Adding multicast failed. Error was: (%d)", err);
@@ -364,6 +376,90 @@ bool setFdTOS(SOCKET fd, uint8_t tos) {
 	return true;
 }
 
+int32_t __maxSndBufValUdp = 0;
+int32_t __maxRcvBufValUdp = 0;
+int32_t __maxSndBufValTcp = 0;
+int32_t __maxRcvBufValTcp = 0;
+SOCKET __maxSndBufSocket = (SOCKET) - 1;
+
+bool testSetsockopt(int option, int32_t testing) {
+	if (setsockopt(__maxSndBufSocket, SOL_SOCKET, option, (const char*) & testing, sizeof (testing)) != 0)
+		return false;
+	int32_t retValue = 0;
+	int retValueSize = sizeof (retValue);
+	if (getsockopt(__maxSndBufSocket, SOL_SOCKET, option, (char*) & retValue, &retValueSize) != 0)
+		return false;
+	return retValue == testing;
+}
+
+bool DetermineMaxRcvSndBuff(int option, bool isUdp) {
+	int32_t &maxVal = isUdp ?
+			((option == SO_SNDBUF) ? __maxSndBufValUdp : __maxRcvBufValUdp)
+			: ((option == SO_SNDBUF) ? __maxSndBufValTcp : __maxRcvBufValTcp);
+	CLOSE_SOCKET(__maxSndBufSocket);
+	__maxSndBufSocket = (SOCKET) - 1;
+	__maxSndBufSocket = socket(AF_INET, isUdp ? SOCK_DGRAM : SOCK_STREAM, 0);
+	if (__maxSndBufSocket < 0) {
+		FATAL("Unable to create testing socket");
+		return false;
+	}
+
+	int32_t known = 0;
+	int32_t testing = 1024 * 1024 * 16;
+	int32_t prevTesting = testing;
+	//	FINEST("---- isUdp: %d; option: %s ----", isUdp, (option == SO_SNDBUF ? "SO_SNDBUF" : "SO_RCVBUF"));
+	while (known != testing) {
+		//		assert(known <= testing);
+		//		assert(known <= prevTesting);
+		//		assert(testing <= prevTesting);
+		//		FINEST("%"PRId32" (%"PRId32") %"PRId32, known, testing, prevTesting);
+		if (testSetsockopt(option, testing)) {
+			known = testing;
+			testing = known + (prevTesting - known) / 2;
+			//FINEST("---------");
+		} else {
+			prevTesting = testing;
+			testing = known + (testing - known) / 2;
+		}
+	}
+	CLOSE_SOCKET(__maxSndBufSocket);
+	__maxSndBufSocket = (SOCKET) - 1;
+	maxVal = known;
+	//	FINEST("%s maxVal: %"PRId32, (option == SO_SNDBUF ? "SO_SNDBUF" : "SO_RCVBUF"), maxVal);
+	return maxVal > 0;
+}
+
+bool setFdMaxSndRcvBuff(SOCKET fd, bool isUdp) {
+	int32_t &maxSndBufVal = isUdp ? __maxSndBufValUdp : __maxSndBufValTcp;
+	int32_t &maxRcvBufVal = isUdp ? __maxRcvBufValUdp : __maxRcvBufValTcp;
+	if (maxSndBufVal == 0) {
+		if (!DetermineMaxRcvSndBuff(SO_SNDBUF, isUdp)) {
+			FATAL("Unable to determine maximum value for SO_SNDBUF");
+			return false;
+		}
+	}
+
+	if (maxRcvBufVal == 0) {
+		if (!DetermineMaxRcvSndBuff(SO_RCVBUF, isUdp)) {
+			FATAL("Unable to determine maximum value for SO_SNDBUF");
+			return false;
+		}
+	}
+
+	if (setsockopt(fd, SOL_SOCKET, SO_SNDBUF, (const char*) & maxSndBufVal,
+			sizeof (maxSndBufVal)) != 0) {
+		FATAL("Unable to set SO_SNDBUF");
+		return false;
+	}
+
+	if (setsockopt(fd, SOL_SOCKET, SO_RCVBUF, (const char*) & maxRcvBufVal,
+			sizeof (maxSndBufVal)) != 0) {
+		FATAL("Unable to set SO_RCVBUF");
+		return false;
+	}
+	return true;
+}
+
 bool setFdOptions(SOCKET fd, bool isUdp) {
 	if (!isUdp) {
 		if (!setFdNonBlock(fd)) {
@@ -391,7 +487,46 @@ bool setFdOptions(SOCKET fd, bool isUdp) {
 		return false;
 	}
 
+	if (!setFdMaxSndRcvBuff(fd, isUdp)) {
+		FATAL("Unable to set max SO_SNDBUF on UDP socket");
+		return false;
+	}
+
 	return true;
+}
+
+void killProcess(pid_t pid) {
+	//1. the the process snapshoot
+	HANDLE hSnap = ::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	if (hSnap == INVALID_HANDLE_VALUE) {
+		DWORD err = GetLastError();
+		FATAL("processes enumeration failed: %"PRIu32, err);
+		return;
+	}
+
+	//2. Prepare the info structure
+	PROCESSENTRY32 pe;
+	memset(&pe, 0, sizeof (PROCESSENTRY32));
+	pe.dwSize = sizeof (PROCESSENTRY32);
+
+	//3. cycle over all processes and see which one has this one as parent
+	if (Process32First(hSnap, &pe)) {
+		do {
+			if (pe.th32ParentProcessID == (DWORD) pid)
+				killProcess(pe.th32ProcessID);
+		} while (Process32Next(hSnap, &pe));
+	}
+
+	//4. Kill the process
+	HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, false, (DWORD) pid);
+	if (hProcess == NULL) {
+		FATAL("Cannot access process id = %"PRId32, pid);
+		return;
+	}
+	if (!TerminateProcess(hProcess, 0)) {
+		FATAL("Cannot terminate process id = %"PRId32, pid);
+	}
+	CloseHandle(hProcess);
 }
 
 string alowedCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -625,5 +760,182 @@ time_t gettimeoffset() {
 	if (_gUTCOffset == -1)
 		computeUTCOffset();
 	return _gUTCOffset;
+}
+
+void GetFinishedProcesses(vector<pid_t> &pids, bool &noMorePids) {
+	//1. set parameters to defaults
+	pids.clear();
+	noMorePids = true;
+
+	// if pid cache is empty, bail out;
+	if (_pids.size() == 0)
+		return;
+	//2. prepare handles of pids
+	uint32_t pidCount = (uint32_t) _pids.size();
+	HANDLE *hProcs = new HANDLE[pidCount];
+	uint8_t i = 0;
+	uint8_t truePidCount = 0;
+
+	while (truePidCount != _pids.size()) {
+		DWORD currProcId = _pids.back();
+
+		hProcs[i] = OpenProcess(PROCESS_ALL_ACCESS, false, currProcId);
+		if (hProcs[i] == 0) {
+			ADD_VECTOR_END(pids, currProcId);
+		} else {
+			i++;
+			truePidCount++;
+			ADD_VECTOR_BEGIN(_pids, currProcId);
+		}
+		_pids.pop_back();
+	}
+
+	//3. catch any terminated process handles
+	while (truePidCount) {
+		pid_t procId = 0;
+		DWORD resp = WaitForMultipleObjects(truePidCount, hProcs, FALSE, 0);
+		if (resp == WAIT_TIMEOUT) // break when there is no terminated processes
+			break;
+
+		noMorePids = false;
+
+		if (resp == WAIT_FAILED) {
+			//ASSERT("Failed to get finished processes");
+			WARN("Failed to get process status. Err: %"PRIu32, GetLastError());
+			break;
+		} else {
+
+			//4. get process id from process handle and dump it into the pid param
+			HANDLE hProcess = hProcs[resp];
+			procId = GetProcessId(hProcess);
+			CloseHandle(hProcess);
+		}
+
+		//5. refresh pid cache
+
+		FOR_VECTOR_ITERATOR(pid_t, _pids, i) {
+			if (VECTOR_VAL(i) == procId) {
+				_pids.erase(i);
+				break;
+			}
+		}
+		pids.push_back(procId);
+
+		//6. update handle array and close unused handle
+		truePidCount--;
+		memmove(&hProcs[resp], &hProcs[resp + 1], pidCount * sizeof (HANDLE));
+	};
+}
+
+bool LaunchProcess(string fullBinaryPath, vector<string> &arguments, vector<string> &envVars, pid_t &pid) {
+	// Wrap fullBinaryPath within qoutes so that spaces will be honored
+	fullBinaryPath="\""+fullBinaryPath+"\"";
+
+	// For arguments, qoute as needed as well
+	FOR_VECTOR(arguments, i) {
+		fullBinaryPath+=" \""+arguments[i]+"\"";
+	}
+
+	// Actual number of characters to be reserved for the environment variables
+	size_t blockSize = 1;
+
+	// Before creating the envVars, we need to copy the environment variables from the parent
+	static vector<string> parentVars;
+	static bool gotParentsVar = false;
+	static uint32_t pvSize = 0;
+
+	if (gotParentsVar == false) {
+		// Populate it first
+		parentVars.clear();
+		const char* pVars = GetEnvironmentStrings();
+		uint32_t prev = 0;
+		pvSize = 0;
+
+		do {
+			if (pVars[pvSize] == '\0') {
+				parentVars.push_back(string(pVars + prev, pVars + pvSize));
+
+				// Skip the null terminator
+				prev = pvSize + 1;
+				if (pVars[pvSize + 1] == '\0') {
+					pvSize += 1; // consider the last null terminator
+					break;
+				}
+			}
+
+			pvSize++;
+
+		} while (pvSize < 0x0FFFFFFFF);
+
+		// Toggle the field since we already got it from the parent
+		//TODO: what if the client updated the environment and EMS was already called with launchProcess?
+		gotParentsVar = true;
+	}
+
+	// Add the passed env variables to the size to be reserved
+	FOR_VECTOR(envVars, i) {
+		blockSize += envVars[i].length() + 1;
+	}
+
+	char *envBlock = NULL;
+
+	// Sanity check: if limit reached
+	if ((pvSize == 0x0FFFFFFFF) || ((uint32_t)(pvSize + blockSize) < pvSize)) {
+			WARN("Passed environment variables will not be considered.");
+	} else {
+		// Add to the target blocksize
+		blockSize += pvSize;
+
+		// Create envVars block (null-terminated block of null-terminated key-value pair strings
+		// format should be: name1=value1\0name2=value2\0\0
+		if (envVars.size() != 0) {
+			envBlock = new char[blockSize];
+			memset(envBlock, 0, blockSize);
+			char *p = envBlock;
+
+			// First the parent
+			FOR_VECTOR(parentVars, i) {
+				memcpy(p, parentVars[i].c_str(), parentVars[i].length());
+				p += parentVars[i].length() + 1;
+			}
+
+			// Then append the passed envVars
+			FOR_VECTOR(envVars, i) {
+				memcpy(p, envVars[i].c_str(), envVars[i].length());
+				p += envVars[i].length() + 1;
+			}
+		}
+	}
+
+	//FINEST("blockSize: %"PRIu32, blockSize);
+
+	// Create the process
+	STARTUPINFO si = {0};
+	si.cb = sizeof (si);
+	PROCESS_INFORMATION pi = {0};
+	char *pTemp=new char[fullBinaryPath.size()+1];
+	memset(pTemp,0,fullBinaryPath.size()+1);
+	memcpy(pTemp,fullBinaryPath.data(),fullBinaryPath.size());
+	//FINEST("pTemp: `%s`",pTemp);
+	if (!CreateProcess(NULL, pTemp, NULL, NULL, false, 0, envBlock, NULL, &si, &pi)) {
+		DWORD error=GetLastError();
+		FATAL("Unable to launch proces. Error: %"PRIu32, error);
+		delete[] pTemp;
+		if (envBlock != NULL)
+			delete envBlock;
+		return false;
+	}
+
+
+	// Cleanup
+	delete[] pTemp;
+	if (envBlock != NULL)
+		delete envBlock;
+	pid = pi.dwProcessId;
+
+	_pids.push_back(pid);
+	CloseHandle(pi.hProcess);
+	CloseHandle(pi.hThread);
+	return true;
 }
 #endif /* WIN32 */

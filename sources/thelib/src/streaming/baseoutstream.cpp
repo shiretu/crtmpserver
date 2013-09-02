@@ -90,7 +90,7 @@ bool BaseOutStream::Link(BaseInStream *pInStream, bool reverseLink) {
 bool BaseOutStream::UnLink(bool reverseUnLink) {
 	_pStreamsManager->SignalUnLinkingStreams(_pInStream, this);
 	if (_pInStream == NULL) {
-		WARN("BaseOutStream::UnLink: This stream is not linked");
+		//WARN("BaseOutStream::UnLink: This stream is not linked");
 		return true;
 	}
 	if (reverseUnLink) {
@@ -234,14 +234,12 @@ bool BaseOutStream::GenericProcessData(uint8_t *pData, uint32_t dataLength,
 			}
 
 			if ((_inStreamType == ST_IN_NET_RTMP)
-					|| (_inStreamType == ST_IN_FILE_RTMP)
 					|| (_inStreamType == ST_IN_NET_LIVEFLV)) {
-				if ((_maxWaitDts < 0)&&(dts > 0))
+				if ((_maxWaitDts < 0) && (dts > 0))
 					_maxWaitDts = dts + 10000;
 			}
 
 			if ((_inStreamType == ST_IN_NET_RTMP)
-					|| (_inStreamType == ST_IN_FILE_RTMP)
 					|| (_inStreamType == ST_IN_NET_LIVEFLV)) {
 				if (_maxWaitDts < 0) {
 					_inStreamType = 0;

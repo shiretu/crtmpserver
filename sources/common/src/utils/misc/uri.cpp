@@ -76,6 +76,13 @@ bool parseURI(string stringUri, URI &uri) {
 	}
 	scheme = lowerCase(stringUri.substr(cursor, pos - cursor));
 	cursor = pos + 3;
+
+	// For now, return immediately if this is a file. Add initializations as necessary
+	if (scheme == "file") {
+		uri.fullDocumentPath(stringUri.substr(cursor));
+		return true;
+	}
+
 	if (_schemeToPort.size() == 0) {
 		_schemeToPort["http"] = 80;
 		_schemeToPort["rtmpt"] = 80;

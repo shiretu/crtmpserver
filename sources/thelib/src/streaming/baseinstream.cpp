@@ -23,6 +23,7 @@
 #include "streaming/streamstypes.h"
 #include "streaming/streamsmanager.h"
 #include "streaming/codectypes.h"
+#include "protocols/baseprotocol.h"
 
 BaseInStream::BaseInStream(BaseProtocol *pProtocol, uint64_t type, string name)
 : BaseStream(pProtocol, type, name) {
@@ -95,7 +96,7 @@ bool BaseInStream::Link(BaseOutStream *pOutStream, bool reverseLink) {
 
 bool BaseInStream::UnLink(BaseOutStream *pOutStream, bool reverseUnLink) {
 	if (!MAP_HAS1(_linkedStreams, pOutStream->GetUniqueId())) {
-		WARN("BaseInStream::UnLink: This stream is not linked");
+		//WARN("BaseInStream::UnLink: This stream is not linked");
 		return true;
 	}
 	_pStreamsManager->SignalUnLinkingStreams(this, pOutStream);

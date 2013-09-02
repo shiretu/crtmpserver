@@ -40,8 +40,8 @@ BaseOutNetRTPUDPStream::BaseOutNetRTPUDPStream(BaseProtocol *pProtocol, string n
 BaseOutNetRTPUDPStream::~BaseOutNetRTPUDPStream() {
 }
 
-void BaseOutNetRTPUDPStream::Enable() {
-	_enabled = true;
+void BaseOutNetRTPUDPStream::Enable(bool value) {
+	_enabled = value;
 }
 
 OutboundConnectivity *BaseOutNetRTPUDPStream::GetConnectivity() {

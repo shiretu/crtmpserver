@@ -63,15 +63,6 @@ private:
 	uint64_t _metaFileSize;
 	double _metaFileDuration;
 
-	uint64_t _audioPacketsCount;
-	uint64_t _audioDroppedPacketsCount;
-	uint64_t _audioBytesCount;
-	uint64_t _audioDroppedBytesCount;
-	uint64_t _videoPacketsCount;
-	uint64_t _videoDroppedPacketsCount;
-	uint64_t _videoBytesCount;
-	uint64_t _videoDroppedBytesCount;
-
 	bool _absoluteTimestamps;
 protected:
 	BaseOutNetRTMPStream(BaseProtocol *pProtocol, uint64_t type, string name,

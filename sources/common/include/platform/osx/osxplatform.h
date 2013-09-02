@@ -111,6 +111,10 @@ using namespace std;
 #define Timestamp struct tm
 #define Timestamp_init {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 #define PIOFFT off_t
+#define GetPid getpid
+#define PutEnv putenv
+#define TzSet tzset
+#define Chmod chmod
 
 #define CLOCKS_PER_SECOND CLOCKS_PER_SEC
 #define GETCLOCKS(result,type) \
@@ -170,14 +174,14 @@ typedef struct _select_event {
 #define ftell64 ftello
 #define fseek64 fseeko
 
-string format(string fmt, ...);
-string vFormat(string fmt, va_list args);
+string GetEnvVariable(const char *pEnvVarName);
 void replace(string &target, string search, string replacement);
 bool fileExists(string path);
 string lowerCase(string value);
 string upperCase(string value);
 string changeCase(string &value, bool lowerCase);
 string tagToString(uint64_t tag);
+bool setMaxFdCount(uint32_t &current, uint32_t &max);
 bool setFdJoinMulticast(SOCKET sock, string bindIp, uint16_t bindPort, string ssmIp);
 bool setFdCloseOnExec(int fd);
 bool setFdNonBlock(SOCKET fd);
@@ -188,7 +192,9 @@ bool setFdReuseAddress(SOCKET fd);
 bool setFdTTL(SOCKET fd, uint8_t ttl);
 bool setFdMulticastTTL(SOCKET fd, uint8_t ttl);
 bool setFdTOS(SOCKET fd, uint8_t tos);
+bool setFdMaxSndRcvBuff(SOCKET fd);
 bool setFdOptions(SOCKET fd, bool isUdp);
+void killProcess(pid_t pid);
 bool deleteFile(string path);
 bool deleteFolder(string path, bool force);
 bool createFolder(string path, bool recursive);
@@ -216,5 +222,7 @@ void installConfRereadSignal(SignalFnc pConfRereadSignalFnc);
 #define getutctime() time(NULL)
 time_t getlocaltime();
 time_t gettimeoffset();
+void GetFinishedProcesses(vector<pid_t> &pids, bool &noMorePids);
+bool LaunchProcess(string fullBinaryPath, vector<string> &arguments, vector<string> &envVars, pid_t &pid);
 #endif /* _OSXPLATFORM_H */
 #endif /* OSX */

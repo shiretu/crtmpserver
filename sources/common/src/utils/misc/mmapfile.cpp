@@ -142,16 +142,7 @@ MmapFile::MmapFile() {
 }
 
 MmapFile::~MmapFile() {
-	_pointer1.Free();
-	_pointer2.Free();
-
-	if (MAP_HAS1(_fds, _path)) {
-		_fds[_path].useCount = _fds[_path].useCount - 1;
-		if (_fds[_path].useCount == 0) {
-			close(_fds[_path].fd);
-			_fds.erase(_path);
-		}
-	}
+	Close();
 }
 
 bool MmapFile::Initialize(string path, uint32_t windowSize) {
@@ -168,7 +159,7 @@ bool MmapFile::Initialize(string path, uint32_t windowSize) {
 
 		//2. Open the file
 		fi.fd = open(STR(_path), O_RDONLY); //NOINHERIT
-		
+
 		if (fi.fd <= 0) {
 			int err = errno;
 			FATAL("Unable to open file %s: (%d) %s", STR(_path), err, strerror(err));
@@ -202,6 +193,28 @@ bool MmapFile::Initialize(string path, uint32_t windowSize) {
 
 	//6. We are done
 	return true;
+}
+
+void MmapFile::Close() {
+	_pointer1.Free();
+	_pointer2.Free();
+
+	if (MAP_HAS1(_fds, _path)) {
+		_fds[_path].useCount = _fds[_path].useCount - 1;
+		if (_fds[_path].useCount == 0) {
+			close(_fds[_path].fd);
+			_fds.erase(_path);
+		}
+	}
+
+	_cursor = 0;
+	_size = 0;
+	_failed = false;
+	if (_pageSize == 0) {
+		_pageSize = getpagesize();
+		LOG_MMAP("_pageSize: %u", _pageSize);
+	}
+	_windowSize = 0;
 }
 
 uint64_t MmapFile::Size() {

@@ -58,7 +58,6 @@ bool IgnoredAtom::Read() {
 			&& (_type != A_GSSD)
 			&& (_type != A_GSST)
 			&& (_type != A_GSTD)
-			&& (_type != A_EDTS)
 			&& (_type != A_ALLF)
 			&& (_type != A_SELO)
 			&& (_type != A_WLOC)

@@ -199,7 +199,6 @@ bool TSDocument::DetermineChunkSize() {
 
 		_chunkSizeDetectionCount++;
 	}
-	return true;
 }
 
 bool TSDocument::GetByteAt(uint64_t offset, uint8_t &byte) {

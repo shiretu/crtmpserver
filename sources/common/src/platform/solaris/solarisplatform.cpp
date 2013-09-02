@@ -36,24 +36,11 @@ SolarisPlatform::SolarisPlatform() {
 SolarisPlatform::~SolarisPlatform() {
 }
 
-string format(string fmt, ...) {
-	string result = "";
-	va_list arguments;
-	va_start(arguments, fmt);
-	result = vFormat(fmt, arguments);
-	va_end(arguments);
-	return result;
-}
-
-string vFormat(string fmt, va_list args) {
-	char *pBuffer = NULL;
-	if (vasprintf(&pBuffer, STR(fmt), args) == -1) {
-		o_assert(false);
-		return "";
-	}
-	string result = pBuffer;
-	free(pBuffer);
-	return result;
+string GetEnvVariable(const char *pEnvVarName) {
+	char *pTemp = getenv(pEnvVarName);
+	if (pTemp != NULL)
+		return pTemp;
+	return "";
 }
 
 void replace(string &target, string search, string replacement) {
@@ -106,6 +93,44 @@ string tagToString(uint64_t tag) {
 		result += (char) v;
 	}
 	return result;
+}
+
+bool setMaxFdCount(uint32_t &current, uint32_t &max) {
+	//1. reset stuff
+	current = 0;
+	max = 0;
+	struct rlimit limits;
+	memset(&limits, 0, sizeof (limits));
+
+	//2. get the current value
+	if (getrlimit(RLIMIT_NOFILE, &limits) != 0) {
+		int err = errno;
+		FATAL("getrlimit failed: (%d) %s", err, strerror(err));
+		return false;
+	}
+	current = (uint32_t) limits.rlim_cur;
+	max = (uint32_t) limits.rlim_max;
+
+	//3. Set the current value to max value
+	limits.rlim_cur = limits.rlim_max;
+	if (setrlimit(RLIMIT_NOFILE, &limits) != 0) {
+		int err = errno;
+		FATAL("setrlimit failed: (%d) %s", err, strerror(err));
+		return false;
+	}
+
+	//4. Try to get it back
+	memset(&limits, 0, sizeof (limits));
+	if (getrlimit(RLIMIT_NOFILE, &limits) != 0) {
+		int err = errno;
+		FATAL("getrlimit failed: (%d) %s", err, strerror(err));
+		return false;
+	}
+	current = (uint32_t) limits.rlim_cur;
+	max = (uint32_t) limits.rlim_max;
+
+
+	return true;
 }
 
 bool setFdJoinMulticast(SOCKET sock, string bindIp, uint16_t bindPort, string ssmIp) {
@@ -241,6 +266,81 @@ bool setFdTOS(SOCKET fd, uint8_t tos) {
 	return true;
 }
 
+int32_t __maxSndBufValUdp = 0;
+int32_t __maxRcvBufValUdp = 0;
+int32_t __maxSndBufValTcp = 0;
+int32_t __maxRcvBufValTcp = 0;
+SOCKET __maxSndBufSocket = -1;
+
+bool DetermineMaxRcvSndBuff(int option, bool isUdp) {
+	int32_t &maxVal = isUdp ?
+			((option == SO_SNDBUF) ? __maxSndBufValUdp : __maxRcvBufValUdp)
+			: ((option == SO_SNDBUF) ? __maxSndBufValTcp : __maxRcvBufValTcp);
+	CLOSE_SOCKET(__maxSndBufSocket);
+	__maxSndBufSocket = -1;
+	__maxSndBufSocket = socket(AF_INET, isUdp ? SOCK_DGRAM : SOCK_STREAM, 0);
+	if (__maxSndBufSocket < 0) {
+		FATAL("Unable to create testing socket");
+		return false;
+	}
+
+	int32_t known = 0;
+	int32_t testing = 0x7fffffff;
+	int32_t prevTesting = testing;
+	//	FINEST("---- isUdp: %d; option: %s ----", isUdp, (option == SO_SNDBUF ? "SO_SNDBUF" : "SO_RCVBUF"));
+	while (known != testing) {
+		//		assert(known <= testing);
+		//		assert(known <= prevTesting);
+		//		assert(testing <= prevTesting);
+		//		FINEST("%"PRId32" (%"PRId32") %"PRId32, known, testing, prevTesting);
+		if (setsockopt(__maxSndBufSocket, SOL_SOCKET, option, (const char*) & testing,
+				sizeof (testing)) == 0) {
+			known = testing;
+			testing = known + (prevTesting - known) / 2;
+			//FINEST("---------");
+		} else {
+			prevTesting = testing;
+			testing = known + (testing - known) / 2;
+		}
+	}
+	CLOSE_SOCKET(__maxSndBufSocket);
+	__maxSndBufSocket = -1;
+	maxVal = known;
+	//	FINEST("%s maxVal: %"PRId32, (option == SO_SNDBUF ? "SO_SNDBUF" : "SO_RCVBUF"), maxVal);
+	return maxVal > 0;
+}
+
+bool setFdMaxSndRcvBuff(SOCKET fd, bool isUdp) {
+	int32_t &maxSndBufVal = isUdp ? __maxSndBufValUdp : __maxSndBufValTcp;
+	int32_t &maxRcvBufVal = isUdp ? __maxRcvBufValUdp : __maxRcvBufValTcp;
+	if (maxSndBufVal == 0) {
+		if (!DetermineMaxRcvSndBuff(SO_SNDBUF, isUdp)) {
+			FATAL("Unable to determine maximum value for SO_SNDBUF");
+			return false;
+		}
+	}
+
+	if (maxRcvBufVal == 0) {
+		if (!DetermineMaxRcvSndBuff(SO_RCVBUF, isUdp)) {
+			FATAL("Unable to determine maximum value for SO_SNDBUF");
+			return false;
+		}
+	}
+
+	if (setsockopt(fd, SOL_SOCKET, SO_SNDBUF, (const char*) & maxSndBufVal,
+			sizeof (maxSndBufVal)) != 0) {
+		FATAL("Unable to set SO_SNDBUF");
+		return false;
+	}
+
+	if (setsockopt(fd, SOL_SOCKET, SO_RCVBUF, (const char*) & maxRcvBufVal,
+			sizeof (maxSndBufVal)) != 0) {
+		FATAL("Unable to set SO_RCVBUF");
+		return false;
+	}
+	return true;
+}
+
 bool setFdOptions(SOCKET fd, bool isUdp) {
 	if (!isUdp) {
 		if (!setFdNonBlock(fd)) {
@@ -265,6 +365,11 @@ bool setFdOptions(SOCKET fd, bool isUdp) {
 
 	if (!setFdReuseAddress(fd)) {
 		FATAL("Unable to enable reuse address");
+		return false;
+	}
+
+	if (!setFdMaxSndRcvBuff(fd, isUdp)) {
+		FATAL("Unable to set max SO_SNDBUF on UDP socket");
 		return false;
 	}
 
@@ -430,6 +535,8 @@ double getFileModificationDate(string path) {
 		FATAL("Unable to stat file %s", STR(path));
 		return 0;
 	}
+#error "getFileModificationDate"
+	//this should return the number of seconds from 1970
 	return (double) s.st_mtime;
 }
 
@@ -581,13 +688,13 @@ void computeUTCOffset() {
 
 	tz = getenv("TZ");
 	setenv("TZ", "", 1);
-	tzset();
+	TzSet();
 	_gUTCOffset = mktime(pTemp1) - mktime(pTemp2);
 	if (tz)
 		setenv("TZ", tz, 1);
 	else
 		unsetenv("TZ");
-	tzset();
+	TzSet();
 }
 
 time_t timegm(struct tm *tm) {
@@ -596,13 +703,13 @@ time_t timegm(struct tm *tm) {
 
 	tz = getenv("TZ");
 	setenv("TZ", "", 1);
-	tzset();
+	TzSet();
 	ret = mktime(tm);
 	if (tz)
 		setenv("TZ", tz, 1);
 	else
 		unsetenv("TZ");
-	tzset();
+	TzSet();
 	return ret;
 }
 

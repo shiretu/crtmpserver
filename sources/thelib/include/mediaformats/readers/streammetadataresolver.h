@@ -21,8 +21,27 @@
 #define	_STREAMMETADATARESOLVER_H
 
 #include "common.h"
+#include "protocols/timer/basetimerprotocol.h"
 
 class StreamCapabilities;
+
+class MetadataStats
+: public Variant {
+private:
+	Variant _dummy;
+public:
+	VARIANT_COPY_CONSTRUCTORS(MetadataStats);
+	VARIANT_GETSET(string, mediaFullPath, "");
+	VARIANT_GETSET(uint64_t, openCount, 0);
+	VARIANT_GETSET(uint64_t, servedBytesCount, 0);
+	VARIANT_GETSET(Variant, lastAccessTime, _dummy);
+
+	void Init() {
+		mediaFullPath("");
+		openCount(0);
+		servedBytesCount(0);
+	}
+};
 
 class Storage
 : public Variant {
@@ -77,14 +96,50 @@ public:
 	VARIANT_GETSET(PublicMetadata&, publicMetadata, _dummy2);
 };
 
+enum StatsOperation {
+	STATS_OPERATION_INCREMENT_OPEN_COUNT = 0,
+	STATS_OPERATION_INCREMENT_SERVED_BYTES_COUNT
+};
+
+class StreamMetadataResolver;
+
+class StreamMetadataResolverTimer
+: public BaseTimerProtocol {
+private:
+	StreamMetadataResolver *_pResolver;
+
+	struct statsOperation {
+		string mediaFullPath;
+		string statsFile;
+		StatsOperation operation;
+		uint64_t value;
+	};
+	vector<statsOperation> _operations1;
+	vector<statsOperation> _operations2;
+	vector<statsOperation> *_pAcceptQueue;
+	vector<statsOperation> *_pWorkQueue;
+public:
+	StreamMetadataResolverTimer(StreamMetadataResolver *pResolver);
+	virtual ~StreamMetadataResolverTimer();
+	void ResetStreamManager();
+
+	virtual bool TimePeriodElapsed();
+
+	void EnqueueOperation(string &mediaFullPath, string &statsFile,
+			StatsOperation operation, uint64_t value);
+};
+
 class StreamMetadataResolver {
 private:
 	StreamCapabilities *_pCapabilities;
 	map<string, Storage *> _storagesByMediaFolder;
 	vector<Storage *> _storagesByOrder;
 	map<string, pair<double, uint64_t> > _badFiles;
+	map<string, bool> _badStatsFiles;
 	Variant _storages;
 	bool _silence;
+	uint32_t _statsTimerId;
+	string _recordedStreamsStorage;
 public:
 	StreamMetadataResolver();
 	virtual ~StreamMetadataResolver();
@@ -189,11 +244,29 @@ public:
 	 * @brief this will return the full list of storages
 	 */
 	Variant &GetAllStorages();
+
+	/*
+	 * @brief this will increment the open count on the stats
+	 */
+	void UpdateStats(string mediaFullPath, string statsFile,
+			StatsOperation operation, uint64_t value);
+
+	/*!
+	 * @brief returns the default location for the recorded streams.
+	 * To be used inside protocols like RTMP where publishing is also requiring
+	 * recording on the fly
+	 */
+	string GetRecordedStreamsStorage();
 private:
+	void SetRecordedSteramsStorage(Variant &value);
+	void UpdateStats(MetadataStats &stats, StatsOperation operation, uint64_t value);
+	void EnqueueStatsOperation(string &mediaFullPath, string &statsFile,
+			StatsOperation operation, uint64_t value);
 	bool ResolveStorage(Metadata &result);
 	bool ComputeSeekMetaPaths(Metadata &result);
 	bool ComputeSeekMeta(Metadata &result);
 	bool LoadSeekMeta(Metadata &result);
+	void DeleteAllMetaFiles(Metadata &result);
 };
 
 

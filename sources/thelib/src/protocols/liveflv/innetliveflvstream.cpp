@@ -30,12 +30,8 @@ InNetLiveFLVStream::InNetLiveFLVStream(BaseProtocol *pProtocol, string name)
 : BaseInNetStream(pProtocol, ST_IN_NET_LIVEFLV, name) {
 	_lastVideoPts = 0;
 	_lastVideoDts = 0;
-	_videoBytesCount = 0;
-	_videoPacketsCount = 0;
 
 	_lastAudioTime = 0;
-	_audioBytesCount = 0;
-	_audioPacketsCount = 0;
 
 	_audioCapabilitiesInitialized = false;
 	_videoCapabilitiesInitialized = false;
@@ -52,8 +48,8 @@ bool InNetLiveFLVStream::FeedData(uint8_t *pData, uint32_t dataLength,
 		uint32_t processedLength, uint32_t totalLength,
 		double pts, double dts, bool isAudio) {
 	if (isAudio) {
-		_audioPacketsCount++;
-		_audioBytesCount += dataLength;
+		_stats.audio.packetsCount++;
+		_stats.audio.bytesCount += dataLength;
 		if ((!_audioCapabilitiesInitialized) && (processedLength == 0)) {
 			if (!InNetRTMPStream::InitializeAudioCapabilities(this,
 					_streamCapabilities, _audioCapabilitiesInitialized, pData,
@@ -64,8 +60,8 @@ bool InNetLiveFLVStream::FeedData(uint8_t *pData, uint32_t dataLength,
 		}
 		_lastAudioTime = pts;
 	} else {
-		_videoPacketsCount++;
-		_videoBytesCount += dataLength;
+		_stats.video.packetsCount++;
+		_stats.video.bytesCount += dataLength;
 		if ((!_videoCapabilitiesInitialized) && (processedLength == 0)) {
 			if (!InNetRTMPStream::InitializeVideoCapabilities(this,
 					_streamCapabilities, _videoCapabilitiesInitialized, pData,
@@ -102,17 +98,7 @@ void InNetLiveFLVStream::ReadyForSend() {
 bool InNetLiveFLVStream::IsCompatibleWithType(uint64_t type) {
 	return TAG_KIND_OF(type, ST_OUT_NET_RTMP)
 			|| TAG_KIND_OF(type, ST_OUT_NET_RTP)
-			|| TAG_KIND_OF(type, ST_OUT_FILE_RTMP_FLV);
-}
-
-void InNetLiveFLVStream::GetStats(Variant &info, uint32_t namespaceId) {
-	BaseInNetStream::GetStats(info, namespaceId);
-	info["audio"]["bytesCount"] = _audioBytesCount;
-	info["audio"]["packetsCount"] = _audioPacketsCount;
-	info["audio"]["droppedPacketsCount"] = (uint32_t) 0;
-	info["video"]["bytesCount"] = _videoBytesCount;
-	info["video"]["packetsCount"] = _videoPacketsCount;
-	info["video"]["droppedPacketsCount"] = (uint32_t) 0;
+			;
 }
 
 void InNetLiveFLVStream::SignalOutStreamAttached(BaseOutStream *pOutStream) {

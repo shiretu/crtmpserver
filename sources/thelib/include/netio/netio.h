@@ -32,9 +32,7 @@
 #include "netio/kqueue/tcpacceptor.h"
 #include "netio/kqueue/tcpcarrier.h"
 #include "netio/kqueue/udpcarrier.h"
-#include "netio/kqueue/inboundnamedpipecarrier.h"
 #include "netio/kqueue/tcpconnector.h"
-#include "netio/kqueue/stdiocarrier.h"
 #ifdef HAS_KQUEUE_TIMERS
 #define NETWORK_REACTOR "kqueue with EVFILT_TIMER support"
 #else /* HAS_KQUEUE_TIMERS */
@@ -51,8 +49,6 @@
 #include "netio/epoll/tcpcarrier.h"
 #include "netio/epoll/udpcarrier.h"
 #include "netio/epoll/tcpconnector.h"
-#include "netio/epoll/inboundnamedpipecarrier.h"
-#include "netio/epoll/stdiocarrier.h"
 #ifdef HAS_EPOLL_TIMERS
 #define NETWORK_REACTOR "epoll with timerfd_XXXX support"
 #else /* HAS_EPOLL_TIMERS */
@@ -67,25 +63,8 @@
 #include "netio/select/tcpacceptor.h"
 #include "netio/select/tcpcarrier.h"
 #include "netio/select/udpcarrier.h"
-#include "netio/select/inboundnamedpipecarrier.h"
 #include "netio/select/tcpconnector.h"
-#include "netio/select/stdiocarrier.h"
 #define NETWORK_REACTOR "select"
-#endif
-
-#ifdef NET_IOCP
-#include "netio/iocp/iohandler.h"
-#include "netio/iocp/iohandlermanager.h"
-#include "netio/iocp/iotimer.h"
-#include "netio/iocp/tcpacceptor.h"
-#include "netio/iocp/tcpcarrier.h"
-#include "netio/iocp/udpcarrier.h"
-#include "netio/iocp/tcpconnector.h"
-#ifdef HAS_EPOLL_TIMERS
-#define NETWORK_REACTOR "iocp with native timers"
-#else /* HAS_EPOLL_TIMERS */
-#define NETWORK_REACTOR "iocp without native timers"
-#endif /* HAS_EPOLL_TIMERS */
 #endif
 
 #endif	/* _NETIO_H */

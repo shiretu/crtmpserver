@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -23,121 +23,39 @@
 #include "mediaformats/readers/mp4/atomavcc.h"
 
 AtomAVC1::AtomAVC1(MP4Document *pDocument, uint32_t type, uint64_t size, uint64_t start)
-: VersionedBoxAtom(pDocument, type, size, start) {
+: BoxAtom(pDocument, type, size, start) {
 	_pAVCC = NULL;
-	_reserved = 0;
-	_referenceIndex = 0;
-	_qtVideoEncodingVersion = 0;
-	_qtVideoEncodingRevisionLevel = 0;
-	_qtVideoEncodingVendor = 0;
-	_qtVideoTemporalQuality = 0;
-	_qtVideoSpatialQuality = 0;
-	_videoFramePixelSize = 0;
-	_horizontalDpi = 0;
-	_verticalDpi = 0;
-	_qtVideoDataSize = 0;
-	_videoFrameCount = 0;
-	_videoEncoderNameLength = 0;
-	_videoPixelDepth = 0;
-	_qtVideoColorTableId = 0;
 }
 
 AtomAVC1::~AtomAVC1() {
 }
 
-bool AtomAVC1::ReadData() {
-	if (!ReadUInt16(_reserved)) {
-		FATAL("Unable to read _reserved");
+bool AtomAVC1::Read() {
+	//aligned(8) abstract class SampleEntry (unsigned int(32) format) extends Box(format){
+	//	const unsigned int(8)[6] reserved = 0;
+	//	unsigned int(16) data_reference_index;
+	//}
+	//class VisualSampleEntry(codingname) extends SampleEntry (codingname){
+	//  unsigned int(16) pre_defined = 0;
+	//	const unsigned int(16) reserved = 0;
+	//	unsigned int(32)[3] pre_defined = 0;
+	//	unsigned int(16) width;
+	//	unsigned int(16) height;
+	//	template unsigned int(32) horizresolution = 0x00480000; // 72 dpi template
+	//  unsigned int(32) vertresolution = 0x00480000; // 72 dpi
+	//  const unsigned int(32) reserved = 0;
+	//	template unsigned int(16) frame_count = 1;
+	//	string[32] compressorname;
+	//	template unsigned int(16) depth = 0x0018;
+	//	int(16) pre_defined = -1;
+	//}
+
+	if (!SkipBytes(78)) {
+		FATAL("Unable to skip 78 bytes");
 		return false;
 	}
 
-	if (!ReadUInt16(_referenceIndex)) {
-		FATAL("Unable to read _referenceIndex");
-		return false;
-	}
-
-	if (!ReadUInt16(_qtVideoEncodingVersion)) {
-		FATAL("Unable to read _qtVideoEncodingVersion");
-		return false;
-	}
-
-	if (!ReadUInt16(_qtVideoEncodingRevisionLevel)) {
-		FATAL("Unable to read _qtVideoEncodingRevisionLevel");
-		return false;
-	}
-
-	if (!ReadUInt32(_qtVideoEncodingVendor)) {
-		FATAL("Unable to read _qtVideoEncodingVendor");
-		return false;
-	}
-
-	if (!ReadUInt32(_qtVideoTemporalQuality)) {
-		FATAL("Unable to read _qtVideoTemporalQuality");
-		return false;
-	}
-
-	if (!ReadUInt32(_qtVideoSpatialQuality)) {
-		FATAL("Unable to read _qtVideoSpatialQuality");
-		return false;
-	}
-
-	if (!ReadUInt32(_videoFramePixelSize)) {
-		FATAL("Unable to read _videoFramePixelSize");
-		return false;
-	}
-
-	if (!ReadUInt32(_horizontalDpi)) {
-		FATAL("Unable to read _horizontalDpi");
-		return false;
-	}
-
-	if (!ReadUInt32(_verticalDpi)) {
-		FATAL("Unable to read _verticalDpi");
-		return false;
-	}
-
-	if (!ReadUInt32(_qtVideoDataSize)) {
-		FATAL("Unable to read _qtVideoDataSize");
-		return false;
-	}
-
-	if (!ReadUInt16(_videoFrameCount)) {
-		FATAL("Unable to read _videoFrameCount");
-		return false;
-	}
-
-	if (!ReadUInt8(_videoEncoderNameLength)) {
-		FATAL("Unable to read _videoEncoderNameLength");
-		return false;
-	}
-
-	if (_videoEncoderNameLength < 31)
-		_videoEncoderNameLength = 31;
-
-	uint8_t *pTemp = new uint8_t[_videoEncoderNameLength];
-	if (!ReadArray(pTemp, _videoEncoderNameLength)) {
-		FATAL("Unable to read _videoEncoderNameLength");
-		delete[] pTemp;
-		return false;
-	}
-	_videoEncoderName = string((char *) pTemp, _videoEncoderNameLength);
-	delete[] pTemp;
-
-	if (!ReadUInt16(_videoPixelDepth)) {
-		FATAL("Unable to read _videoPixelDepth");
-		return false;
-	}
-
-	if (!ReadUInt16(_qtVideoColorTableId)) {
-		FATAL("Unable to read _qtVideoColorTableId");
-		return false;
-	}
-	if (_qtVideoColorTableId != 0xffff) {
-		FATAL("_qtVideoColorTableId not supported yet");
-		return false;
-	}
-	
-	return true;
+	return BoxAtom::Read();
 }
 
 bool AtomAVC1::AtomCreated(BaseAtom *pAtom) {

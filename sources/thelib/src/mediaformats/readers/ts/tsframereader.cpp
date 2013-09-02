@@ -194,7 +194,6 @@ bool TSFrameReader::DetermineChunkSize() {
 
 		_chunkSizeDetectionCount++;
 	}
-	return true;
 }
 
 bool TSFrameReader::TestChunkSize(uint8_t chunkSize) {

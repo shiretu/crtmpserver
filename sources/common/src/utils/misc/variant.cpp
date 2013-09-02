@@ -726,7 +726,6 @@ Variant& Variant::operator[](Variant &key) {
 		{
 			ASSERT("Variant has invalid type to be used as an index: %s", STR(key.ToString()));
 			return operator[]("Dummy key to get rid of C2220 on windows. This code path is not executed anyway");
-			break;
 		}
 	}
 }
@@ -1196,8 +1195,8 @@ bool Variant::ConvertToTimestamp() {
 
 	//Set UTC
 	char * oldTZ = getenv("TZ");
-	putenv((char*) "TZ=UTC");
-	tzset();
+	PutEnv((char*) "TZ=UTC");
+	TzSet();
 
 	//Normalize time
 	if (mktime(&temp) < 0) {
@@ -1206,13 +1205,13 @@ bool Variant::ConvertToTimestamp() {
 	}
 	//Reset Timezone
 	if (oldTZ == NULL) {
-		putenv((char*) "TZ=");
+		PutEnv((char*) "TZ=");
 	} else {
 		char buff[50];
 		sprintf(buff, "TZ=%s", oldTZ);
-		putenv(buff);
+		PutEnv(buff);
 	}
-	tzset();
+	TzSet();
 
 	Reset();
 	DYNAMIC_ALLOC("_value.t");
@@ -1330,6 +1329,11 @@ void Variant::Compact() {
 			break;
 		}
 	}
+}
+
+Variant Variant::Now() {
+	time_t now = getutctime();
+	return Variant(*gmtime(&now));
 }
 
 bool Variant::DeserializeFromBin(uint8_t *pBuffer, uint32_t bufferLength,
@@ -1522,6 +1526,62 @@ bool Variant::SerializeToXml(string &result, bool prettyPrint) {
 	TiXmlDeclaration * pXmlDeclaration = new TiXmlDeclaration("1.0", "", "");
 	document.LinkEndChild(pXmlDeclaration);
 	document.LinkEndChild(pElement);
+
+	if (prettyPrint) {
+		TiXmlPrinter printer;
+		document.Accept(&printer);
+		result = printer.Str();
+	} else {
+		stringstream ss;
+		ss << document;
+		result = ss.str();
+	}
+
+	return true;
+}
+
+bool Variant::DeserializeFromXmlRpcResponse(const uint8_t *pBuffer, uint32_t bufferLength,
+		Variant &result) {
+	NYIR;
+}
+
+bool Variant::SerializeToXmlRpcRequest(string &result, bool prettyPrint) {
+	result = "";
+	if (_type != V_TYPED_MAP) {
+		FATAL("Only typed maps can do XML RPC calls");
+		return false;
+	}
+
+	TiXmlDocument document;
+
+	TiXmlDeclaration * pXmlDeclarationElement = new TiXmlDeclaration("1.0", "", "");
+	document.LinkEndChild(pXmlDeclarationElement);
+
+	TiXmlElement *pMethodCallElement = new TiXmlElement("methodCall");
+	document.LinkEndChild(pMethodCallElement);
+
+	TiXmlElement *pMethodNameElement = new TiXmlElement("methodName");
+	pMethodNameElement->LinkEndChild(new TiXmlText(STR(_value.m->typeName)));
+	pMethodCallElement->LinkEndChild(pMethodNameElement);
+
+	TiXmlElement *pParamsElement = new TiXmlElement("params");
+	pMethodCallElement->LinkEndChild(pParamsElement);
+
+	FOR_MAP(_value.m->children, string, Variant, i) {
+		TiXmlElement *pValue = MAP_VAL(i).SerializeToXmlRpcElement();
+		if (pValue == NULL) {
+			FATAL("Unable to serialize variant:\n%s", STR(ToString()));
+			return false;
+		}
+
+		TiXmlElement *pParamElement = new TiXmlElement("param");
+		pParamsElement->LinkEndChild(pParamElement);
+
+		TiXmlElement *pValueElement = new TiXmlElement("value");
+		pParamElement->LinkEndChild(pValueElement);
+
+		pValueElement->LinkEndChild(pValue);
+	}
 
 	if (prettyPrint) {
 		TiXmlPrinter printer;
@@ -1978,6 +2038,162 @@ TiXmlElement *Variant::SerializeToXmlElement(string &name) {
 	return pResult;
 }
 
+TiXmlElement *Variant::SerializeToXmlRpcElement() {
+	TiXmlElement *pResult = NULL;
+	switch (_type) {
+		case V_UNDEFINED:
+		case V_NULL:
+		{
+			pResult = new TiXmlElement("nil");
+			break;
+		}
+		case V_BOOL:
+		{
+			pResult = new TiXmlElement("boolean");
+			pResult->LinkEndChild(new TiXmlText(_value.b ? "1" : "0"));
+			break;
+		}
+		case V_INT8:
+		{
+			pResult = new TiXmlElement("int");
+			pResult->LinkEndChild(new TiXmlText(format("%hhd", _value.i8)));
+			break;
+		}
+		case V_INT16:
+		{
+			pResult = new TiXmlElement("int");
+			pResult->LinkEndChild(new TiXmlText(format("%hd", _value.i16)));
+			break;
+		}
+		case V_INT32:
+		{
+			pResult = new TiXmlElement("int");
+			pResult->LinkEndChild(new TiXmlText(format("%d", _value.i32)));
+			break;
+		}
+		case V_INT64:
+		{
+			pResult = new TiXmlElement("int");
+			pResult->LinkEndChild(new TiXmlText(format("%"PRId64, _value.i64)));
+			break;
+		}
+		case V_UINT8:
+		{
+			pResult = new TiXmlElement("int");
+			pResult->LinkEndChild(new TiXmlText(format("%hhu", _value.ui8)));
+			break;
+		}
+		case V_UINT16:
+		{
+			pResult = new TiXmlElement("int");
+			pResult->LinkEndChild(new TiXmlText(format("%hu", _value.ui16)));
+			break;
+		}
+		case V_UINT32:
+		{
+			pResult = new TiXmlElement("int");
+			pResult->LinkEndChild(new TiXmlText(format("%u", _value.ui32)));
+			break;
+		}
+		case V_UINT64:
+		{
+			pResult = new TiXmlElement("int");
+			pResult->LinkEndChild(new TiXmlText(format("%"PRIu64, _value.ui64)));
+			break;
+		}
+		case V_DOUBLE:
+		{
+			pResult = new TiXmlElement("double");
+			pResult->LinkEndChild(new TiXmlText(format("%.03f", _value.d)));
+			break;
+		}
+		case V_TIMESTAMP:
+		{
+			pResult = new TiXmlElement("dateTime.iso8601");
+			pResult->LinkEndChild(new TiXmlText(STR(*this)));
+			break;
+		}
+		case V_DATE:
+		{
+			pResult = new TiXmlElement("dateTime.iso8601");
+			pResult->LinkEndChild(new TiXmlText(STR(*this)));
+			break;
+		}
+		case V_TIME:
+		{
+			pResult = new TiXmlElement("dateTime.iso8601");
+			pResult->LinkEndChild(new TiXmlText(STR(*this)));
+			break;
+		}
+		case V_STRING:
+		{
+			pResult = new TiXmlElement("string");
+			pResult->LinkEndChild(new TiXmlText(STR(*_value.s)));
+			break;
+		}
+		case V_BYTEARRAY:
+		{
+			pResult = new TiXmlElement("base64");
+			pResult->LinkEndChild(new TiXmlText(STR(b64(*_value.s))));
+			break;
+		}
+		case V_TYPED_MAP:
+		case V_MAP:
+		{
+			if (_value.m->isArray) {
+				pResult = new TiXmlElement("array");
+
+				TiXmlElement *pDataElement = new TiXmlElement("data");
+				pResult->LinkEndChild(pDataElement);
+
+				FOR_MAP(_value.m->children, string, Variant, i) {
+					TiXmlElement *pValue = MAP_VAL(i).SerializeToXmlRpcElement();
+					if (pValue == NULL) {
+						delete pResult;
+						pResult = NULL;
+						break;
+					}
+
+					TiXmlElement *pValueElement = new TiXmlElement("value");
+					pValueElement->LinkEndChild(pValue);
+
+					pDataElement->LinkEndChild(pValueElement);
+				}
+			} else {
+				pResult = new TiXmlElement("struct");
+
+				FOR_MAP(_value.m->children, string, Variant, i) {
+					TiXmlElement *pValue = MAP_VAL(i).SerializeToXmlRpcElement();
+					if (pValue == NULL) {
+						delete pResult;
+						pResult = NULL;
+						break;
+					}
+
+					TiXmlElement *pNameElement = new TiXmlElement("name");
+					pNameElement->LinkEndChild(new TiXmlText(STR(MAP_KEY(i))));
+
+					TiXmlElement *pValueElement = new TiXmlElement("value");
+					pValueElement->LinkEndChild(pValue);
+
+					TiXmlElement *pMemberElement = new TiXmlElement("member");
+					pMemberElement->LinkEndChild(pNameElement);
+					pMemberElement->LinkEndChild(pValueElement);
+
+					pResult->LinkEndChild(pMemberElement);
+				}
+			}
+			break;
+		}
+		default:
+		{
+			ASSERT("Invalid type: %d", _type);
+			return NULL;
+		}
+	}
+	return pResult;
+}
+
 #define VARIANT_CHECK_BOUNDS(s) \
 do {\
 	if(s>bufferSize-cursor) \
@@ -2028,7 +2244,6 @@ bool Variant::DeserializeFromBin(uint8_t *pBuffer, uint32_t bufferSize,
 			cursor += 2;
 			variant = *((int16_t *) & val);
 			return true;
-			break;
 		}
 		case V_INT32:
 		{
@@ -2447,10 +2662,14 @@ bool Variant::ReadJSONString(string &raw, Variant &result, uint32_t &start) {
 
 bool Variant::ReadJSONNumber(string &raw, Variant &result, uint32_t &start) {
 	string str = "";
+	bool isFloat = false;
 	for (; start < raw.length(); start++) {
 		if ((raw[start] < '0')
 				|| (raw[start] > '9')) {
-			break;
+			if (raw[start] == '.')
+				isFloat = true;
+			else
+				break;
 		}
 		str += raw[start];
 	}
@@ -2458,7 +2677,10 @@ bool Variant::ReadJSONNumber(string &raw, Variant &result, uint32_t &start) {
 		FATAL("Invalid JSON number");
 		return false;
 	}
-	result = (int64_t) atoll(STR(str));
+	if (isFloat)
+		result = (double) atof(STR(str));
+	else
+		result = (int64_t) atoll(STR(str));
 	return true;
 }
 

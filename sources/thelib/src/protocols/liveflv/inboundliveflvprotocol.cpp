@@ -225,6 +225,22 @@ bool InboundLiveFLVProtocol::SignalInputData(IOBuffer &buffer) {
 	return true;
 }
 
+void InboundLiveFLVProtocol::GetStats(Variant &info, uint32_t namespaceId) {
+	BaseProtocol::GetStats(info, namespaceId);
+	info["streams"].IsArray(true);
+	Variant si;
+	if (GetApplication() != NULL) {
+		StreamsManager *pStreamsManager = GetApplication()->GetStreamsManager();
+		map<uint32_t, BaseStream*> streams = pStreamsManager->FindByProtocolId(GetId());
+
+		FOR_MAP(streams, uint32_t, BaseStream *, i) {
+			si.Reset();
+			MAP_VAL(i)->GetStats(si, namespaceId);
+			info["streams"].PushToArray(si);
+		}
+	}
+}
+
 bool InboundLiveFLVProtocol::InitializeStream(string streamName) {
 	streamName = ComputeStreamName(streamName);
 

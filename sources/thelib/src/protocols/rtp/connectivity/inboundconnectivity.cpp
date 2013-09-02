@@ -479,7 +479,7 @@ bool InboundConnectivity::CreateCarriers(InboundRTPProtocol *pRTP, RTCPProtocol 
 		}
 
 		if (pCarrier1->GetNearEndpointPort() > pCarrier2->GetNearEndpointPort()) {
-			WARN("Switch carriers");
+			//WARN("Switch carriers");
 			UDPCarrier *pTemp = pCarrier1;
 			pCarrier1 = pCarrier2;
 			pCarrier2 = pTemp;

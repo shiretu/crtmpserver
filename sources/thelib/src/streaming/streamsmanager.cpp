@@ -39,7 +39,9 @@ uint32_t StreamsManager::GenerateUniqueId() {
 bool StreamsManager::RegisterStream(BaseStream *pStream) {
 	//1. Test to see if we had registered this stream before
 	if (MAP_HAS1(_streamsByUniqueId, pStream->GetUniqueId())) {
-		FATAL("Stream with unique ID %u already registered", pStream->GetUniqueId());
+		FATAL("Stream %s already registered. Stream %s will not be registered",
+				STR(*_streamsByUniqueId[pStream->GetUniqueId()]),
+				pStream != NULL ? STR(*pStream) : "");
 		return false;
 	}
 
@@ -77,8 +79,6 @@ void StreamsManager::UnRegisterStreams(uint32_t protocolId) {
 }
 
 bool StreamsManager::StreamNameAvailable(string streamName) {
-	if (_pApplication->GetAllowDuplicateInboundNetworkStreams())
-		return true;
 	return FindByTypeByName(ST_IN_NET, streamName, true, false).size() == 0;
 }
 

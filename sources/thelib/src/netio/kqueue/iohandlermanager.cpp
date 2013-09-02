@@ -308,11 +308,9 @@ bool IOHandlerManager::Pulse() {
 #ifdef HAS_KQUEUE_TIMERS
 	result = kevent(_kq, _pPendingEvents, _pendingEventsCount,
 			_pDetectedEvents, _eventsSize, NULL);
-	_pendingEventsCount = 0;
 #else /* HAS_KQUEUE_TIMERS */
 	result = kevent(_kq, _pPendingEvents, _pendingEventsCount,
 			_pDetectedEvents, _eventsSize, &_timeout);
-	_pendingEventsCount = 0;
 	int32_t nextVal = _pTimersManager->TimeElapsed();
 	_timeout.tv_sec = nextVal / 1000;
 	_timeout.tv_nsec = (nextVal * 1000000) % 1000000000;
@@ -325,12 +323,13 @@ bool IOHandlerManager::Pulse() {
 		FATAL("kevent failed: (%d) %s", err, strerror(err));
 		return false;
 	}
+	_pendingEventsCount = 0;
 	for (int32_t i = 0; i < result; i++) {
 		IOHandlerManagerToken *pToken =
 				(IOHandlerManagerToken *) _pDetectedEvents[i].udata;
 		if ((_pDetectedEvents[i].flags & EV_ERROR) != 0) {
 			if (pToken->validPayload) {
-				DEBUG("***Event handler ERROR: %p", (IOHandler *) pToken->pPayload);
+				//DEBUG("***Event handler ERROR: %p", (IOHandler *) pToken->pPayload);
 				IOHandlerManager::EnqueueForDelete((IOHandler *) pToken->pPayload);
 			}
 			continue;
@@ -341,12 +340,13 @@ bool IOHandlerManager::Pulse() {
 				EnqueueForDelete((IOHandler *) pToken->pPayload);
 			}
 			if ((_pDetectedEvents[i].flags & EV_EOF) != 0) {
-				DEBUG("***Event handler EOF: %p", (IOHandler *) pToken->pPayload);
+				//DEBUG("***Event handler EOF: %p", (IOHandler *) pToken->pPayload);
 				IOHandlerManager::EnqueueForDelete((IOHandler *) pToken->pPayload);
 			}
-		} else {
-			FATAL("Invalid token");
 		}
+		//		else {
+		//			FATAL("Invalid token");
+		//		}
 	}
 
 	if (_tokensVector1.size() > _tokensVector2.size()) {

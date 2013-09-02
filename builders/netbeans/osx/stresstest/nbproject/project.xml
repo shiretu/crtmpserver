@@ -16,8 +16,6 @@
             <sourceRootList>
                 <sourceRootElem>../../../sources/applications/stresstest/include</sourceRootElem>
                 <sourceRootElem>../../../sources/applications/stresstest/src</sourceRootElem>
-                <sourceRootElem>../../../../sources/applications/stresstest/include</sourceRootElem>
-                <sourceRootElem>../../../../sources/applications/stresstest/src</sourceRootElem>
             </sourceRootList>
             <confList>
                 <confElem>

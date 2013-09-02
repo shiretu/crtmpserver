@@ -422,11 +422,12 @@ bool IOHandlerManager::Pulse() {
 		if ((_query[i].events & EPOLLERR) != 0) {
 			if (pToken->validPayload) {
 				if ((_query[i].events & EPOLLHUP) != 0) {
-					DEBUG("***Event handler HUP: %p", (IOHandler *) pToken->pPayload);
+					//DEBUG("***Event handler HUP: %p", (IOHandler *) pToken->pPayload);
 					((IOHandler *) pToken->pPayload)->OnEvent(_query[i]);
-				} else {
-					DEBUG("***Event handler ERR: %p", (IOHandler *) pToken->pPayload);
 				}
+				//				else {
+				//					DEBUG("***Event handler ERR: %p", (IOHandler *) pToken->pPayload);
+				//				}
 				IOHandlerManager::EnqueueForDelete((IOHandler *) pToken->pPayload);
 			}
 			continue;
@@ -437,9 +438,10 @@ bool IOHandlerManager::Pulse() {
 			if (!((IOHandler *) pToken->pPayload)->OnEvent(_query[i])) {
 				EnqueueForDelete((IOHandler *) pToken->pPayload);
 			}
-		} else {
-			FATAL("Invalid token");
 		}
+		//		else {
+		//			FATAL("Invalid token");
+		//		}
 	}
 
 	if (_tokensVector1.size() > _tokensVector2.size()) {

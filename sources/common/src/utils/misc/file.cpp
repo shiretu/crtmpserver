@@ -91,7 +91,6 @@ bool File::Initialize(string path, FILE_OPEN_MODE mode) {
 
 	if (!SeekBegin())
 		return false;
-
 	return true;
 }
 
@@ -504,4 +503,3 @@ bool File::Flush() {
 	fflush(_pFile);
 	return IsOpen();
 }
-

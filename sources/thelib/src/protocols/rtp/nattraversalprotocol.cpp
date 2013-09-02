@@ -24,7 +24,6 @@
 NATTraversalProtocol::NATTraversalProtocol()
 : BaseProtocol(PT_RTP_NAT_TRAVERSAL) {
 	_pOutboundAddress = NULL;
-	_pConnectivity = NULL;
 }
 
 NATTraversalProtocol::~NATTraversalProtocol() {
@@ -57,41 +56,30 @@ bool NATTraversalProtocol::SignalInputData(IOBuffer &buffer, sockaddr_in *pPeerA
 	if (_pOutboundAddress == NULL)
 		return true;
 	if (_pOutboundAddress->sin_addr.s_addr != pPeerAddress->sin_addr.s_addr) {
-		WARN("Attempt to divert traffic. DoS attack!?");
+		//WARN("Attempt to divert traffic. DoS attack!?");
 		return true;
 	}
-	string ipAddress = inet_ntoa(_pOutboundAddress->sin_addr);
-	if (_pOutboundAddress->sin_port == pPeerAddress->sin_port) {
-		INFO("The client has public endpoint: %s:%"PRIu16,
-				STR(ipAddress),
-				ENTOHS(_pOutboundAddress->sin_port));
-	} else {
-		INFO("The client is behind firewall: %s:%"PRIu16" -> %s:%"PRIu16,
-				STR(ipAddress),
-				ENTOHS(_pOutboundAddress->sin_port),
-				STR(ipAddress),
-				ENTOHS(pPeerAddress->sin_port));
+	//string ipAddress = inet_ntoa(_pOutboundAddress->sin_addr);
+	//	if (_pOutboundAddress->sin_port == pPeerAddress->sin_port) {
+	//		FINEST("The client has public endpoint: %s:%"PRIu16,
+	//				STR(ipAddress),
+	//				ENTOHS(_pOutboundAddress->sin_port));
+	//	} else {
+	//		FINEST("The client is behind firewall: %s:%"PRIu16" -> %s:%"PRIu16,
+	//				STR(ipAddress),
+	//				ENTOHS(_pOutboundAddress->sin_port),
+	//				STR(ipAddress),
+	//				ENTOHS(pPeerAddress->sin_port));
+	//		_pOutboundAddress->sin_port = pPeerAddress->sin_port;
+	//	}
+	if (_pOutboundAddress->sin_port != pPeerAddress->sin_port)
 		_pOutboundAddress->sin_port = pPeerAddress->sin_port;
-	}
 	_pOutboundAddress = NULL;
 	return true;
 }
 
 void NATTraversalProtocol::SetOutboundAddress(sockaddr_in *pOutboundAddress) {
 	_pOutboundAddress = pOutboundAddress;
-}
-
-void NATTraversalProtocol::SetOutboundConnectivity(OutboundConnectivity *pConnectivity) {
-	_pConnectivity = pConnectivity;
-}
-
-void NATTraversalProtocol::ResetOutboundConnectivity() {
-	_pConnectivity = NULL;
-}
-
-void NATTraversalProtocol::ReadyForSend() {
-	if (_pConnectivity != NULL)
-		_pConnectivity->ReadyForSend();
 }
 
 #endif /* HAS_PROTOCOL_RTP */

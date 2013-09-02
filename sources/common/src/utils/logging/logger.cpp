@@ -17,7 +17,6 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include "utils/logging/logger.h"
 #include "utils/logging/baseloglocation.h"
 #include "version.h"
@@ -120,7 +119,7 @@ string Version::GetBanner() {
 		result += " - " + GetCodeName();
 	if (GetBuilderOS() != "") {
 		result += " - (built for " + GetBuilderOS() + " on " + GetBuildDateString() + ")";
-	}else{
+	} else {
 		result += " - (built on " + GetBuildDateString() + ")";
 	}
 	return result;
@@ -220,35 +219,22 @@ void Logger::Free(bool freeAppenders) {
 	}
 }
 
-void Logger::Log(int32_t level, string fileName, uint32_t lineNumber,
-		string functionName, string formatString, ...) {
+void Logger::Log(int32_t level, const char *pFileName, uint32_t lineNumber,
+		const char *pFunctionName, const char *pFormatString, ...) {
 	LOCK;
 	if (_pLogger == NULL)
 		return;
 
 	va_list arguments;
-	va_start(arguments, formatString);
-	string message = vFormat(formatString, arguments);
+	va_start(arguments, pFormatString);
+	string message = vFormat(pFormatString, arguments);
 	va_end(arguments);
 
 	FOR_VECTOR(_pLogger->_logLocations, i) {
-		if (_pLogger->_logLocations[i]->EvalLogLevel(level, fileName, lineNumber,
-				functionName, formatString))
-			_pLogger->_logLocations[i]->Log(level, fileName,
-				lineNumber, functionName, message);
-	}
-}
-
-void Logger::LogProd(int32_t level, string fileName, uint32_t lineNumber, string functionName, Variant &le) {
-	LOCK;
-	if (_pLogger == NULL)
-		return;
-
-	FOR_VECTOR(_pLogger->_logLocations, i) {
-		if (_pLogger->_logLocations[i]->EvalLogLevel(level, fileName, lineNumber,
-				functionName, le))
-			_pLogger->_logLocations[i]->Log(level, fileName,
-				lineNumber, functionName, le);
+		if (_pLogger->_logLocations[i]->EvalLogLevel(level, pFileName, lineNumber,
+				pFunctionName))
+			_pLogger->_logLocations[i]->Log(level, pFileName,
+				lineNumber, pFunctionName, message);
 	}
 }
 

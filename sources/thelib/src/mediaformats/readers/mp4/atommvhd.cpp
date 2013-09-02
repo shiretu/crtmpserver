@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -43,24 +43,47 @@ AtomMVHD::~AtomMVHD() {
 }
 
 bool AtomMVHD::ReadData() {
-	if (!ReadUInt32(_creationTime)) {
-		FATAL("Unable to read creation time");
-		return false;
-	}
+	if (_version == 1) {
+		if (!ReadUInt64(_creationTime)) {
+			FATAL("Unable to read creation time");
+			return false;
+		}
 
-	if (!ReadUInt32(_modificationTime)) {
-		FATAL("Unable to read modification time");
-		return false;
+		if (!ReadUInt64(_modificationTime)) {
+			FATAL("Unable to read modification time");
+			return false;
+		}
+	} else {
+		uint32_t temp;
+		if (!ReadUInt32(temp)) {
+			FATAL("Unable to read creation time");
+			return false;
+		}
+		_creationTime = temp;
+
+		if (!ReadUInt32(temp)) {
+			FATAL("Unable to read modification time");
+			return false;
+		}
+		_modificationTime = temp;
 	}
 
 	if (!ReadUInt32(_timeScale)) {
 		FATAL("Unable to read time scale");
 		return false;
 	}
-
-	if (!ReadUInt32(_duration)) {
-		FATAL("Unable to read duration");
-		return false;
+	if (_version == 1) {
+		if (!ReadUInt64(_duration)) {
+			FATAL("Unable to read duration");
+			return false;
+		}
+	} else {
+		uint32_t temp;
+		if (!ReadUInt32(temp)) {
+			FATAL("Unable to read duration");
+			return false;
+		}
+		_duration = temp;
 	}
 
 	if (!ReadUInt32(_preferredRate)) {

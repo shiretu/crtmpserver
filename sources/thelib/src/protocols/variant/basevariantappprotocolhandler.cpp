@@ -122,39 +122,24 @@ bool BaseVariantAppProtocolHandler::Send(string ip, uint16_t port, Variant &vari
 }
 
 bool BaseVariantAppProtocolHandler::Send(string url, Variant &variant,
-		VariantSerializer serializer) {
+		VariantSerializer serializer, string serverCertificate,
+		string clientCertificate, string clientCertificateKey) {
 	//1. Build the parameters
 	Variant &parameters = GetScaffold(url);
 	if (parameters != V_MAP) {
-		FATAL("Unable to get parameters scaffold");
-		return false;
-	}
-	parameters["payload"] = variant;
-
-	//2. Start the HTTP request
-	if (!TCPConnector<BaseVariantAppProtocolHandler>::Connect(parameters["ip"],
-			parameters["port"],
-			GetTransport(serializer, true, parameters["isSsl"]),
-			parameters)) {
-		FATAL("Unable to open connection");
-		return false;
-	}
-
-	return true;
-}
-
-bool BaseVariantAppProtocolHandler::Send(string url, string serverCertificate, string certificate,
-		string key, Variant &variant, VariantSerializer serializer) {
-	//1. Build the parameters
-	Variant &parameters = GetScaffold(url);
-	if (parameters != V_MAP) {
+		Variant temp;
+		temp["payload"] = variant;
+		temp["serverCert"] = serverCertificate;
+		temp[CONF_SSL_KEY] = clientCertificateKey;
+		temp[CONF_SSL_CERT] = clientCertificate;
+		ConnectionFailed(temp);
 		FATAL("Unable to get parameters scaffold");
 		return false;
 	}
 	parameters["payload"] = variant;
 	parameters["serverCert"] = serverCertificate;
-	parameters[CONF_SSL_KEY] = key;
-	parameters[CONF_SSL_CERT] = certificate;
+	parameters[CONF_SSL_KEY] = clientCertificateKey;
+	parameters[CONF_SSL_CERT] = clientCertificate;
 
 	//2. Start the HTTP request
 	if (!TCPConnector<BaseVariantAppProtocolHandler>::Connect(parameters["ip"],
@@ -179,14 +164,17 @@ bool BaseVariantAppProtocolHandler::SignalProtocolCreated(BaseProtocol *pProtoco
 	}
 
 	//2. get the protocol handler
-	BaseAppProtocolHandler *pHandler = pApplication->GetProtocolHandler(PT_BIN_VAR);
-	if (pHandler == NULL) {
+	BaseAppProtocolHandler *pHandler = NULL;
+	if (pApplication->HasProtocolHandler(PT_JSON_VAR)) {
+		pHandler = pApplication->GetProtocolHandler(PT_JSON_VAR);
+	} else if (pApplication->HasProtocolHandler(PT_XML_VAR)) {
 		pHandler = pApplication->GetProtocolHandler(PT_XML_VAR);
-		if (pHandler == NULL) {
-			WARN("Unable to get protocol handler for variant protocol");
-		}
+	} else if (pApplication->HasProtocolHandler(PT_BIN_VAR)) {
+		pHandler = pApplication->GetProtocolHandler(PT_BIN_VAR);
 	}
-
+	if (pHandler == NULL) {
+		WARN("Unable to get protocol handler for variant protocol");
+	}
 
 	//3. Is the connection up
 	if (pProtocol == NULL) {

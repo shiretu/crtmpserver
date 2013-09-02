@@ -28,14 +28,6 @@ BaseOutRecording::BaseOutRecording(BaseProtocol *pProtocol, uint64_t type,
 		string name, Variant &settings)
 : BaseOutFileStream(pProtocol, type, name) {
 	_settings = settings;
-
-	//audio
-	_audioBytesCount = 0;
-	_audioPacketsCount = 0;
-
-	//video
-	_videoBytesCount = 0;
-	_videoPacketsCount = 0;
 }
 
 BaseOutRecording::~BaseOutRecording() {
@@ -43,13 +35,6 @@ BaseOutRecording::~BaseOutRecording() {
 
 void BaseOutRecording::GetStats(Variant &info, uint32_t namespaceId) {
 	BaseOutStream::GetStats(info, namespaceId);
-	info["audio"]["bytesCount"] = _audioBytesCount;
-	info["audio"]["packetsCount"] = _audioPacketsCount;
-	info["audio"]["droppedPacketsCount"] = (uint64_t) 0;
-	info["video"]["bytesCount"] = _videoBytesCount;
-	info["video"]["packetsCount"] = _videoPacketsCount;
-	info["video"]["droppedPacketsCount"] = (uint64_t) 0;
-	info["record"] = _settings;
 }
 
 bool BaseOutRecording::IsCompatibleWithType(uint64_t type) {
@@ -94,8 +79,8 @@ void BaseOutRecording::SignalStreamCompleted() {
 bool BaseOutRecording::FeedData(uint8_t *pData, uint32_t dataLength,
 		uint32_t processedLength, uint32_t totalLength,
 		double pts, double dts, bool isAudio) {
-	uint64_t &bytesCount = isAudio ? _audioBytesCount : _videoBytesCount;
-	uint64_t &packetsCount = isAudio ? _audioPacketsCount : _videoPacketsCount;
+	uint64_t &bytesCount = isAudio ? _stats.audio.bytesCount : _stats.video.bytesCount;
+	uint64_t &packetsCount = isAudio ? _stats.audio.packetsCount : _stats.video.packetsCount;
 	packetsCount++;
 	bytesCount += dataLength;
 	return GenericProcessData(pData, dataLength, processedLength, totalLength,
@@ -107,6 +92,13 @@ void BaseOutRecording::SignalAudioStreamCapabilitiesChanged(
 		AudioCodecInfo *pNew) {
 	if ((pOld == NULL)&&(pNew != NULL))
 		return;
+	WARN("Codecs changed and the recordings does not support it. Closing recording");
+	if (pOld != NULL)
+		FINEST("pOld: %s", STR(*pOld));
+	if (pNew != NULL)
+		FINEST("pNew: %s", STR(*pNew));
+	else
+		FINEST("pNew: NULL");
 	EnqueueForDelete();
 }
 
@@ -115,5 +107,12 @@ void BaseOutRecording::SignalVideoStreamCapabilitiesChanged(
 		VideoCodecInfo *pNew) {
 	if ((pOld == NULL)&&(pNew != NULL))
 		return;
+	WARN("Codecs changed and the recordings does not support it. Closing recording");
+	if (pOld != NULL)
+		FINEST("pOld: %s", STR(*pOld));
+	if (pNew != NULL)
+		FINEST("pNew: %s", STR(*pNew));
+	else
+		FINEST("pNew: NULL");
 	EnqueueForDelete();
 }

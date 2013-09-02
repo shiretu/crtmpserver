@@ -209,6 +209,8 @@ public:
 	bool ConvertToTimestamp();
 	void Compact();
 
+	static Variant Now();
+
 	static bool DeserializeFromBin(uint8_t *pBuffer, uint32_t bufferLength,
 			Variant &variant);
 	static bool DeserializeFromBin(string &data, Variant &variant);
@@ -218,6 +220,10 @@ public:
 			Variant &result);
 	static bool DeserializeFromXml(string data, Variant &result);
 	bool SerializeToXml(string &result, bool prettyPrint = true);
+
+	static bool DeserializeFromXmlRpcResponse(const uint8_t *pBuffer, uint32_t bufferLength,
+			Variant &result);
+	bool SerializeToXmlRpcRequest(string &result, bool prettyPrint = true);
 
 	static bool DeserializeFromBinFile(string path, Variant &variant);
 	bool SerializeToBinFile(string fileName);
@@ -234,6 +240,7 @@ public:
 	static bool ParseTime(const char *pRaw, const char *pFormat, Variant &result);
 private:
 	TiXmlElement *SerializeToXmlElement(string &name);
+	TiXmlElement *SerializeToXmlRpcElement();
 	static bool DeserializeFromBin(uint8_t *pBuffer, uint32_t bufferSize,
 			Variant &variant, uint32_t &cursor);
 	static bool DeserializeFromXml(TiXmlElement *pNode, Variant &variant);

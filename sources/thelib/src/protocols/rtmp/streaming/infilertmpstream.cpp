@@ -252,7 +252,7 @@ bool InFileRTMPStream::FeedData(uint8_t *pData, uint32_t dataLength,
 bool InFileRTMPStream::IsCompatibleWithType(uint64_t type) {
 	return TAG_KIND_OF(type, ST_OUT_NET_RTMP)
 			|| TAG_KIND_OF(type, ST_OUT_NET_RTP)
-			|| TAG_KIND_OF(type, ST_OUT_FILE_RTMP_FLV);
+			;
 }
 
 uint32_t InFileRTMPStream::GetChunkSize() {
@@ -305,8 +305,6 @@ void InFileRTMPStream::SignalOutStreamAttached(BaseOutStream *pOutStream) {
 }
 
 void InFileRTMPStream::SignalOutStreamDetached(BaseOutStream *pOutStream) {
-	FINEST("outbound stream %u detached from inbound stream %u",
-			pOutStream->GetUniqueId(), GetUniqueId());
 }
 
 bool InFileRTMPStream::BuildFrame(MediaFile *pFile, MediaFrame &mediaFrame,

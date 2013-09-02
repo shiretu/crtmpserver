@@ -24,6 +24,7 @@
 
 #include "streaming/baseinnetstream.h"
 #include "streaming/streamcapabilities.h"
+#include "mediaformats/readers/streammetadataresolver.h"
 
 class BaseRTMPProtocol;
 class BaseOutStream;
@@ -35,24 +36,13 @@ private:
 	uint32_t _chunkSize;
 	uint32_t _channelId;
 	string _clientId;
-	double _videoCts;
+	int32_t _videoCts;
 	Variant _lastStreamMessage;
-	BaseOutStream *_pOutFileRTMPFLVStream;
 
-	bool _audioCapabilitiesInitialized;
+	bool _dummy;
 	uint8_t _lastAudioCodec;
-	bool _videoCapabilitiesInitialized;
 	uint8_t _lastVideoCodec;
 	StreamCapabilities _streamCapabilities;
-
-	uint64_t _audioPacketsCount;
-	uint64_t _audioDroppedPacketsCount;
-	uint64_t _audioBytesCount;
-	uint64_t _audioDroppedBytesCount;
-	uint64_t _videoPacketsCount;
-	uint64_t _videoDroppedPacketsCount;
-	uint64_t _videoBytesCount;
-	uint64_t _videoDroppedBytesCount;
 
 	IOBuffer _aggregate;
 public:
@@ -63,7 +53,6 @@ public:
 
 	virtual void ReadyForSend();
 	virtual bool IsCompatibleWithType(uint64_t type);
-	virtual void GetStats(Variant &info, uint32_t namespaceId = 0);
 
 	uint32_t GetRTMPStreamId();
 	uint32_t GetChunkSize();
@@ -73,8 +62,8 @@ public:
 	virtual bool SendStreamMessage(string functionName, Variant &parameters,
 			bool persistent = true);
 	bool SendOnStatusStreamPublished();
-	bool RecordFLV(Variant &meta, bool append);
-	bool RecordMP4(Variant &meta);
+	bool RecordFLV(Metadata &meta, bool append);
+	bool RecordMP4(Metadata &meta);
 
 	virtual void SignalOutStreamAttached(BaseOutStream *pOutStream);
 	virtual void SignalOutStreamDetached(BaseOutStream *pOutStream);
@@ -99,6 +88,7 @@ public:
 	virtual uint32_t GetInputVideoTimescale();
 	virtual uint32_t GetInputAudioTimescale();
 private:
+	string GetRecordedFileName(Metadata &meta);
 	BaseRTMPProtocol *GetRTMPProtocol();
 };
 

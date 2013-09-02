@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -43,15 +43,11 @@ public:
 	void SetLevel(int32_t level);
 	string GetName();
 	void SetName(string name);
-	virtual bool EvalLogLevel(int32_t level, string &fileName, uint32_t lineNumber,
-			string &functionName, string &message);
-	virtual bool EvalLogLevel(int32_t level, string fileName, uint32_t lineNumber,
-			string functionName, Variant &le);
+	virtual bool EvalLogLevel(int32_t level, const char *pFileName, uint32_t lineNumber,
+			const char *pFunctionName);
 	virtual bool Init();
-	virtual void Log(int32_t level, string fileName, uint32_t lineNumber,
-			string functionName, string message) = 0;
-	virtual void Log(int32_t level, string fileName, uint32_t lineNumber,
-			string functionName, Variant &le) = 0;
+	virtual void Log(int32_t level, const char *pFileName, uint32_t lineNumber,
+			const char *pFunctionName, string &message) = 0;
 	virtual void SignalFork() = 0;
 private:
 	bool EvalLogLevel(int32_t level);

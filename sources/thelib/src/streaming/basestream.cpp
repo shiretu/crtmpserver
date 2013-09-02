@@ -28,6 +28,7 @@
 uint32_t BaseStream::_uniqueIdGenerator = 1;
 
 BaseStream::BaseStream(BaseProtocol *pProtocol, uint64_t type, string name) {
+	memset(&_stats, 0, sizeof (_stats));
 	_pStreamsManager = NULL;
 	_type = type;
 	_uniqueId = _uniqueIdGenerator++;
@@ -36,7 +37,7 @@ BaseStream::BaseStream(BaseProtocol *pProtocol, uint64_t type, string name) {
 	GETCLOCKS(_creationTimestamp, double);
 	_creationTimestamp /= (double) CLOCKS_PER_SECOND;
 	_creationTimestamp *= 1000.00;
-	GetIpPort();
+	GetIpPortInfo();
 	StoreConnectionType();
 }
 
@@ -91,14 +92,18 @@ void BaseStream::SetName(string name) {
 }
 
 void BaseStream::GetStats(Variant &info, uint32_t namespaceId) {
-	GetIpPort();
+	GetIpPortInfo();
 	info["uniqueId"] = (((uint64_t) namespaceId) << 32) | _uniqueId;
 	info["type"] = tagToString(_type);
 	info["typeNumeric"] = _type;
 	info["name"] = _name;
 	info["creationTimestamp"] = _creationTimestamp;
-	info["ip"] = _ip;
-	info["port"] = _port;
+	info["ip"] = _nearIp;
+	info["port"] = _nearPort;
+	info["nearIp"] = _nearIp;
+	info["nearPort"] = _nearPort;
+	info["farIp"] = _farIp;
+	info["farPort"] = _farPort;
 	double queryTimestamp = 0;
 	GETCLOCKS(queryTimestamp, double);
 	queryTimestamp /= (double) CLOCKS_PER_SECOND;
@@ -119,6 +124,15 @@ void BaseStream::GetStats(Variant &info, uint32_t namespaceId) {
 		info["audio"]["codecNumeric"] = (uint64_t) CODEC_AUDIO_UNKNOWN;
 		info["bandwidth"] = 0;
 	}
+
+	info["audio"]["packetsCount"] = _stats.audio.packetsCount;
+	info["audio"]["droppedPacketsCount"] = _stats.audio.droppedPacketsCount;
+	info["audio"]["bytesCount"] = _stats.audio.bytesCount;
+	info["audio"]["droppedBytesCount"] = _stats.audio.droppedBytesCount;
+	info["video"]["packetsCount"] = _stats.video.packetsCount;
+	info["video"]["droppedPacketsCount"] = _stats.video.droppedPacketsCount;
+	info["video"]["bytesCount"] = _stats.video.bytesCount;
+	info["video"]["droppedBytesCount"] = _stats.video.droppedBytesCount;
 	BaseClientApplication *pApp = NULL;
 	if ((_pProtocol != NULL)
 			&& ((pApp = _pProtocol->GetLastKnownApplication()) != NULL)) {
@@ -151,6 +165,15 @@ void BaseStream::EnqueueForDelete() {
 	}
 }
 
+BaseStream::operator string() {
+	return format("%s(%"PRIu32") with name `%s` from protocol %s(%"PRIu32")",
+			STR(tagToString(_type)),
+			_uniqueId,
+			STR(_name),
+			_pProtocol != NULL ? STR(tagToString(_pProtocol->GetType())) : "",
+			_pProtocol != NULL ? _pProtocol->GetId() : 0);
+}
+
 void BaseStream::StoreConnectionType() {
 	if (_connectionType != V_NULL)
 		return;
@@ -160,21 +183,31 @@ void BaseStream::StoreConnectionType() {
 		pApp->StoreConnectionType(_connectionType, _pProtocol);
 }
 
-void BaseStream::GetIpPort() {
-	if ((_ip != "") && (_port != 0))
+void BaseStream::GetIpPortInfo() {
+	if ((_nearIp != "")
+			&& (_nearPort != 0)
+			&& (_farIp != "")
+			&& (_farPort != 0)) {
 		return;
+	}
 	IOHandler *pIOHandler = NULL;
 	if ((_pProtocol != NULL)
 			&& ((pIOHandler = _pProtocol->GetIOHandler()) != NULL)
 			&& (pIOHandler->GetType() == IOHT_TCP_CARRIER)) {
-		_ip = ((TCPCarrier *) pIOHandler)->GetNearEndpointAddressIp();
-		_port = ((TCPCarrier *) pIOHandler)->GetNearEndpointPort();
+		_nearIp = ((TCPCarrier *) pIOHandler)->GetNearEndpointAddressIp();
+		_nearPort = ((TCPCarrier *) pIOHandler)->GetNearEndpointPort();
+		_farIp = ((TCPCarrier *) pIOHandler)->GetFarEndpointAddressIp();
+		_farPort = ((TCPCarrier *) pIOHandler)->GetFarEndpointPort();
 	} else if ((pIOHandler != NULL)
 			&& (pIOHandler->GetType() == IOHT_UDP_CARRIER)) {
-		_ip = ((UDPCarrier *) pIOHandler)->GetNearEndpointAddress();
-		_port = ((UDPCarrier *) pIOHandler)->GetNearEndpointPort();
+		_nearIp = ((UDPCarrier *) pIOHandler)->GetNearEndpointAddress();
+		_nearPort = ((UDPCarrier *) pIOHandler)->GetNearEndpointPort();
+		_farIp = "";
+		_farPort = 0;
 	} else {
-		_ip = "";
-		_port = 0;
+		_nearIp = "";
+		_nearPort = 0;
+		_farIp = "";
+		_farPort = 0;
 	}
 }

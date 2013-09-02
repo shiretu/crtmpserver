@@ -60,8 +60,8 @@ OutboundConnectivity::OutboundConnectivity(bool forceTcp, RTSPProtocol *pRTSPPro
 	_videoDataPort = 0;
 	_videoRTCPFd = (SOCKET) (-1);
 	_videoRTCPPort = 0;
-	_pVideoNATData = NULL;
-	_pVideoNATRTCP = NULL;
+	_videoNATDataId = 0;
+	_videoNATRTCPId = 0;
 	_videoSampleRate = 0;
 
 	_hasAudio = false;
@@ -69,13 +69,14 @@ OutboundConnectivity::OutboundConnectivity(bool forceTcp, RTSPProtocol *pRTSPPro
 	_audioDataPort = 0;
 	_audioRTCPFd = (SOCKET) (-1);
 	_audioRTCPPort = 0;
-	_pAudioNATData = NULL;
-	_pAudioNATRTCP = NULL;
+	_audioNATDataId = 0;
+	_audioNATRTCPId = 0;
 	_audioSampleRate = 0;
 
 	_startupTime = (uint64_t) time(NULL);
 
 	_amountSent = 0;
+	_dummyValue = 0;
 }
 
 OutboundConnectivity::~OutboundConnectivity() {
@@ -85,26 +86,22 @@ OutboundConnectivity::~OutboundConnectivity() {
 	if (_pOutStream != NULL) {
 		delete _pOutStream;
 	}
-	if (_pVideoNATData != NULL) {
-		_pVideoNATData->ResetOutboundConnectivity();
-		_pVideoNATData->EnqueueForDelete();
-		_pVideoNATData = NULL;
-	}
-	if (_pVideoNATRTCP != NULL) {
-		_pVideoNATRTCP->ResetOutboundConnectivity();
-		_pVideoNATRTCP->EnqueueForDelete();
-		_pVideoNATRTCP = NULL;
-	}
-	if (_pAudioNATData != NULL) {
-		_pAudioNATData->ResetOutboundConnectivity();
-		_pAudioNATData->EnqueueForDelete();
-		_pAudioNATData = NULL;
-	}
-	if (_pAudioNATRTCP != NULL) {
-		_pAudioNATRTCP->ResetOutboundConnectivity();
-		_pAudioNATRTCP->EnqueueForDelete();
-		_pAudioNATRTCP = NULL;
-	}
+	NATTraversalProtocol *pTemp = NULL;
+	pTemp = (NATTraversalProtocol *) ProtocolManager::GetProtocol(_videoNATDataId);
+	if (pTemp != NULL)
+		pTemp->EnqueueForDelete();
+
+	pTemp = (NATTraversalProtocol *) ProtocolManager::GetProtocol(_videoNATRTCPId);
+	if (pTemp != NULL)
+		pTemp->EnqueueForDelete();
+
+	pTemp = (NATTraversalProtocol *) ProtocolManager::GetProtocol(_audioNATDataId);
+	if (pTemp != NULL)
+		pTemp->EnqueueForDelete();
+
+	pTemp = (NATTraversalProtocol *) ProtocolManager::GetProtocol(_audioNATRTCPId);
+	if (pTemp != NULL)
+		pTemp->EnqueueForDelete();
 }
 
 bool OutboundConnectivity::Initialize() {
@@ -114,13 +111,13 @@ bool OutboundConnectivity::Initialize() {
 		_rtpClient.videoDataChannel = 2;
 		_rtpClient.videoRtcpChannel = 3;
 	} else {
-		if (!InitializePorts(_videoDataFd, _videoDataPort, &_pVideoNATData,
-				_videoRTCPFd, _videoRTCPPort, &_pVideoNATRTCP)) {
+		if (!InitializePorts(_videoDataFd, _videoDataPort, _videoNATDataId,
+				_videoRTCPFd, _videoRTCPPort, _videoNATRTCPId)) {
 			FATAL("Unable to initialize video ports");
 			return false;
 		}
-		if (!InitializePorts(_audioDataFd, _audioDataPort, &_pAudioNATData,
-				_audioRTCPFd, _audioRTCPPort, &_pAudioNATRTCP)) {
+		if (!InitializePorts(_audioDataFd, _audioDataPort, _audioNATDataId,
+				_audioRTCPFd, _audioRTCPPort, _audioNATRTCPId)) {
 			FATAL("Unable to initialize audio ports");
 			return false;
 		}
@@ -128,9 +125,9 @@ bool OutboundConnectivity::Initialize() {
 	return true;
 }
 
-void OutboundConnectivity::Enable() {
+void OutboundConnectivity::Enable(bool value) {
 	if (_pOutStream != NULL)
-		_pOutStream->Enable();
+		_pOutStream->Enable(value);
 }
 
 void OutboundConnectivity::SetOutStream(BaseOutNetRTPUDPStream *pOutStream) {
@@ -196,12 +193,21 @@ bool OutboundConnectivity::RegisterUDPVideoClient(uint32_t rtspProtocolId,
 	_rtpClient.videoDataAddress = data;
 	_rtpClient.videoRtcpAddress = rtcp;
 	_rtpClient.protocolId = rtspProtocolId;
-	_pVideoNATData->SetOutboundAddress(&_rtpClient.videoDataAddress);
-	_pVideoNATData->SetOutboundConnectivity(this);
-	_pVideoNATRTCP->SetOutboundAddress(&_rtpClient.videoRtcpAddress);
-	return ((UDPCarrier *) _pVideoNATData->GetIOHandler())->StartAccept()
-			&((UDPCarrier *) _pVideoNATData->GetIOHandler())->EnableWriteEvents()
-			&((UDPCarrier *) _pVideoNATRTCP->GetIOHandler())->StartAccept();
+	NATTraversalProtocol *pVideoNATData =
+			(NATTraversalProtocol *) ProtocolManager::GetProtocol(_videoNATDataId);
+	NATTraversalProtocol *pVideoNATRTCP =
+			(NATTraversalProtocol *) ProtocolManager::GetProtocol(_videoNATRTCPId);
+	bool result = true;
+	if (pVideoNATData != NULL) {
+		pVideoNATData->SetOutboundAddress(&_rtpClient.videoDataAddress);
+		result &= ((UDPCarrier *) pVideoNATData->GetIOHandler())->StartAccept();
+	}
+	if (pVideoNATRTCP != NULL) {
+		pVideoNATRTCP->SetOutboundAddress(&_rtpClient.videoRtcpAddress);
+		result &= ((UDPCarrier *) pVideoNATRTCP->GetIOHandler())->StartAccept();
+	}
+
+	return result;
 }
 
 bool OutboundConnectivity::RegisterUDPAudioClient(uint32_t rtspProtocolId,
@@ -215,12 +221,23 @@ bool OutboundConnectivity::RegisterUDPAudioClient(uint32_t rtspProtocolId,
 	_rtpClient.audioDataAddress = data;
 	_rtpClient.audioRtcpAddress = rtcp;
 	_rtpClient.protocolId = rtspProtocolId;
-	_pAudioNATData->SetOutboundAddress(&_rtpClient.audioDataAddress);
-	_pAudioNATData->SetOutboundConnectivity(this);
-	_pAudioNATRTCP->SetOutboundAddress(&_rtpClient.audioRtcpAddress);
-	return ((UDPCarrier *) _pAudioNATData->GetIOHandler())->StartAccept()
-			&((UDPCarrier *) _pAudioNATData->GetIOHandler())->EnableWriteEvents()
-			&((UDPCarrier *) _pAudioNATRTCP->GetIOHandler())->StartAccept();
+
+	NATTraversalProtocol *pAudioNATData =
+			(NATTraversalProtocol *) ProtocolManager::GetProtocol(_audioNATDataId);
+
+	NATTraversalProtocol *pAudioNATRTCP =
+			(NATTraversalProtocol *) ProtocolManager::GetProtocol(_audioNATRTCPId);
+
+	bool result = true;
+	if (pAudioNATData != NULL) {
+		pAudioNATData->SetOutboundAddress(&_rtpClient.audioDataAddress);
+		result &= ((UDPCarrier *) pAudioNATData->GetIOHandler())->StartAccept();
+	}
+	if (pAudioNATRTCP != NULL) {
+		pAudioNATRTCP->SetOutboundAddress(&_rtpClient.audioRtcpAddress);
+		result &= ((UDPCarrier *) pAudioNATRTCP->GetIOHandler())->StartAccept();
+	}
+	return result;
 }
 
 bool OutboundConnectivity::RegisterTCPVideoClient(uint32_t rtspProtocolId,
@@ -283,10 +300,12 @@ void OutboundConnectivity::ReadyForSend() {
 }
 
 bool OutboundConnectivity::InitializePorts(SOCKET &dataFd, uint16_t &dataPort,
-		NATTraversalProtocol **ppNATData, SOCKET &RTCPFd, uint16_t &RTCPPort,
-		NATTraversalProtocol **ppNATRTCP) {
+		uint32_t &natDataId, SOCKET &RTCPFd, uint16_t &RTCPPort,
+		uint32_t &natRTCPId) {
 	UDPCarrier *pCarrier1 = NULL;
 	UDPCarrier *pCarrier2 = NULL;
+	NATTraversalProtocol *pNATData = NULL;
+	NATTraversalProtocol *pNATRTCP = NULL;
 	for (uint32_t i = 0; i < 10; i++) {
 		if (pCarrier1 != NULL) {
 			delete pCarrier1;
@@ -317,7 +336,7 @@ bool OutboundConnectivity::InitializePorts(SOCKET &dataFd, uint16_t &dataPort,
 		}
 
 		if (pCarrier1->GetNearEndpointPort() > pCarrier2->GetNearEndpointPort()) {
-			WARN("Switch carriers");
+			//WARN("Switch carriers");
 			UDPCarrier *pTemp = pCarrier1;
 			pCarrier1 = pCarrier2;
 			pCarrier2 = pTemp;
@@ -329,40 +348,42 @@ bool OutboundConnectivity::InitializePorts(SOCKET &dataFd, uint16_t &dataPort,
 
 		dataFd = pCarrier1->GetInboundFd();
 		dataPort = pCarrier1->GetNearEndpointPort();
-		*ppNATData = (NATTraversalProtocol *) ProtocolFactoryManager::CreateProtocolChain(
+		pNATData = (NATTraversalProtocol *) ProtocolFactoryManager::CreateProtocolChain(
 				CONF_PROTOCOL_RTP_NAT_TRAVERSAL, dummy);
-		if (*ppNATData == NULL) {
+		if (pNATData == NULL) {
 			FATAL("Unable to create the protocol chain %s", CONF_PROTOCOL_RTP_NAT_TRAVERSAL);
 			return false;
 		}
-		pCarrier1->SetProtocol(((*ppNATData)->GetFarEndpoint()));
-		(*ppNATData)->GetFarEndpoint()->SetIOHandler(pCarrier1);
+		pCarrier1->SetProtocol((pNATData->GetFarEndpoint()));
+		pNATData->GetFarEndpoint()->SetIOHandler(pCarrier1);
 
 		//RTCP
 		RTCPFd = pCarrier2->GetInboundFd();
 		RTCPPort = pCarrier2->GetNearEndpointPort();
-		*ppNATRTCP = (NATTraversalProtocol *) ProtocolFactoryManager::CreateProtocolChain(
+		pNATRTCP = (NATTraversalProtocol *) ProtocolFactoryManager::CreateProtocolChain(
 				CONF_PROTOCOL_RTP_NAT_TRAVERSAL, dummy);
-		if (*ppNATRTCP == NULL) {
+		if (pNATRTCP == NULL) {
 			FATAL("Unable to create the protocol chain %s", CONF_PROTOCOL_RTP_NAT_TRAVERSAL);
-			(*ppNATData)->EnqueueForDelete();
+			pNATData->EnqueueForDelete();
+			pNATData = NULL;
 			return false;
 		}
-		pCarrier2->SetProtocol((*ppNATRTCP)->GetFarEndpoint());
-		(*ppNATRTCP)->GetFarEndpoint()->SetIOHandler(pCarrier2);
+		pCarrier2->SetProtocol(pNATRTCP->GetFarEndpoint());
+		pNATRTCP->GetFarEndpoint()->SetIOHandler(pCarrier2);
+
+		natDataId = pNATData->GetId();
+		natRTCPId = pNATRTCP->GetId();
 
 		//return pCarrier1->StartAccept() & pCarrier2->StartAccept();
 		return true;
 	}
 
-	if (*ppNATData != NULL) {
-		(*ppNATData)->EnqueueForDelete();
-		(*ppNATData) = NULL;
-	}
-	if (*ppNATRTCP != NULL) {
-		(*ppNATRTCP)->EnqueueForDelete();
-		(*ppNATRTCP) = NULL;
-	}
+	if (pNATData != NULL)
+		pNATData->EnqueueForDelete();
+
+	if (pNATRTCP != NULL)
+		pNATRTCP->EnqueueForDelete();
+
 
 	return false;
 }

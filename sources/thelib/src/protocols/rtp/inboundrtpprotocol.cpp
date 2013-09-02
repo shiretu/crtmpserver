@@ -38,7 +38,7 @@ InboundRTPProtocol::InboundRTPProtocol()
 #ifdef RTP_DETECT_ROLLOVER
 	_lastTimestamp = 0;
 	_timestampRollover = 0;
-#endif
+#endif /* RTP_DETECT_ROLLOVER */
 }
 
 InboundRTPProtocol::~InboundRTPProtocol() {

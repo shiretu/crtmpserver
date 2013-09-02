@@ -49,6 +49,7 @@ public:
 	uint32_t _consumed;
 	uint32_t _minChunkSize;
 	socklen_t _dummy;
+	uint32_t _sendLimit;
 public:
 	//constructor/destructor and initialization
 	IOBuffer();
@@ -60,22 +61,13 @@ public:
 	 */
 	void Initialize(uint32_t expected);
 
-	//Read from a source and put to this buffer
-	/*!
-		@brief Read from Pipe and saves it.
-		@param fd
-		@param expected - Expected size of the buffer
-		@param recvAmount - Size of data read
-	 */
-	bool ReadFromPipe(int32_t fd, uint32_t expected, int32_t &recvAmount);
-
 	/*!
 		@brief Read from TCP File Descriptor and saves it. This function is advisable for connection-oriented sockets.
 		@param fd - Descriptor that contains the data
 		@param expected - Expected size of the receiving buffer
 		@param recvAmount - Size of data received
 	 */
-	bool ReadFromTCPFd(int32_t fd, uint32_t expected, int32_t &recvAmount);
+	bool ReadFromTCPFd(int32_t fd, uint32_t expected, int32_t &recvAmount, int &err);
 
 	/*!
 		@brief Read from UDP File Descriptor and saves it. This function is advisable for connectionless-oriented sockets.
@@ -125,6 +117,13 @@ public:
 	bool ReadFromInputBuffer(const IOBuffer &buffer, uint32_t size);
 
 	/*!
+		@brief read data from input buffer and also removes it. If the conditions are right,
+		this can be actually reduced to a simple exchange of internal buffers which is the
+		fastest way
+	 */
+	bool ReadFromInputBufferWithIgnore(IOBuffer &src);
+
+	/*!
 		@brief Read data from buffer from a string
 		@param binary - The string that will be read
 	 */
@@ -154,7 +153,7 @@ public:
 		@param size - Size of buffer
 		@param sentAmount - Size of data sent
 	 */
-	bool WriteToTCPFd(int32_t fd, uint32_t size, int32_t &sentAmount);
+	bool WriteToTCPFd(int32_t fd, uint32_t size, int32_t &sentAmount, int &err);
 
 	/*!
 		@brief Read data from standard IO and store it.
@@ -219,6 +218,7 @@ public:
 	string ToString(uint32_t startIndex = 0, uint32_t limit = 0);
 	operator string();
 
+	static void ReleaseDoublePointer(char ***pppPointer);
 protected:
 	void Cleanup();
 	void Recycle();

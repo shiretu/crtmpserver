@@ -59,9 +59,16 @@ TCPCarrier::TCPCarrier(int32_t fd)
 	_rx = 0;
 	_tx = 0;
 	_ioAmount = 0;
+	_lastRecvError = 0;
+	_lastSendError = 0;
+
+	Variant stats;
+	GetStats(stats);
 }
 
 TCPCarrier::~TCPCarrier() {
+	Variant stats;
+	GetStats(stats);
 	CLOSE_SOCKET(_inboundFd);
 }
 
@@ -70,23 +77,18 @@ bool TCPCarrier::OnEvent(struct epoll_event &event) {
 	if ((event.events & EPOLLIN) != 0) {
 		IOBuffer *pInputBuffer = _pProtocol->GetInputBuffer();
 		o_assert(pInputBuffer != NULL);
-		if (!pInputBuffer->ReadFromTCPFd(_inboundFd, _recvBufferSize, _ioAmount)) {
-			FATAL("Unable to read data. %s:%"PRIu16" -> %s:%"PRIu16" %s",
-					STR(_farIp), _farPort,
-					STR(_nearIp), _nearPort,
-					(_pProtocol != NULL) ? STR(*_pProtocol) : ""
-					);
+		if (!pInputBuffer->ReadFromTCPFd(_inboundFd, _recvBufferSize, _ioAmount,
+				_lastRecvError)) {
+			FATAL("Unable to read data from connection: %s. Error was (%d): %s",
+					(_pProtocol != NULL) ? STR(*_pProtocol) : "", _lastRecvError,
+					strerror(_lastRecvError));
 			return false;
 		}
 		_rx += _ioAmount;
 		ADD_IN_BYTES_MANAGED(_type, _ioAmount);
-		if (_ioAmount == 0) {
-			FATAL("Connection closed");
-			return false;
-		}
-
 		if (!_pProtocol->SignalInputData(_ioAmount)) {
-			FATAL("Unable to signal data available");
+			FATAL("Unable to read data from connection: %s. Signaling upper protocols failed",
+					(_pProtocol != NULL) ? STR(*_pProtocol) : "");
 			return false;
 		}
 	}
@@ -94,12 +96,12 @@ bool TCPCarrier::OnEvent(struct epoll_event &event) {
 	//2. Write data
 	if ((event.events & EPOLLOUT) != 0) {
 		IOBuffer *pOutputBuffer = NULL;
-
 		if ((pOutputBuffer = _pProtocol->GetOutputBuffer()) != NULL) {
-			if (!pOutputBuffer->WriteToTCPFd(_inboundFd, _sendBufferSize, _ioAmount)) {
-				FATAL("Unable to send data. %s:%hu -> %s:%hu",
-						STR(_farIp), _farPort,
-						STR(_nearIp), _nearPort);
+			if (!pOutputBuffer->WriteToTCPFd(_inboundFd, _sendBufferSize, _ioAmount,
+					_lastSendError)) {
+				FATAL("Unable to write data on connection: %s. Error was (%d): %s",
+						(_pProtocol != NULL) ? STR(*_pProtocol) : "", _lastSendError,
+						strerror(_lastSendError));
 				IOHandlerManager::EnqueueForDelete(this);
 				return false;
 			}
@@ -119,12 +121,6 @@ bool TCPCarrier::OnEvent(struct epoll_event &event) {
 bool TCPCarrier::SignalOutputData() {
 	ENABLE_WRITE_DATA;
 	return true;
-}
-
-TCPCarrier::operator string() {
-	if (_pProtocol != NULL)
-		return STR(*_pProtocol);
-	return format("TCP(%d)", _inboundFd);
 }
 
 void TCPCarrier::GetStats(Variant &info, uint32_t namespaceId) {

@@ -17,10 +17,7 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include "utils/logging/fileloglocation.h"
-#include "utils/lua/luautils.h"
-#include "utils/misc/file.h"
+#include "common.h"
 
 FileLogLocation::FileLogLocation(Variant &configuration)
 : BaseLogLocation(configuration) {
@@ -63,29 +60,22 @@ bool FileLogLocation::Init() {
 	return true;
 }
 
-bool FileLogLocation::EvalLogLevel(int32_t level, string &fileName, uint32_t lineNumber,
-		string &functionName, string &message) {
+bool FileLogLocation::EvalLogLevel(int32_t level, const char *pFileName,
+		uint32_t lineNumber, const char *pFunctionName) {
 	if (!_canLog)
 		return false;
-	return BaseLogLocation::EvalLogLevel(level, fileName, lineNumber, functionName, message);
+	return BaseLogLocation::EvalLogLevel(level, pFileName, lineNumber, pFunctionName);
 }
 
-bool FileLogLocation::EvalLogLevel(int32_t level, string fileName, uint32_t lineNumber,
-		string functionName, Variant &le) {
-	if (!_canLog)
-		return false;
-	return BaseLogLocation::EvalLogLevel(level, fileName, lineNumber, functionName, le);
-}
-
-void FileLogLocation::Log(int32_t level, string fileName, uint32_t lineNumber,
-		string functionName, string message) {
+void FileLogLocation::Log(int32_t level, const char *pFileName,
+		uint32_t lineNumber, const char *pFunctionName, string &message) {
 	if (_fileIsClosed) {
 		OpenFile();
 		if (_fileIsClosed)
 			return;
 	}
 	string logEntry = format("%"PRIu64":%d:%s:%u:%s:%s",
-			(uint64_t) time(NULL), level, STR(fileName), lineNumber, STR(functionName),
+			(uint64_t) time(NULL), level, pFileName, lineNumber, pFunctionName,
 			STR(message));
 	if (_singleLine) {
 		replace(logEntry, "\r", "\\r");
@@ -101,10 +91,6 @@ void FileLogLocation::Log(int32_t level, string fileName, uint32_t lineNumber,
 	}
 }
 
-void FileLogLocation::Log(int32_t level, string fileName, uint32_t lineNumber, string functionName, Variant &le) {
-	return;
-}
-
 void FileLogLocation::SignalFork() {
 	_fileIsClosed = true;
 	_history.clear();
@@ -114,21 +100,23 @@ bool FileLogLocation::OpenFile() {
 	CloseFile();
 	double ts;
 	GETCLOCKS(ts, double);
-	ts = (ts / CLOCKS_PER_SECOND)*1000;
-	string temp = format("%s.%"PRIu64".%"PRIu64, STR(_fileName), (uint64_t) getpid(), (uint64_t) ts);
+	ts = (ts / CLOCKS_PER_SECOND) * 1000;
+	string filename = format("%s.%"PRIu64".%"PRIu64".log", STR(_fileName), (uint64_t) GetPid(), (uint64_t) ts);
 	_fileStream = new File();
-	if (!_fileStream->Initialize(temp, FILE_OPEN_MODE_TRUNCATE)) {
+	if (!_fileStream->Initialize(filename, FILE_OPEN_MODE_TRUNCATE)) {
 		return false;
 	}
-	temp = format("PID: %"PRIu64"; TIMESTAMP: %"PRIz"u%s",
-			(uint64_t) getpid(),
+	string header = format("PID: %"PRIu64"; TIMESTAMP: %"PRIz"u%s%s%s",
+			(uint64_t) GetPid(),
 			time(NULL),
+			STR(_newLineCharacters),
+			STR(Version::GetBanner()),
 			STR(_newLineCharacters));
-	if (!_fileStream->WriteString(temp)) {
+	if (!_fileStream->WriteString(header)) {
 		return false;
 	}
 	if (_fileHistorySize > 0) {
-		ADD_VECTOR_END(_history, temp);
+		ADD_VECTOR_END(_history, filename);
 		while (_history.size() > _fileHistorySize) {
 			deleteFile(_history[0]);
 			_history.erase(_history.begin());

@@ -57,9 +57,16 @@ TCPCarrier::TCPCarrier(int32_t fd)
 	_rx = 0;
 	_tx = 0;
 	_ioAmount = 0;
+	_lastRecvError = 0;
+	_lastSendError = 0;
+
+	Variant stats;
+	GetStats(stats);
 }
 
 TCPCarrier::~TCPCarrier() {
+	Variant stats;
+	GetStats(stats);
 	CLOSE_SOCKET(_inboundFd);
 }
 
@@ -70,27 +77,31 @@ bool TCPCarrier::OnEvent(struct kevent &event) {
 		{
 			IOBuffer *pInputBuffer = _pProtocol->GetInputBuffer();
 			o_assert(pInputBuffer != NULL);
-			if (!pInputBuffer->ReadFromTCPFd(event.ident, event.data, _ioAmount)) {
-				FATAL("Unable to read data. %s:%"PRIu16" -> %s:%"PRIu16" %s",
-						STR(_farIp), _farPort,
-						STR(_nearIp), _nearPort,
-						(_pProtocol != NULL) ? STR(*_pProtocol) : ""
-						);
+			if (!pInputBuffer->ReadFromTCPFd(event.ident, event.data, _ioAmount,
+					_lastRecvError)) {
+				FATAL("Unable to read data from connection: %s. Error was (%d): %s",
+						(_pProtocol != NULL) ? STR(*_pProtocol) : "", _lastRecvError,
+						strerror(_lastRecvError));
 				return false;
 			}
 			_rx += _ioAmount;
 			ADD_IN_BYTES_MANAGED(_type, _ioAmount);
-			return _pProtocol->SignalInputData(_ioAmount);
+			if (!_pProtocol->SignalInputData(_ioAmount)) {
+				FATAL("Unable to read data from connection: %s. Signaling upper protocols failed",
+						(_pProtocol != NULL) ? STR(*_pProtocol) : "");
+				return false;
+			}
+			return true;
 		}
 		case EVFILT_WRITE:
 		{
 			IOBuffer *pOutputBuffer = NULL;
-
 			if ((pOutputBuffer = _pProtocol->GetOutputBuffer()) != NULL) {
-				if (!pOutputBuffer->WriteToTCPFd(event.ident, event.data, _ioAmount)) {
-					FATAL("Unable to send data. %s:%hu -> %s:%hu",
-							STR(_farIp), _farPort,
-							STR(_nearIp), _nearPort);
+				if (!pOutputBuffer->WriteToTCPFd(event.ident, event.data,
+						_ioAmount, _lastSendError)) {
+					FATAL("Unable to write data on connection: %s. Error was (%d): %s",
+							(_pProtocol != NULL) ? STR(*_pProtocol) : "", _lastSendError,
+							strerror(_lastSendError));
 					IOHandlerManager::EnqueueForDelete(this);
 					return false;
 				}
@@ -106,7 +117,8 @@ bool TCPCarrier::OnEvent(struct kevent &event) {
 		}
 		default:
 		{
-			ASSERT("Invalid state: %hd", event.filter);
+			FATAL("Unable to read/write data from/to connection: %s. Invalid event type: %d",
+					(_pProtocol != NULL) ? STR(*_pProtocol) : "", event.filter);
 			return false;
 		}
 	}
@@ -115,12 +127,6 @@ bool TCPCarrier::OnEvent(struct kevent &event) {
 bool TCPCarrier::SignalOutputData() {
 	ENABLE_WRITE_DATA;
 	return true;
-}
-
-TCPCarrier::operator string() {
-	if (_pProtocol != NULL)
-		return STR(*_pProtocol);
-	return format("TCP(%d)", _inboundFd);
 }
 
 void TCPCarrier::GetStats(Variant &info, uint32_t namespaceId) {

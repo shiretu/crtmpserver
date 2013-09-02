@@ -1,34 +1,53 @@
 MESSAGE(STATUS "Looking for pcap")
-FIND_PATH(PCAP_INCLUDE_PATH 
+FIND_PATH(PCAP_INCLUDE_PATH
 	NAMES
-		pcap.h
+		pcap/pcap.h
 	PATHS
-		/usr/include
-		/usr/include/pcap
-		/usr/local/include
-		/usr/local/include/pcap
-		/sw/include
-		/sw/include/pcap
+		${TOOLCHAIN_HEADER_PATH}
 		/opt/local/include
-		/opt/local/include/pcap
+		/sw/include
+		/usr/include
+		/usr/local/include
+		/usr/local/ssl/include
 		NO_DEFAULT_PATH)
 
 FIND_LIBRARY(PCAP_LIBRARY_PATH
 	NAMES
 		pcap
 	PATHS
-		/usr/lib64
-		/usr/lib64/pcap
-		/usr/lib
-		/usr/lib/pcap
-		/usr/local/lib64
-		/usr/local/lib64/pcap
-		/usr/local/lib
-		/usr/local/lib64/pcap
-		/sw/lib
-		/sw/lib/pcap
+		${TOOLCHAIN_LIBRARY_PATH}
+		/opt/local/lib64
 		/opt/local/lib
+		/sw/lib64
+		/sw/lib
+		/lib64
+		/usr/lib64
+		/usr/local/lib64
+		/lib/x86_64-linux-gnu
+		/usr/lib/x86_64-linux-gnu
+		/opt/local/lib64
+		/lib
+		/usr/lib
+		/usr/local/lib
+		/lib/i386-linux-gnu
+		/usr/lib/i386-linux-gnu
+		/usr/local/ssl/lib
+		/opt/local/lib64/pcap
 		/opt/local/lib/pcap
+		/sw/lib64/pcap
+		/sw/lib/pcap
+		/lib64/pcap
+		/usr/lib64/pcap
+		/usr/local/lib64/pcap
+		/lib/x86_64-linux-gnu/pcap
+		/usr/lib/x86_64-linux-gnu/pcap
+		/opt/local/lib64/pcap
+		/lib/pcap
+		/usr/lib/pcap
+		/usr/local/lib/pcap
+		/lib/i386-linux-gnu/pcap
+		/usr/lib/i386-linux-gnu/pcap
+		/usr/local/ssl/lib/pcap
 		NO_DEFAULT_PATH)
 
 IF(PCAP_INCLUDE_PATH)

@@ -30,8 +30,17 @@ private:
 	File *_pFile;
 	uint32_t _prevTagSize;
 	uint8_t _tagHeader[11];
+	double _chunkLength;
+	bool _waitForIDR;
+	double _lastVideoDts;
+	double _lastAudioDts;
+	uint32_t _chunkCount;
+	Variant _metadata;
+	IOBuffer _buff;
 public:
 	OutFileFLV(BaseProtocol *pProtocol, string name, Variant &settings);
+	static OutFileFLV* GetInstance(BaseClientApplication *pApplication,
+			string name, Variant &settings);
 	virtual ~OutFileFLV();
 protected:
 	virtual bool FinishInitialization(
@@ -40,10 +49,15 @@ protected:
 	virtual bool PushAudioData(IOBuffer &buffer, double pts, double dts);
 	virtual bool IsCodecSupported(uint64_t codec);
 private:
+	bool WriteFLVHeader(bool hasAudio, bool hasVideo);
+	bool WriteFLVMetaData();
+	bool WriteFLVCodecAudio(AudioCodecInfoAAC *pInfoAudio);
+	bool WriteFLVCodecVideo(VideoCodecInfoH264 *pInfoVideo);
 	bool InitializeFLVFile(GenericProcessDataSetup *pGenericProcessDataSetup);
 	bool WriteMetaData(GenericProcessDataSetup *pGenericProcessDataSetup);
 	bool WriteCodecSetupBytes(GenericProcessDataSetup *pGenericProcessDataSetup);
 	void UpdateDuration();
+	bool SplitFile();
 };
 
 #endif	/* _OUTFILEFLV_H */

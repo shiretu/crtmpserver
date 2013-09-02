@@ -70,62 +70,68 @@ bool RTCPProtocol::SignalInputData(IOBuffer &buffer, sockaddr_in *pPeerAddress) 
 	//1. Parse the SR
 	uint8_t *pBuffer = GETIBPOINTER(buffer);
 	uint32_t bufferLength = GETAVAILABLEBYTESCOUNT(buffer);
-	if (bufferLength < 16)
-		return true;
-
-	uint8_t PT = pBuffer[1];
-	uint16_t len = ENTOHSP(pBuffer + 2);
-	len = (len + 1)*4;
-	if (len > bufferLength) {
-		WARN("Invalid RTCP packet length: len %hu; bufferLength: %u", len, bufferLength);
-		buffer.IgnoreAll();
-		return true;
-	}
-
-	switch (PT) {
-		case 200: //SR
-		{
-			if (len < 28) {
-				WARN("Invalid RTCP packet length: %hu", len);
-				buffer.IgnoreAll();
-				return true;
-			}
-			uint32_t ntpSec = ENTOHLP(pBuffer + 8) - 2208988800UL;
-			uint32_t ntpFrac = ENTOHLP(pBuffer + 12);
-			uint64_t ntpMicroseconds = (uint32_t) (((double) ntpFrac / (double) (0x100000000LL))*1000000.0);
-			ntpMicroseconds += ((uint64_t) ntpSec)*1000000;
-			uint32_t rtpTimestamp = ENTOHLP(pBuffer + 16);
-			if (_pConnectivity == NULL) {
-				FATAL("No connectivity, unable to send SR");
-				return false;
-			}
-			_pConnectivity->ReportSR(ntpMicroseconds, rtpTimestamp, _isAudio);
-			break;
-		}
-		default:
-		{
-			WARN("Unknown packet type: %hhu", PT);
+	while (bufferLength > 0) {
+		if (bufferLength < 4) {
 			buffer.IgnoreAll();
 			return true;
 		}
-	}
 
-	if (pBuffer[1] != 200)
-		return true;
+		uint8_t PT = pBuffer[1];
+		uint16_t len = ENTOHSP(pBuffer + 2);
+		len = (len + 1)*4;
+		if (len > bufferLength) {
+			buffer.IgnoreAll();
+			return true;
+		}
 
-	_lsr = ENTOHLP(pBuffer + 10);
-	buffer.IgnoreAll();
+		switch (PT) {
+			case 200: //SR
+			{
+				if (len < 28) {
+					buffer.IgnoreAll();
+					return true;
+				}
+				uint32_t ntpSec = ENTOHLP(pBuffer + 8) - 2208988800UL;
+				uint32_t ntpFrac = ENTOHLP(pBuffer + 12);
+				uint64_t ntpMicroseconds = (uint32_t) (((double) ntpFrac / (double) (0x100000000LL))*1000000.0);
+				ntpMicroseconds += ((uint64_t) ntpSec)*1000000;
+				uint32_t rtpTimestamp = ENTOHLP(pBuffer + 16);
+				if (_pConnectivity == NULL) {
+					FATAL("No connectivity, unable to send SR");
+					return false;
+				}
+				_pConnectivity->ReportSR(ntpMicroseconds, rtpTimestamp, _isAudio);
 
-	//2. Send the RR
-	if (_pConnectivity == NULL) {
-		FATAL("no connectivity");
-		return false;
-	}
-	if (!_pConnectivity->SendRR(_isAudio)) {
-		FATAL("Unable to send RR");
-		_pConnectivity->EnqueueForDelete();
-		_pConnectivity = NULL;
-		return false;
+				_lsr = ENTOHLP(pBuffer + 10);
+
+				if (!_pConnectivity->SendRR(_isAudio)) {
+					FATAL("Unable to send RR");
+					_pConnectivity->EnqueueForDelete();
+					_pConnectivity = NULL;
+					return false;
+				}
+				break;
+			}
+			case 203: //BYE
+			{
+				if (_pConnectivity == NULL) {
+					FATAL("No connectivity, BYE packet ignored");
+					return false;
+				}
+				_pConnectivity->EnqueueForDelete();
+				_pConnectivity = NULL;
+				break;
+			}
+			default:
+			{
+				break;
+			}
+		}
+
+		buffer.Ignore(len);
+
+		pBuffer = GETIBPOINTER(buffer);
+		bufferLength = GETAVAILABLEBYTESCOUNT(buffer);
 	}
 
 	return true;

@@ -71,6 +71,9 @@ public:
 	//init
 	bool Initialize(string path, uint32_t windowSize);
 
+	//close
+	void Close();
+
 	//info
 	uint64_t Size();
 	uint64_t Cursor();

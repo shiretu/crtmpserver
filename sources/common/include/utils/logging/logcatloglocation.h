@@ -31,10 +31,8 @@ public:
 	LogCatLogLocation(Variant &configuration);
 	virtual ~LogCatLogLocation();
 
-	virtual void Log(int32_t level, string fileName, uint32_t lineNumber,
-			string functionName, string message);
-	virtual void Log(int32_t level, string fileName, uint32_t lineNumber,
-			string functionName, Variant &le);
+	virtual void Log(int32_t level, const char *pFileName, uint32_t lineNumber,
+			const char *pFunctionName, string &message);
 	virtual void SignalFork();
 
 };

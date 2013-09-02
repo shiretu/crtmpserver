@@ -99,9 +99,15 @@ BaseInFileStream::BaseInFileStream(BaseProtocol *pProtocol, uint64_t type,
 	_tsChunkStart = 0;
 	_tsPts = 0;
 	_tsDts = 0;
+	_servedBytesCount = 0;
 }
 
 BaseInFileStream::~BaseInFileStream() {
+	if ((GetProtocol() != NULL)&&(GetProtocol()->GetLastKnownApplication() != NULL))
+		GetProtocol()->GetLastKnownApplication()->GetStreamMetadataResolver()->UpdateStats(
+			_metadata.mediaFullPath(),
+			_metadata.statsFileFullPath(),
+			STATS_OPERATION_INCREMENT_SERVED_BYTES_COUNT, _servedBytesCount);
 	if (_pTimer != NULL) {
 		_pTimer->ResetStream();
 		_pTimer->EnqueueForDelete();
@@ -154,8 +160,9 @@ StreamCapabilities * BaseInFileStream::GetCapabilities() {
 
 bool BaseInFileStream::Initialize(Metadata &metadata, TimerType timerType,
 		uint32_t granularity) {
+	_metadata = metadata;
 	//1. Check to see if we have an universal seeking file
-	string seekFilePath = metadata.seekFileFullPath();
+	string seekFilePath = _metadata.seekFileFullPath();
 	if (!fileExists(seekFilePath)) {
 		FATAL("Seek file not found");
 		return false;
@@ -240,7 +247,12 @@ bool BaseInFileStream::Initialize(Metadata &metadata, TimerType timerType,
 	_timeToIndexOffset = _framesBaseOffset + _totalFrames * sizeof (MediaFrame);
 
 	//5. Set the client side buffer length
-	_clientSideBufferLength = metadata.storage().clientSideBuffer();
+	if ((GetProtocol() != NULL)&&(GetProtocol()->GetApplication() != NULL))
+		GetProtocol()->GetApplication()->GetStreamMetadataResolver()->UpdateStats(
+			_metadata.mediaFullPath(),
+			_metadata.statsFileFullPath(),
+			STATS_OPERATION_INCREMENT_OPEN_COUNT, 1);
+	_clientSideBufferLength = _metadata.storage().clientSideBuffer();
 
 	//6. Create the timer
 	return InitializeTimer(_clientSideBufferLength, timerType, granularity);
@@ -293,6 +305,10 @@ bool BaseInFileStream::InitializeTimer(int32_t clientSideBufferLength, TimerType
 	}
 
 	return true;
+}
+
+double BaseInFileStream::GetPosition() {
+	return _currentFrame.dts >= 0 ? _currentFrame.dts : 0;
 }
 
 bool BaseInFileStream::SignalPlay(double &dts, double &length) {
@@ -607,18 +623,20 @@ bool BaseInFileStream::FeedRTMP(bool &dataSent) {
 
 	//2. Determine if the client has enough data on the buffer and continue
 	//or stay put
-	if (_highGranularityTimers) {
-		double now;
-		GETCLOCKS(now, double);
-		double elapsedTime = (now - _startFeedingTime) / (double) CLOCKS_PER_SECOND * 1000.0;
-		if ((_totalSentTime - elapsedTime) >= (_clientSideBufferLength * 1000.0)) {
-			return true;
-		}
-	} else {
-		int32_t elapsedTime = (int32_t) (time(NULL) - (time_t) _startFeedingTime);
-		int32_t totalSentTime = (int32_t) (_totalSentTime / 1000);
-		if ((totalSentTime - elapsedTime) >= ((int32_t) _clientSideBufferLength)) {
-			return true;
+	if (_clientSideBufferLength != 0xffffffff) {
+		if (_highGranularityTimers) {
+			double now;
+			GETCLOCKS(now, double);
+			double elapsedTime = (now - _startFeedingTime) / (double) CLOCKS_PER_SECOND * 1000.0;
+			if ((_totalSentTime - elapsedTime) >= (_clientSideBufferLength * 1000.0)) {
+				return true;
+			}
+		} else {
+			int32_t elapsedTime = (int32_t) (time(NULL) - (time_t) _startFeedingTime);
+			int32_t totalSentTime = (int32_t) (_totalSentTime / 1000);
+			if ((totalSentTime - elapsedTime) >= ((int32_t) _clientSideBufferLength)) {
+				return true;
+			}
 		}
 	}
 
@@ -691,6 +709,8 @@ bool BaseInFileStream::FeedRTMP(bool &dataSent) {
 		FATAL("Unable to feed audio data");
 		return false;
 	}
+
+	_servedBytesCount += GETAVAILABLEBYTESCOUNT(buffer);
 
 	//12. Done. We either feed again if frame length was 0
 	//or just return true
@@ -803,6 +823,7 @@ bool BaseInFileStream::FeedTS(bool &dataSent) {
 			FATAL("Unable to feed data");
 			return false;
 		}
+		_servedBytesCount += size;
 
 		_videoBuffer.Ignore(size);
 

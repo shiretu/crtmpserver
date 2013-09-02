@@ -40,6 +40,7 @@ public:
 	virtual bool AllowNearProtocol(uint64_t type);
 	virtual bool SignalInputData(int32_t recvAmount);
 	virtual bool SignalInputData(IOBuffer &buffer);
+	virtual void GetStats(Variant &info, uint32_t namespaceId = 0);
 private:
 	bool InitializeStream(string streamName);
 	string ComputeStreamName(string suggestion);

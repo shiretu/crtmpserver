@@ -54,7 +54,6 @@ public:
 	Variant & GetParameters();
 	BaseClientApplication *GetApplication();
 	vector<uint64_t> &GetProtocolChain();
-	virtual operator string();
 	virtual void GetStats(Variant &info, uint32_t namespaceId = 0);
 	bool Enable();
 	void Enable(bool enabled);

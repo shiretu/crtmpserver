@@ -34,6 +34,7 @@ class InNetRTPStream;
 class OutboundConnectivity;
 class InboundConnectivity;
 class BaseOutStream;
+class PassThroughProtocol;
 struct RTPClient;
 
 //#define RTSP_DUMP_TRAFFIC
@@ -53,7 +54,6 @@ private:
 	};
 #ifdef RTSP_DUMP_TRAFFIC
 	string _debugInputData;
-	string _debugOutputData;
 #endif /* RTSP_DUMP_TRAFFIC */
 protected:
 	uint32_t _state;
@@ -94,6 +94,11 @@ protected:
 	uint32_t _maxBufferSize;
 
 	uint32_t _clientSideBuffer;
+	bool _isHTTPTunneled;
+	string _xSessionCookie;
+	string _httpTunnelUri;
+	string _httpTunnelHostPort;
+	uint32_t _passThroughProtocolId;
 public:
 	RTSPProtocol();
 	virtual ~RTSPProtocol();
@@ -109,12 +114,16 @@ public:
 	virtual void GetStats(Variant &info, uint32_t namespaceId = 0);
 	virtual void EnqueueForDelete();
 
+	void IsHTTPTunneled(bool value);
+	bool IsHTTPTunneled();
+	bool OpenHTTPTunnel();
 	string GetSessionId();
 	string GenerateSessionId();
 	bool SetSessionId(string sessionId);
 
-	bool SetAuthentication(string wwwAuthenticateHeader, string userName,
-			string password);
+	bool SetAuthentication(string authenticateHeader, string userName,
+			string password, bool isRtsp);
+	void EnableSendRenewStream();
 	bool EnableKeepAlive(uint32_t period, string keepAliveURI);
 	void EnableTearDown();
 	void SetKeepAliveMethod(string keepAliveMethod);
@@ -154,8 +163,12 @@ public:
 			bool isAudio, bool isData, bool allowDrop);
 
 	void SetOutStream(BaseOutStream *pOutStream);
+	static bool SignalProtocolCreated(BaseProtocol *pProtocol,
+			Variant &parameters);
 private:
-	bool SendMessage(Variant &headers, string &content);
+	bool SignalPassThroughProtocolCreated(PassThroughProtocol *pProtocol,
+			Variant &parameters);
+	bool SendMessage(string &firstLine, Variant &headers, string &content);
 	bool ParseHeaders(IOBuffer &buffer);
 	bool ParseInterleavedHeaders(IOBuffer &buffer);
 	bool ParseNormalHeaders(IOBuffer &buffer);

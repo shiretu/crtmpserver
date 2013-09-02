@@ -34,6 +34,10 @@
 #include "protocols/rtp/connectivity/inboundconnectivity.h"
 #include "protocols/protocolmanager.h"
 #include "protocols/http/httpauthhelper.h"
+#include "protocols/rtmp/basertmpappprotocolhandler.h"
+#include "protocols/rtmp/streaming/infilertmpstream.h"
+#include "mediaformats/readers/streammetadataresolver.h"
+#include "protocols/passthrough/passthroughprotocol.h"
 
 #define RTSP_STATE_HEADERS 0
 #define RTSP_STATE_PAYLOAD 1
@@ -83,6 +87,8 @@ RTSPProtocol::RTSPProtocol()
 	_keepAliveMethod = RTSP_METHOD_OPTIONS;
 	_maxBufferSize = 256 * 1024;
 	_clientSideBuffer = 2;
+	_isHTTPTunneled = false;
+	_passThroughProtocolId = 0;
 }
 
 RTSPProtocol::~RTSPProtocol() {
@@ -95,6 +101,9 @@ RTSPProtocol::~RTSPProtocol() {
 		delete _pOutStream;
 		_pOutStream = NULL;
 	}
+	BaseProtocol *pProtocol = ProtocolManager::GetProtocol(_passThroughProtocolId);
+	if (pProtocol != NULL)
+		pProtocol->GracefullyEnqueueForDelete();
 }
 
 IOBuffer * RTSPProtocol::GetOutputBuffer() {
@@ -167,6 +176,49 @@ void RTSPProtocol::EnqueueForDelete() {
 	GracefullyEnqueueForDelete();
 }
 
+void RTSPProtocol::IsHTTPTunneled(bool value) {
+	_isHTTPTunneled = value;
+}
+
+bool RTSPProtocol::IsHTTPTunneled() {
+	return _isHTTPTunneled;
+}
+
+bool RTSPProtocol::OpenHTTPTunnel() {
+	Variant &params = GetCustomParameters();
+	if (!params.HasKeyChain(V_STRING, true, 2, "uri", "fullUri")) {
+		FATAL("URI not found");
+		return false;
+	}
+	_httpTunnelHostPort = format("%s:%"PRIu16, STR(params["uri"]["host"]), (uint16_t) params["uri"]["port"]);
+	_httpTunnelUri = format("http://%s%s",
+			STR(_httpTunnelHostPort),
+			STR(params["uri"]["fullDocumentPathWithParameters"]));
+	_xSessionCookie = generateRandomString(22);
+
+	PushRequestFirstLine(HTTP_METHOD_GET, _httpTunnelUri, HTTP_VERSION_1_0);
+	PushRequestHeader(RTSP_HEADERS_ACCEPT, "application/x-rtsp-tunnelled");
+	PushRequestHeader(HTTP_HEADERS_HOST, _httpTunnelHostPort);
+	PushRequestHeader("Pragma", "no-cache");
+	PushRequestHeader(HTTP_HEADERS_CACHE_CONTROL, HTTP_HEADERS_CACHE_CONTROL_NO_CACHE);
+	Variant &auth = _authentication["rtsp"];
+	if (auth == V_MAP) {
+		if (!HTTPAuthHelper::GetAuthorizationHeader(
+				(string) auth["authenticateHeader"],
+				(string) auth["userName"],
+				(string) auth["password"],
+				_httpTunnelUri,
+				HTTP_METHOD_GET,
+				auth["temp"])) {
+			FATAL("Unable to create authentication header");
+			return false;
+		}
+
+		PushRequestHeader(HTTP_HEADERS_AUTORIZATION, auth["temp"]["authorizationHeader"]["raw"]);
+	}
+	return SendRequestMessage();
+}
+
 string RTSPProtocol::GetSessionId() {
 	return _sessionId;
 }
@@ -189,19 +241,20 @@ bool RTSPProtocol::SetSessionId(string sessionId) {
 	return true;
 }
 
-bool RTSPProtocol::SetAuthentication(string wwwAuthenticateHeader, string userName,
-		string password) {
+bool RTSPProtocol::SetAuthentication(string authenticateHeader, string userName,
+		string password, bool isRtsp) {
+	Variant &auth = isRtsp ? _authentication["rtsp"] : _authentication["proxy"];
 	//1. Setup the authentication
-	if (_authentication != V_NULL) {
+	if (auth != V_NULL) {
 		FATAL("Authentication was setup but it failed");
 		return false;
 	}
-	_authentication["userName"] = userName;
-	_authentication["password"] = password;
-	_authentication["lastWwwAuthenticateHeader"] = wwwAuthenticateHeader;
+	auth["userName"] = userName;
+	auth["password"] = password;
+	auth["authenticateHeader"] = authenticateHeader;
 
 	//2. re-do the request
-	return SendRequestMessage();
+	return true;
 }
 
 bool RTSPProtocol::EnableKeepAlive(uint32_t period, string keepAliveURI) {
@@ -311,38 +364,43 @@ void RTSPProtocol::PushRequestContent(string outboundContent, bool append) {
 }
 
 bool RTSPProtocol::SendRequestMessage() {
-	//1. Put the first line
-	string firstLine = format("%s %s %s\r\n",
-			STR(_requestHeaders[RTSP_FIRST_LINE][RTSP_METHOD]),
-			STR(_requestHeaders[RTSP_FIRST_LINE][RTSP_URL]),
-			STR(_requestHeaders[RTSP_FIRST_LINE][RTSP_VERSION]));
-#ifdef RTSP_DUMP_TRAFFIC
-	_debugOutputData = firstLine;
-#endif /* RTSP_DUMP_TRAFFIC */
-	_outputBuffer.ReadFromString(firstLine);
+	bool isHttpRequest = (_requestHeaders[RTSP_FIRST_LINE][RTSP_METHOD] == HTTP_METHOD_GET)
+			|| (_requestHeaders[RTSP_FIRST_LINE][RTSP_METHOD] == HTTP_METHOD_POST);
 
 	//2. Put our request sequence in place
-	_requestHeaders[RTSP_HEADERS][RTSP_HEADERS_CSEQ] = format("%u", ++_requestSequence);
-
-	//3. Put authentication if necessary
-	if (_authentication == V_MAP) {
-		if (!HTTPAuthHelper::GetAuthorizationHeader(
-				(string) _authentication["lastWwwAuthenticateHeader"],
-				(string) _authentication["userName"],
-				(string) _authentication["password"],
-				(string) _requestHeaders[RTSP_FIRST_LINE][RTSP_URL],
-				(string) _requestHeaders[RTSP_FIRST_LINE][RTSP_METHOD],
-				_authentication["temp"])) {
-			FATAL("Unable to create authentication header");
+	if (isHttpRequest) {
+		_requestHeaders[RTSP_HEADERS]["x-sessioncookie"] = _xSessionCookie;
+		_pendingRequestHeaders[0xffffffff] = _requestHeaders;
+		_pendingRequestContent[0xffffffff] = _requestContent;
+	} else {
+		if (_requestSequence == 0xffffffff) {
+			FATAL("Maximum number of requests reached");
 			return false;
 		}
+		_requestHeaders[RTSP_HEADERS][RTSP_HEADERS_CSEQ] = format("%"PRIu32, ++_requestSequence);
 
-		_requestHeaders[RTSP_HEADERS][HTTP_HEADERS_AUTORIZATION] =
-				_authentication["temp"]["authorizationHeader"]["raw"];
+		//3. Put authentication if necessary
+		Variant &auth = _authentication["rtsp"];
+		if (auth == V_MAP) {
+			if (!HTTPAuthHelper::GetAuthorizationHeader(
+					(string) auth["authenticateHeader"],
+					(string) auth["userName"],
+					(string) auth["password"],
+					(string) _requestHeaders[RTSP_FIRST_LINE][RTSP_URL],
+					(string) _requestHeaders[RTSP_FIRST_LINE][RTSP_METHOD],
+					auth["temp"])) {
+				FATAL("Unable to create authentication header");
+				return false;
+			}
+
+			_requestHeaders[RTSP_HEADERS][HTTP_HEADERS_AUTORIZATION] =
+					auth["temp"]["authorizationHeader"]["raw"];
+		}
+
+		_pendingRequestHeaders[_requestSequence] = _requestHeaders;
+		_pendingRequestContent[_requestSequence] = _requestContent;
 	}
 
-	_pendingRequestHeaders[_requestSequence] = _requestHeaders;
-	_pendingRequestContent[_requestSequence] = _requestContent;
 	if (_pendingRequestHeaders.size() > 10 || _pendingRequestContent.size() > 10) {
 		FATAL("Requests backlog count too high");
 		return false;
@@ -360,8 +418,13 @@ bool RTSPProtocol::SendRequestMessage() {
 	_requestHeaders[RTSP_HEADERS][RTSP_HEADERS_X_POWERED_BY] = RTSP_HEADERS_X_POWERED_BY_US;
 	_requestHeaders[RTSP_HEADERS].RemoveKey(RTSP_HEADERS_SERVER, false);
 
+	string firstLine =
+			(string) _requestHeaders[RTSP_FIRST_LINE][RTSP_METHOD]
+			+ " " + (string) _requestHeaders[RTSP_FIRST_LINE][RTSP_URL]
+			+ " " + (string) _requestHeaders[RTSP_FIRST_LINE][RTSP_VERSION];
+
 	//3. send the mesage
-	return SendMessage(_requestHeaders, _requestContent);
+	return SendMessage(firstLine, _requestHeaders, _requestContent);
 }
 
 uint32_t RTSPProtocol::LastRequestSequence() {
@@ -406,16 +469,6 @@ void RTSPProtocol::PushResponseContent(string outboundContent, bool append) {
 }
 
 bool RTSPProtocol::SendResponseMessage() {
-	string firstLine = format("%s %u %s\r\n",
-			STR(_responseHeaders[RTSP_FIRST_LINE][RTSP_VERSION]),
-			(uint32_t) _responseHeaders[RTSP_FIRST_LINE][RTSP_STATUS_CODE],
-			STR(_responseHeaders[RTSP_FIRST_LINE][RTSP_STATUS_CODE_REASON]));
-#ifdef RTSP_DUMP_TRAFFIC
-	_debugOutputData = firstLine;
-#endif /* RTSP_DUMP_TRAFFIC */
-	//1. Put the first line
-	_outputBuffer.ReadFromString(firstLine);
-
 	string date;
 	char tempBuff[128] = {0};
 	struct tm tm;
@@ -432,7 +485,11 @@ bool RTSPProtocol::SendResponseMessage() {
 	_responseHeaders[RTSP_HEADERS].RemoveKey(RTSP_HEADERS_X_POWERED_BY, false);
 
 	//2. send the mesage
-	return SendMessage(_responseHeaders, _responseContent);
+	string firstLine = format("%s %u %s",
+			STR(_responseHeaders[RTSP_FIRST_LINE][RTSP_VERSION]),
+			(uint32_t) _responseHeaders[RTSP_FIRST_LINE][RTSP_STATUS_CODE],
+			STR(_responseHeaders[RTSP_FIRST_LINE][RTSP_STATUS_CODE_REASON]));
+	return SendMessage(firstLine, _responseHeaders, _responseContent);
 }
 
 OutboundConnectivity * RTSPProtocol::GetOutboundConnectivity(
@@ -549,40 +606,147 @@ void RTSPProtocol::SetOutStream(BaseOutStream *pOutStream) {
 	_pOutStream = pOutStream;
 }
 
-bool RTSPProtocol::SendMessage(Variant &headers, string &content) {
+bool RTSPProtocol::SignalProtocolCreated(BaseProtocol *pProtocol,
+		Variant &parameters) {
+	RTSPProtocol *pRTSPProtocol =
+			(RTSPProtocol *) ProtocolManager::GetProtocol(
+			(uint32_t) parameters["rtspProtocolId"]);
+	if (pRTSPProtocol == NULL) {
+		FATAL("RTSP protocol expired");
+		if (pProtocol != NULL)
+			pProtocol->EnqueueForDelete();
+		return false;
+	}
+
+	return pRTSPProtocol->SignalPassThroughProtocolCreated((PassThroughProtocol *) pProtocol, parameters);
+}
+
+bool RTSPProtocol::SignalPassThroughProtocolCreated(PassThroughProtocol *pProtocol,
+		Variant &parameters) {
+	if (pProtocol == NULL) {
+		FATAL("Connect failed");
+		EnqueueForDelete();
+		return false;
+	}
+
+	_passThroughProtocolId = pProtocol->GetId();
+
+	string payload = parameters["payload"];
+
+	if (!pProtocol->SendTCPData(payload)) {
+		FATAL("Unable to send");
+		pProtocol->EnqueueForDelete();
+		EnqueueForDelete();
+		return false;
+	}
+
+	return true;
+}
+
+bool RTSPProtocol::SendMessage(string &firstLine, Variant &headers, string &content) {
+	bool isHttpRequest = (headers[RTSP_FIRST_LINE][RTSP_METHOD] == HTTP_METHOD_GET)
+			|| (headers[RTSP_FIRST_LINE][RTSP_METHOD] == HTTP_METHOD_POST);
+
+	//1. Put the first line
+	string rawRequest = firstLine + "\r\n";
+
 	//2. Add the content length if required
 	if (content.size() > 0) {
 		headers[RTSP_HEADERS][RTSP_HEADERS_CONTENT_LENGTH] = format("%"PRIz"u", content.size());
 	}
 
 	//3. Add the session id if necessary
-	if (_sessionId != "") {
-		headers[RTSP_HEADERS][RTSP_HEADERS_SESSION] = _sessionId;
+	if (!isHttpRequest) {
+		if (_sessionId != "") {
+			headers[RTSP_HEADERS][RTSP_HEADERS_SESSION] = _sessionId;
+		}
 	}
 
 	//3. Write the headers
 
 	FOR_MAP(headers[RTSP_HEADERS], string, Variant, i) {
-		_outputBuffer.ReadFromString(MAP_KEY(i) + ": " + (string) MAP_VAL(i) + "\r\n");
-#ifdef RTSP_DUMP_TRAFFIC
-		_debugOutputData += MAP_KEY(i) + ": " + (string) MAP_VAL(i) + "\r\n";
-#endif /* RTSP_DUMP_TRAFFIC */
+		rawRequest += MAP_KEY(i) + ": " + (string) MAP_VAL(i) + "\r\n";
 	}
-	_outputBuffer.ReadFromString("\r\n");
-#ifdef RTSP_DUMP_TRAFFIC
-	_debugOutputData += "\r\n";
-#endif /* RTSP_DUMP_TRAFFIC */
+	rawRequest += "\r\n";
 
 	//4. Write the content
-	_outputBuffer.ReadFromString(content);
-#ifdef RTSP_DUMP_TRAFFIC
-	_debugOutputData += content;
-	FINEST("OUTPUT\n`%s`", STR(_debugOutputData));
-	_debugOutputData = "";
-#endif /* RTSP_DUMP_TRAFFIC */
+	rawRequest += content;
 
-	//5. Enqueue for outbound
-	return EnqueueForOutbound();
+	if ((isHttpRequest) || (!_isHTTPTunneled)) {
+#ifdef RTSP_DUMP_TRAFFIC
+		FINEST("OUTPUT\n`%s`", STR(rawRequest));
+#endif /* RTSP_DUMP_TRAFFIC */
+		_outputBuffer.ReadFromString(rawRequest);
+
+		//5. Enqueue for outbound
+		return EnqueueForOutbound();
+	} else {
+		PassThroughProtocol *pProtocol =
+				(PassThroughProtocol *) ProtocolManager::GetProtocol(_passThroughProtocolId);
+		if (pProtocol == NULL) {
+			string headers = HTTP_METHOD_POST" " + _httpTunnelUri + " "HTTP_VERSION_1_0"\r\n";
+			headers += RTSP_HEADERS_X_POWERED_BY": "RTSP_HEADERS_X_POWERED_BY_US"\r\n";
+			headers += "x-sessioncookie: " + _xSessionCookie + "\r\n";
+			headers += "Content-Type: application/x-rtsp-tunnelled\r\n";
+			headers += "Pragma: no-cache\r\n";
+			headers += "Cache-Control: no-cache\r\n";
+			headers += "Host: " + _httpTunnelHostPort + "\r\n";
+			Variant &auth = _authentication["rtsp"];
+			if (auth == V_MAP) {
+				if (!HTTPAuthHelper::GetAuthorizationHeader(
+						(string) auth["authenticateHeader"],
+						(string) auth["userName"],
+						(string) auth["password"],
+						_httpTunnelUri,
+						HTTP_METHOD_POST,
+						auth["temp"])) {
+					FATAL("Unable to create authentication header");
+					return false;
+				}
+				headers += HTTP_HEADERS_AUTORIZATION": " + (string) auth["temp"]["authorizationHeader"]["raw"] + "\r\n";
+			}
+			headers += "Content-Length: 536870912\r\n\r\n";
+#ifdef RTSP_DUMP_TRAFFIC
+			FINEST("OUTPUT\n`%s`", STR(headers + "b64(" + rawRequest + ")"));
+#endif /* RTSP_DUMP_TRAFFIC */
+			rawRequest = headers + b64(rawRequest);
+
+			vector<uint64_t> chain = ProtocolFactoryManager::ResolveProtocolChain(
+					CONF_PROTOCOL_TCP_PASSTHROUGH);
+			if (chain.size() == 0) {
+				FATAL("Unable to resolve protocol chain");
+				return false;
+			}
+
+			string ip = GetCustomParameters()["customParameters"]["httpProxy"]["ip"];
+			uint16_t port = (uint16_t) GetCustomParameters()["customParameters"]["httpProxy"]["port"];
+
+			Variant customParameters;
+			customParameters["rtspProtocolId"] = GetId();
+			customParameters["payload"] = rawRequest;
+
+			if (!TCPConnector<RTSPProtocol>::Connect(ip, port, chain,
+					customParameters)) {
+				FATAL("Unable to connect to %s:%"PRIu16, STR(ip), port);
+				return false;
+			}
+
+			return true;
+		} else {
+#ifdef RTSP_DUMP_TRAFFIC
+			FINEST("OUTPUT\n`%s`", STR("b64(" + rawRequest + ")"));
+#endif /* RTSP_DUMP_TRAFFIC */
+			rawRequest = b64(rawRequest);
+			if (!pProtocol->SendTCPData(rawRequest)) {
+				FATAL("Unable to send data");
+				pProtocol->EnqueueForDelete();
+				EnqueueForDelete();
+				return false;
+			}
+
+			return true;
+		}
+	}
 }
 
 bool RTSPProtocol::ParseHeaders(IOBuffer& buffer) {
@@ -768,6 +932,26 @@ bool RTSPProtocol::ParseFirstLine(string &line) {
 
 		return true;
 
+	} else if (parts[0] == HTTP_VERSION_1_0) {
+		if (!isNumeric(parts[1])) {
+			FATAL("Invalid HTTP code: %s", STR(parts[1]));
+			return false;
+		}
+
+		string reason = "";
+		for (uint32_t i = 2; i < parts.size(); i++) {
+			reason += parts[i];
+			if (i != parts.size() - 1)
+				reason += " ";
+		}
+
+		_inboundHeaders[HTTP_FIRST_LINE][HTTP_VERSION] = parts[0];
+		_inboundHeaders[HTTP_FIRST_LINE][HTTP_STATUS_CODE] = (uint32_t) atoi(STR(parts[1]));
+		_inboundHeaders[HTTP_FIRST_LINE][HTTP_STATUS_CODE_REASON] = reason;
+		_inboundHeaders["isRequest"] = false;
+		_inboundHeaders["isHttp"] = (bool)true;
+		return true;
+
 	} else if ((parts[0] == RTSP_METHOD_DESCRIBE)
 			|| (parts[0] == RTSP_METHOD_OPTIONS)
 			|| (parts[0] == RTSP_METHOD_PAUSE)
@@ -810,7 +994,7 @@ bool RTSPProtocol::HandleRTSPMessage(IOBuffer &buffer) {
 	}
 	//1. Get the content
 	if (_contentLength > 0) {
-		if (_contentLength > 1024 * 1024) {
+		if (_contentLength > 1024 * 1024 * 1024) {
 			FATAL("Bogus content length: %u", _contentLength);
 			return false;
 		}
@@ -870,7 +1054,11 @@ bool RTSPProtocol::HandleRTSPMessage(IOBuffer &buffer) {
 		WARN("INPUT\n`%s`", STR(_debugInputData));
 		_debugInputData = "";
 #endif /* RTSP_DUMP_TRAFFIC */
-		result = _pProtocolHandler->HandleRTSPResponse(this, _inboundHeaders, _inboundContent);
+		if ((bool)_inboundHeaders["isHttp"]) {
+			result = _pProtocolHandler->HandleHTTPResponse(this, _inboundHeaders, _inboundContent);
+		} else {
+			result = _pProtocolHandler->HandleRTSPResponse(this, _inboundHeaders, _inboundContent);
+		}
 		_state = RTSP_STATE_HEADERS;
 	}
 

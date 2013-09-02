@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -17,28 +17,23 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifdef NET_SELECT
-#ifndef _INBOUNDNAMEDPIPECARRIER_H
-#define	_INBOUNDNAMEDPIPECARRIER_H
+#ifndef _PASSTHROUGHAPPPROTOCOLHANDLER_H
+#define	_PASSTHROUGHAPPPROTOCOLHANDLER_H
 
-#include "netio/select/iohandler.h"
+#include "application/baseappprotocolhandler.h"
 
-class InboundNamedPipeCarrier
-: public IOHandler {
-private:
-	string _path;
+#define SCHEME_MPEGTSUDP "mpegtsudp"
+#define SCHEME_MPEGTSTCP "mpegtstcp"
+#define SCHEME_DEEP_MPEGTSUDP "dmpegtsudp"
+#define SCHEME_DEEP_MPEGTSTCP "dmpegtstcp"
+
+class DLLEXP PassThroughAppProtocolHandler
+: public BaseAppProtocolHandler {
 public:
-	InboundNamedPipeCarrier(int32_t fd, string path);
-	virtual ~InboundNamedPipeCarrier();
+	PassThroughAppProtocolHandler(Variant &configuration);
+	virtual ~PassThroughAppProtocolHandler();
 
-	static InboundNamedPipeCarrier *Create(string path, uint16_t mode);
-
-	virtual bool SignalOutputData();
-	virtual bool OnEvent(select_event &event);
-	virtual operator string();
-	virtual void GetStats(Variant &info, uint32_t namespaceId = 0);
+	virtual void RegisterProtocol(BaseProtocol *pProtocol);
+	virtual void UnRegisterProtocol(BaseProtocol *pProtocol);
 };
-
-#endif	/* _INBOUNDNAMEDPIPECARRIER_H */
-#endif /* NET_SELECT */
-
+#endif	/* _PASSTHROUGHAPPPROTOCOLHANDLER_H */

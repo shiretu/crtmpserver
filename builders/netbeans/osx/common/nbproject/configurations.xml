@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configurationDescriptor version="88">
+<configurationDescriptor version="89">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
     <logicalFolder name="include" displayName="include" projectFiles="true">
       <logicalFolder name="platform" displayName="platform" projectFiles="true">
@@ -8,8 +8,6 @@
           <itemPath>../../../../sources/common/include/platform/android/max.h</itemPath>
         </logicalFolder>
         <logicalFolder name="dfreebsd" displayName="dfreebsd" projectFiles="true">
-          <itemPath>../../../../sources/common/include/platform/dfreebsd/dfreebsdplatform.h</itemPath>
-          <itemPath>../../../../sources/common/include/platform/dfreebsd/max.h</itemPath>
         </logicalFolder>
         <logicalFolder name="endianess" displayName="endianess" projectFiles="true">
           <itemPath>../../../../sources/common/include/platform/endianess/big_endian_byte_aligned.h</itemPath>
@@ -27,8 +25,6 @@
           <itemPath>../../../../sources/common/include/platform/linux/max.h</itemPath>
         </logicalFolder>
         <logicalFolder name="openbsd" displayName="openbsd" projectFiles="true">
-          <itemPath>../../../../sources/common/include/platform/openbsd/max.h</itemPath>
-          <itemPath>../../../../sources/common/include/platform/openbsd/openbsdplatform.h</itemPath>
         </logicalFolder>
         <logicalFolder name="osx" displayName="osx" projectFiles="true">
           <itemPath>../../../../sources/common/include/platform/osx/osxplatform.h</itemPath>
@@ -69,6 +65,7 @@
           <itemPath>../../../../sources/common/include/utils/misc/crypto.h</itemPath>
           <itemPath>../../../../sources/common/include/utils/misc/dhgroups.h</itemPath>
           <itemPath>../../../../sources/common/include/utils/misc/file.h</itemPath>
+          <itemPath>../../../../sources/common/include/utils/misc/format.h</itemPath>
           <itemPath>../../../../sources/common/include/utils/misc/linkedlist.h</itemPath>
           <itemPath>../../../../sources/common/include/utils/misc/misc.h</itemPath>
           <itemPath>../../../../sources/common/include/utils/misc/mmapfile.h</itemPath>
@@ -90,7 +87,6 @@
           <itemPath>../../../../sources/common/src/platform/android/timegm.cpp</itemPath>
         </logicalFolder>
         <logicalFolder name="dfreebsd" displayName="dfreebsd" projectFiles="true">
-          <itemPath>../../../../sources/common/src/platform/dfreebsd/dfreebsdplatform.cpp</itemPath>
         </logicalFolder>
         <logicalFolder name="freebsd" displayName="freebsd" projectFiles="true">
           <itemPath>../../../../sources/common/src/platform/freebsd/freebsdplatform.cpp</itemPath>
@@ -99,7 +95,6 @@
           <itemPath>../../../../sources/common/src/platform/linux/linuxplatform.cpp</itemPath>
         </logicalFolder>
         <logicalFolder name="openbsd" displayName="openbsd" projectFiles="true">
-          <itemPath>../../../../sources/common/src/platform/openbsd/openbsdplatform.cpp</itemPath>
         </logicalFolder>
         <logicalFolder name="osx" displayName="osx" projectFiles="true">
           <itemPath>../../../../sources/common/src/platform/osx/osxplatform.cpp</itemPath>
@@ -138,6 +133,7 @@
         <logicalFolder name="misc" displayName="misc" projectFiles="true">
           <itemPath>../../../../sources/common/src/utils/misc/crypto.cpp</itemPath>
           <itemPath>../../../../sources/common/src/utils/misc/file.cpp</itemPath>
+          <itemPath>../../../../sources/common/src/utils/misc/format.cpp</itemPath>
           <itemPath>../../../../sources/common/src/utils/misc/mmapfile.cpp</itemPath>
           <itemPath>../../../../sources/common/src/utils/misc/timersmanager.cpp</itemPath>
           <itemPath>../../../../sources/common/src/utils/misc/uri.cpp</itemPath>
@@ -154,6 +150,7 @@
   <sourceRootList>
     <Elem>../../../../sources/common/include</Elem>
     <Elem>../../../../sources/common/src</Elem>
+    <Elem>../../../cmake</Elem>
   </sourceRootList>
   <projectmakefile>Makefile.nb</projectmakefile>
   <confs>
@@ -161,6 +158,8 @@
       <toolsSet>
         <remote-sources-mode>LOCAL_SOURCES</remote-sources-mode>
         <compilerSet>GNU|GNU</compilerSet>
+        <dependencyChecking>true</dependencyChecking>
+        <rebuildPropChanged>false</rebuildPropChanged>
       </toolsSet>
       <compileType>
         <ccTool>
@@ -201,16 +200,6 @@
             flavor2="0">
       </item>
       <item path="../../../../sources/common/include/platform/baseplatform.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/common/include/platform/dfreebsd/dfreebsdplatform.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/common/include/platform/dfreebsd/max.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -256,16 +245,6 @@
             flavor2="0">
       </item>
       <item path="../../../../sources/common/include/platform/linux/max.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/common/include/platform/openbsd/max.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/common/include/platform/openbsd/openbsdplatform.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -375,6 +354,11 @@
             tool="3"
             flavor2="0">
       </item>
+      <item path="../../../../sources/common/include/utils/misc/format.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
       <item path="../../../../sources/common/include/utils/misc/linkedlist.h"
             ex="false"
             tool="3"
@@ -435,22 +419,12 @@
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/platform/dfreebsd/dfreebsdplatform.cpp"
-            ex="false"
-            tool="1"
-            flavor2="0">
-      </item>
       <item path="../../../../sources/common/src/platform/freebsd/freebsdplatform.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
       <item path="../../../../sources/common/src/platform/linux/linuxplatform.cpp"
-            ex="false"
-            tool="1"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/common/src/platform/openbsd/openbsdplatform.cpp"
             ex="false"
             tool="1"
             flavor2="0">
@@ -550,6 +524,11 @@
             tool="1"
             flavor2="0">
       </item>
+      <item path="../../../../sources/common/src/utils/misc/format.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
       <item path="../../../../sources/common/src/utils/misc/mmapfile.cpp"
             ex="false"
             tool="1"
@@ -575,6 +554,8 @@
       <toolsSet>
         <remote-sources-mode>LOCAL_SOURCES</remote-sources-mode>
         <compilerSet>GNU|GNU</compilerSet>
+        <dependencyChecking>true</dependencyChecking>
+        <rebuildPropChanged>false</rebuildPropChanged>
       </toolsSet>
       <compileType>
         <cTool>
@@ -624,16 +605,6 @@
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/dfreebsd/dfreebsdplatform.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/common/include/platform/dfreebsd/max.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
       <item path="../../../../sources/common/include/platform/endianess/big_endian_byte_aligned.h"
             ex="false"
             tool="3"
@@ -675,16 +646,6 @@
             flavor2="0">
       </item>
       <item path="../../../../sources/common/include/platform/linux/max.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/common/include/platform/openbsd/max.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/common/include/platform/openbsd/openbsdplatform.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -794,6 +755,11 @@
             tool="3"
             flavor2="0">
       </item>
+      <item path="../../../../sources/common/include/utils/misc/format.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
       <item path="../../../../sources/common/include/utils/misc/linkedlist.h"
             ex="false"
             tool="3"
@@ -854,22 +820,12 @@
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/platform/dfreebsd/dfreebsdplatform.cpp"
-            ex="false"
-            tool="1"
-            flavor2="0">
-      </item>
       <item path="../../../../sources/common/src/platform/freebsd/freebsdplatform.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
       <item path="../../../../sources/common/src/platform/linux/linuxplatform.cpp"
-            ex="false"
-            tool="1"
-            flavor2="0">
-      </item>
-      <item path="../../../../sources/common/src/platform/openbsd/openbsdplatform.cpp"
             ex="false"
             tool="1"
             flavor2="0">
@@ -965,6 +921,11 @@
             flavor2="0">
       </item>
       <item path="../../../../sources/common/src/utils/misc/file.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../../../sources/common/src/utils/misc/format.cpp"
             ex="false"
             tool="1"
             flavor2="0">

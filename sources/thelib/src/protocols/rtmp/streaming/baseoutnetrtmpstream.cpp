@@ -76,15 +76,6 @@ BaseOutNetRTMPStream::BaseOutNetRTMPStream(BaseProtocol *pProtocol, uint64_t typ
 	_metaFileSize = 0;
 	_metaFileDuration = 0;
 
-	_audioPacketsCount = 0;
-	_audioDroppedPacketsCount = 0;
-	_audioBytesCount = 0;
-	_audioDroppedBytesCount = 0;
-	_videoPacketsCount = 0;
-	_videoDroppedPacketsCount = 0;
-	_videoBytesCount = 0;
-	_videoDroppedBytesCount = 0;
-
 	if ((pProtocol != NULL)
 			&& (pProtocol->GetApplication() != NULL)
 			&& (pProtocol->GetApplication()->GetConfiguration().HasKeyChain(_V_NUMERIC, false, 1, "maxRtmpOutBuffer"))) {
@@ -185,14 +176,6 @@ void BaseOutNetRTMPStream::SetSendOnStatusPlayMessages(bool value) {
 void BaseOutNetRTMPStream::GetStats(Variant &info, uint32_t namespaceId) {
 	BaseOutNetStream::GetStats(info, namespaceId);
 	info["canDropFrames"] = (bool)_canDropFrames;
-	info["audio"]["packetsCount"] = _audioPacketsCount;
-	info["audio"]["droppedPacketsCount"] = _audioDroppedPacketsCount;
-	info["audio"]["bytesCount"] = _audioBytesCount;
-	info["audio"]["droppedBytesCount"] = _audioDroppedBytesCount;
-	info["video"]["packetsCount"] = _videoPacketsCount;
-	info["video"]["droppedPacketsCount"] = _videoDroppedPacketsCount;
-	info["video"]["bytesCount"] = _videoBytesCount;
-	info["video"]["droppedBytesCount"] = _videoDroppedBytesCount;
 }
 
 bool BaseOutNetRTMPStream::SendStreamMessage(Variant &message) {
@@ -579,8 +562,8 @@ bool BaseOutNetRTMPStream::InternalFeedData(uint8_t *pData, uint32_t dataLength,
 		return true;
 	if (isAudio) {
 		if (processedLength == 0)
-			_audioPacketsCount++;
-		_audioBytesCount += dataLength;
+			_stats.audio.packetsCount++;
+		_stats.audio.bytesCount += dataLength;
 		if (_isFirstAudioFrame) {
 			_audioCurrentFrameDropped = false;
 			if (dataLength == 0)
@@ -622,8 +605,8 @@ bool BaseOutNetRTMPStream::InternalFeedData(uint8_t *pData, uint32_t dataLength,
 				_audioHeader, *_pChannelAudio);
 	} else {
 		if (processedLength == 0)
-			_videoPacketsCount++;
-		_videoBytesCount += dataLength;
+			_stats.video.packetsCount++;
+		_stats.video.bytesCount += dataLength;
 		if (_isFirstVideoFrame) {
 			_videoCurrentFrameDropped = false;
 			if (dataLength == 0)
@@ -824,8 +807,8 @@ bool BaseOutNetRTMPStream::AllowExecution(uint32_t totalProcessed, uint32_t data
 	}
 
 	//we are allowed to drop frames
-	uint64_t &bytesCounter = isAudio ? _audioDroppedBytesCount : _videoDroppedBytesCount;
-	uint64_t &packetsCounter = isAudio ? _audioDroppedPacketsCount : _videoDroppedPacketsCount;
+	uint64_t &bytesCounter = isAudio ? _stats.audio.droppedBytesCount : _stats.video.droppedBytesCount;
+	uint64_t &packetsCounter = isAudio ? _stats.audio.droppedPacketsCount : _stats.video.droppedPacketsCount;
 	bool &currentFrameDropped = isAudio ? _audioCurrentFrameDropped : _videoCurrentFrameDropped;
 
 	if (currentFrameDropped) {

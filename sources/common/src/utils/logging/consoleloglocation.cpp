@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -46,8 +46,8 @@ bool ConsoleLogLocation::Init() {
 	return true;
 }
 
-void ConsoleLogLocation::Log(int32_t level, string fileName,
-		uint32_t lineNumber, string functionName, string message) {
+void ConsoleLogLocation::Log(int32_t level, const char *pFileName,
+		uint32_t lineNumber, const char *pFunctionName, string &message) {
 	if (_singleLine) {
 		replace(message, "\r", "\\r");
 		replace(message, "\n", "\\n");
@@ -56,31 +56,28 @@ void ConsoleLogLocation::Log(int32_t level, string fileName,
 	if (_allowColors) {
 		printf("%s%s:%u %s%s\n",
 				STR(_colors[level]),
-				STR(fileName),
+				pFileName,
 				lineNumber,
 				STR(message),
 				STR(_colors[6]));
 	} else {
 		printf("%s:%u %s\n",
-				STR(fileName),
+				pFileName,
 				lineNumber,
 				STR(message));
 	}
 #else
 	if (_allowColors) {
 		SET_CONSOLE_TEXT_COLOR(_colors[level]);
-		fprintf(stdout, "%s:%"PRIu32" %s", STR(fileName), lineNumber, STR(message));
+		fprintf(stdout, "%s:%"PRIu32" %s", pFileName, lineNumber, STR(message));
+		//fprintf(stdout, "%d %s:%"PRIu32" %s", (int) getpid(), pFileName, lineNumber, STR(message));
 		SET_CONSOLE_TEXT_COLOR(_colors[6]);
 		fprintf(stdout, "\n");
 	} else {
-		fprintf(stdout, "%s:%"PRIu32" %s\n", STR(fileName), lineNumber, STR(message));
+		fprintf(stdout, "%s:%"PRIu32" %s\n", pFileName, lineNumber, STR(message));
 	}
 #endif /* ANDROID */
-}
-
-void ConsoleLogLocation::Log(int32_t level, string fileName, uint32_t lineNumber,
-		string functionName, Variant &le) {
-	return;
+	fflush(stdout);
 }
 
 void ConsoleLogLocation::SignalFork() {

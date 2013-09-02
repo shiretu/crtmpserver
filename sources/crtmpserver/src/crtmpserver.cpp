@@ -69,9 +69,6 @@ BaseProtocolFactory *SpawnFactory(Variant configuration);
 #endif /* COMPILE_STATIC */
 
 int main(int argc, const char **argv) {
-	SRAND();
-	InitNetworking();
-
 	//1. Pick up the startup parameters and hold them inside the running status
 	if (argc < 2) {
 		fprintf(stdout, "Invalid command line. Use --help\n");
@@ -100,6 +97,9 @@ int main(int argc, const char **argv) {
 		fprintf(stderr, "Configuration file not found: `%s`\n", argv[argc - 1]);
 		return -1;
 	}
+
+	SRAND();
+	InitNetworking();
 
 	do {
 		//2. Reset the run flag
@@ -158,7 +158,7 @@ bool Initialize() {
 			FATAL("Unable to load file %s", STR(configFilePath));
 			return false;
 		}
-#else
+#else /* HAS_LUA */
 		fprintf(stdout, "Lua is not supported by the current build of the server\n");
 		ASSERT("Lua is not supported by the current build of the server");
 		return false;
@@ -166,6 +166,12 @@ bool Initialize() {
 	} else {
 		FATAL("Invalid file format: %s", STR(configFilePath));
 		return false;
+	}
+
+	uint32_t currentFdCount = 0;
+	uint32_t maxFdCount = 0;
+	if (!setMaxFdCount(currentFdCount, maxFdCount)) {
+		WARN("Unable to apply file descriptors count limits");
 	}
 
 #ifndef WIN32
@@ -208,6 +214,9 @@ bool Initialize() {
 	}
 
 	INFO("%s", STR(Version::GetBanner()));
+
+	INFO("OS files descriptors count limits: %"PRIu32"/%"PRIu32,
+			currentFdCount, maxFdCount);
 
 	INFO("Initialize I/O handlers manager: %s", NETWORK_REACTOR);
 	IOHandlerManager::Initialize();
@@ -264,7 +273,7 @@ void Run() {
 		exit(-1);
 	}
 	INFO("\n%s", STR(gRs.pConfigFile->GetServicesInfo()));
-	INFO("GO! GO! GO! (%u)", (uint32_t) getpid());
+	INFO("GO! GO! GO! (%"PRIu32")", (uint32_t) GetPid());
 	while (IOHandlerManager::Pulse()) {
 		IOHandlerManager::DeleteDeadHandlers();
 		ProtocolManager::CleanupDeadProtocols();

@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -17,28 +17,12 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifdef NET_KQUEUE
-#ifndef _INBOUNDNAMEDPIPECARRIER_H
-#define	_INBOUNDNAMEDPIPECARRIER_H
+#ifndef _FORMAT_H
+#define	_FORMAT_H
 
-#include "netio/kqueue/iohandler.h"
+#include "platform/platform.h"
 
-class InboundNamedPipeCarrier
-: public IOHandler {
-private:
-	string _path;
-public:
-	InboundNamedPipeCarrier(int32_t fd, string path);
-	virtual ~InboundNamedPipeCarrier();
+DLLEXP string format(const char *pFormat, ...);
+DLLEXP string vFormat(const char *pFormat, va_list args);
 
-	static InboundNamedPipeCarrier *Create(string path, uint16_t mode);
-
-	virtual bool SignalOutputData();
-	virtual bool OnEvent(struct kevent &event);
-	virtual operator string();
-	virtual void GetStats(Variant &info, uint32_t namespaceId = 0);
-};
-
-#endif	/* _INBOUNDNAMEDPIPECARRIER_H */
-#endif /* NET_KQUEUE */
-
+#endif	/* _FORMAT_H */

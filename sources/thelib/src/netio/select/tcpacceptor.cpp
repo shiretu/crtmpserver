@@ -172,11 +172,7 @@ bool TCPAcceptor::Accept() {
 
 	_acceptedCount++;
 
-	INFO("Client connected: %s:%"PRIu16" -> %s:%"PRIu16,
-			inet_ntoa(((sockaddr_in *) & address)->sin_addr),
-			ENTOHS(((sockaddr_in *) & address)->sin_port),
-			STR(pTCPCarrier->GetNearEndpointAddressIp()),
-			pTCPCarrier->GetNearEndpointPort());
+	INFO("Inbound connection accepted: %s", STR(*(pProtocol->GetNearEndpoint())));
 
 	//7. Done
 	return true;
@@ -218,10 +214,6 @@ BaseClientApplication *TCPAcceptor::GetApplication() {
 
 vector<uint64_t> &TCPAcceptor::GetProtocolChain() {
 	return _protocolChain;
-}
-
-TCPAcceptor::operator string() {
-	return format("A(%d)", _inboundFd);
 }
 
 void TCPAcceptor::GetStats(Variant &info, uint32_t namespaceId) {

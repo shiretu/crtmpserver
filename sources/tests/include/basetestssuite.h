@@ -35,7 +35,7 @@ do { \
 #define TS_ASSERT_NO_INCREMENT(x) \
 do { \
     if(!(x)) { \
-        TS_PRINT("Test failed. %s:%u\n",__FILE__,__LINE__); \
+        TS_PRINT("Test failed. %s:%d\n",__FILE__,__LINE__); \
         exit(-1); \
     } \
 } while(0)
@@ -43,7 +43,7 @@ do { \
 #define TS_ASSERT(x) \
 do { \
     if(!(x)) { \
-        TS_PRINT("Test %s failed. %s:%u\n",#x,__FILE__,__LINE__); \
+        TS_PRINT("Test %s failed. %s:%d\n",#x,__FILE__,__LINE__); \
         exit(-1); \
     } else { \
         _testsCount++; \
@@ -56,7 +56,7 @@ do { \
         int before = BaseTestsSuite::_testsCount; \
         x().Run(); \
         int testsCount = BaseTestsSuite::_testsCount - before; \
-        TS_PRINT("%u tests completed successfuly\n", testsCount); \
+        TS_PRINT("%d tests completed successfuly\n", testsCount); \
 } while(0)
 
 class BaseTestsSuite {

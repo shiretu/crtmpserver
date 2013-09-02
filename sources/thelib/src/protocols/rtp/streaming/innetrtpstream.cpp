@@ -26,6 +26,7 @@
 #include "protocols/rtmp/basertmpprotocol.h"
 #include "protocols/rtmp/streaming/baseoutnetrtmpstream.h"
 #include "protocols/rtp/sdp.h"
+#include "protocols/rtp/rtspprotocol.h"
 
 InNetRTPStream::InNetRTPStream(BaseProtocol *pProtocol, string name, Variant &videoTrack,
 		Variant &audioTrack, uint32_t bandwidthHint, uint8_t rtcpDetectionInterval)
@@ -34,13 +35,8 @@ InNetRTPStream::InNetRTPStream(BaseProtocol *pProtocol, string name, Variant &vi
 	_isLatm = false;
 	_audioSampleRate = 1;
 	if (audioTrack != V_NULL) {
+		uint32_t sdpSampleRate = (uint32_t) SDP_TRACK_CLOCKRATE(audioTrack);
 		string raw = unhex(SDP_AUDIO_CODEC_SETUP(audioTrack));
-		//IC TODO
-		//		DEBUG("Audio codec: %s", STR(SDP_AUDIO_CODEC_SETUP(audioTrack)));
-		//		DEBUG("audioTrack: length %"PRIz"u", raw.length());
-		//		for (uint8_t i = 0; i < raw.length(); i++) {
-		//			DEBUG("audioTrack: %"PRIx8" : %"PRIx8, i, ((uint8_t *) raw.data())[i]);
-		//		}
 		_isLatm = (SDP_AUDIO_TRANSPORT(audioTrack) == "mp4a-latm");
 		AudioCodecInfo *pInfo = _capabilities.AddTrackAudioAAC(
 				(uint8_t *) raw.data(),
@@ -49,7 +45,13 @@ InNetRTPStream::InNetRTPStream(BaseProtocol *pProtocol, string name, Variant &vi
 				this);
 		_hasAudio = (bool)(pInfo != NULL);
 		if (pInfo != NULL) {
-			_audioSampleRate = pInfo->_samplingRate;
+			if (sdpSampleRate != pInfo->_samplingRate) {
+				WARN("Audio sample rate advertised inside SDP is different from the actual value compued from the codec setup bytes. SDP: %"PRIu32"; codec setup bytes: %"PRIu32". Using the value from SDP",
+						sdpSampleRate, pInfo->_samplingRate);
+				_audioSampleRate = sdpSampleRate;
+			} else {
+				_audioSampleRate = pInfo->_samplingRate;
+			}
 		}
 	}
 
@@ -58,17 +60,6 @@ InNetRTPStream::InNetRTPStream(BaseProtocol *pProtocol, string name, Variant &vi
 	if (videoTrack != V_NULL) {
 		string rawSps = unb64(SDP_VIDEO_CODEC_H264_SPS(videoTrack));
 		string rawPps = unb64(SDP_VIDEO_CODEC_H264_PPS(videoTrack));
-		//		//IC TODO
-		//		DEBUG("SPS: %s", STR(SDP_VIDEO_CODEC_H264_SPS(videoTrack)));
-		//		DEBUG("PPS: %s", STR(SDP_VIDEO_CODEC_H264_PPS(videoTrack)));
-		//		DEBUG("videoTrack SPS: length %"PRIz"u", rawSps.length());
-		//		for (uint8_t i = 0; i < rawSps.length(); i++) {
-		//			DEBUG("SPS: %"PRIx8" : %"PRIx8, i, ((uint8_t *) rawSps.data())[i]);
-		//		}
-		//		DEBUG("videoTrack PPS: length %"PRIz"u", rawPps.length());
-		//		for (uint8_t i = 0; i < rawPps.length(); i++) {
-		//			DEBUG("PPS: %"PRIx8" : %"PRIx8, i, ((uint8_t *) rawPps.data())[i]);
-		//		}
 		VideoCodecInfo *pInfo = _capabilities.AddTrackVideoH264(
 				(uint8_t *) rawSps.data(),
 				(uint32_t) rawSps.length(),
@@ -86,9 +77,6 @@ InNetRTPStream::InNetRTPStream(BaseProtocol *pProtocol, string name, Variant &vi
 		_capabilities.SetTransferRate(bandwidthHint);
 
 	_audioSequence = 0;
-	_audioPacketsCount = 0;
-	_audioDroppedPacketsCount = 0;
-	_audioBytesCount = 0;
 	_audioNTP = 0;
 	_audioRTP = 0;
 	_audioLastDts = -1;
@@ -99,9 +87,6 @@ InNetRTPStream::InNetRTPStream(BaseProtocol *pProtocol, string name, Variant &vi
 	_audioRTCPRTPRollCount = 0;
 
 	_videoSequence = 0;
-	_videoPacketsCount = 0;
-	_videoDroppedPacketsCount = 0;
-	_videoBytesCount = 0;
 	_videoNTP = 0;
 	_videoRTP = 0;
 	_videoLastPts = -1;
@@ -113,6 +98,8 @@ InNetRTPStream::InNetRTPStream(BaseProtocol *pProtocol, string name, Variant &vi
 	_videoRTCPRTPRollCount = 0;
 
 	_rtcpPresence = RTCP_PRESENCE_UNKNOWN;
+	//	_rtcpPresence = (((_hasAudio)&&(!_hasVideo)) || ((!_hasAudio)&&(_hasVideo)))
+	//			? RTCP_PRESENCE_ABSENT : RTCP_PRESENCE_UNKNOWN;
 	_rtcpDetectionInterval = rtcpDetectionInterval;
 	_rtcpDetectionStart = 0;
 
@@ -181,14 +168,10 @@ bool InNetRTPStream::FeedVideoData(uint8_t *pData, uint32_t dataLength,
 		RTPHeader &rtpHeader) {
 	if (!_hasVideo)
 		return false;
+
 	//1. Check the counter first
 	if (_videoSequence == 0) {
-		//this is the first packet. Make sure we start with a M packet
-		if (!GET_RTP_M(rtpHeader)) {
-			return true;
-		}
 		_videoSequence = GET_RTP_SEQ(rtpHeader);
-		return true;
 	} else {
 		if ((uint16_t) (_videoSequence + 1) != (uint16_t) GET_RTP_SEQ(rtpHeader)) {
 			WARN("Missing video packet. Wanted: %"PRIu16"; got: %"PRIu16" on stream: %s",
@@ -196,7 +179,8 @@ bool InNetRTPStream::FeedVideoData(uint8_t *pData, uint32_t dataLength,
 					(uint16_t) GET_RTP_SEQ(rtpHeader),
 					STR(GetName()));
 			_currentNalu.IgnoreAll();
-			_videoDroppedPacketsCount++;
+			_stats.video.droppedPacketsCount++;
+			_stats.video.droppedBytesCount += dataLength;
 			_videoSequence = 0;
 			return true;
 		} else {
@@ -211,17 +195,15 @@ bool InNetRTPStream::FeedVideoData(uint8_t *pData, uint32_t dataLength,
 	if (naluType <= 23) {
 		//3. Standard NALU
 		//FINEST("V: %08"PRIx32, rtpHeader._timestamp);
-		_videoPacketsCount++;
-		_videoBytesCount += dataLength;
+		_stats.video.packetsCount++;
+		_stats.video.bytesCount += dataLength;
+		_currentNalu.IgnoreAll();
 		return InternalFeedData(pData, dataLength, 0, dataLength, ts, false);
 	} else if (naluType == NALU_TYPE_FUA) {
 		if (GETAVAILABLEBYTESCOUNT(_currentNalu) == 0) {
-			_currentNalu.IgnoreAll();
-			//start NAL
 			if ((pData[1] >> 7) == 0) {
-				WARN("Bogus nalu");
+				WARN("Bogus nalu: %s", STR(bits(pData, 2)));
 				_currentNalu.IgnoreAll();
-				_videoSequence = 0;
 				return true;
 			}
 			pData[1] = (pData[0]&0xe0) | (pData[1]&0x1f);
@@ -232,8 +214,8 @@ bool InNetRTPStream::FeedVideoData(uint8_t *pData, uint32_t dataLength,
 			_currentNalu.ReadFromBuffer(pData + 2, dataLength - 2);
 			if (((pData[1] >> 6)&0x01) == 1) {
 				//FINEST("V: %08"PRIx32, rtpHeader._timestamp);
-				_videoPacketsCount++;
-				_videoBytesCount += GETAVAILABLEBYTESCOUNT(_currentNalu);
+				_stats.video.packetsCount++;
+				_stats.video.bytesCount += GETAVAILABLEBYTESCOUNT(_currentNalu);
 				if (!InternalFeedData(GETIBPOINTER(_currentNalu),
 						GETAVAILABLEBYTESCOUNT(_currentNalu),
 						0,
@@ -258,8 +240,8 @@ bool InNetRTPStream::FeedVideoData(uint8_t *pData, uint32_t dataLength,
 				_videoSequence = 0;
 				return true;
 			}
-			_videoPacketsCount++;
-			_videoBytesCount += length;
+			_stats.video.packetsCount++;
+			_stats.video.bytesCount += length;
 			if (!InternalFeedData(pData + index,
 					length, 0,
 					length,
@@ -288,16 +270,6 @@ bool InNetRTPStream::FeedAudioData(uint8_t *pData, uint32_t dataLength,
 		return FeedAudioDataAU(pData, dataLength, rtpHeader);
 }
 
-void InNetRTPStream::GetStats(Variant &info, uint32_t namespaceId) {
-	BaseInNetStream::GetStats(info, namespaceId);
-	info["audio"]["bytesCount"] = _audioBytesCount;
-	info["audio"]["packetsCount"] = _audioPacketsCount;
-	info["audio"]["droppedPacketsCount"] = _audioDroppedPacketsCount;
-	info["video"]["bytesCount"] = _videoBytesCount;
-	info["video"]["packetsCount"] = _videoPacketsCount;
-	info["video"]["droppedPacketsCount"] = _videoDroppedPacketsCount;
-}
-
 void InNetRTPStream::ReportSR(uint64_t ntpMicroseconds, uint32_t rtpTimestamp,
 		bool isAudio) {
 	if (isAudio) {
@@ -314,19 +286,15 @@ void InNetRTPStream::ReportSR(uint64_t ntpMicroseconds, uint32_t rtpTimestamp,
 bool InNetRTPStream::FeedAudioDataAU(uint8_t *pData, uint32_t dataLength,
 		RTPHeader &rtpHeader) {
 	if (_audioSequence == 0) {
-		//this is the first packet. Make sure we start with a M packet
-		if (!GET_RTP_M(rtpHeader)) {
-			return true;
-		}
 		_audioSequence = GET_RTP_SEQ(rtpHeader);
-		return true;
 	} else {
 		if ((uint16_t) (_audioSequence + 1) != (uint16_t) GET_RTP_SEQ(rtpHeader)) {
 			WARN("Missing audio packet. Wanted: %"PRIu16"; got: %"PRIu16" on stream: %s",
 					(uint16_t) (_audioSequence + 1),
 					(uint16_t) GET_RTP_SEQ(rtpHeader),
 					STR(GetName()));
-			_audioDroppedPacketsCount++;
+			_stats.audio.droppedPacketsCount++;
+			_stats.audio.droppedBytesCount += dataLength;
 			_audioSequence = 0;
 			return true;
 		} else {
@@ -359,8 +327,8 @@ bool InNetRTPStream::FeedAudioDataAU(uint8_t *pData, uint32_t dataLength,
 					cursor, chunkSize, dataLength, chunksCount);
 			return false;
 		}
-		_audioPacketsCount++;
-		_audioBytesCount += chunkSize;
+		_stats.audio.packetsCount++;
+		_stats.audio.bytesCount += chunkSize;
 		if (!InternalFeedData(pData + cursor - 2,
 				chunkSize + 2,
 				0,
@@ -378,8 +346,8 @@ bool InNetRTPStream::FeedAudioDataAU(uint8_t *pData, uint32_t dataLength,
 
 bool InNetRTPStream::FeedAudioDataLATM(uint8_t *pData, uint32_t dataLength,
 		RTPHeader &rtpHeader) {
-	_audioPacketsCount++;
-	_audioBytesCount += dataLength;
+	_stats.audio.packetsCount++;
+	_stats.audio.bytesCount += dataLength;
 	if (dataLength == 0)
 		return true;
 	uint32_t cursor = 0;
@@ -430,49 +398,91 @@ double __lastDts = 0;
 bool InNetRTPStream::InternalFeedData(uint8_t *pData, uint32_t dataLength,
 		uint32_t processedLength, uint32_t totalLength,
 		double pts, bool isAudio) {
+	if ((!isAudio) && (dataLength > 0) && (_hasVideo)) {
+		switch (NALU_TYPE(pData[0])) {
+			case NALU_TYPE_SPS:
+			{
+				_pps.IgnoreAll();
+				_sps.IgnoreAll();
+				_sps.ReadFromBuffer(pData, dataLength);
+				break;
+			}
+			case NALU_TYPE_PPS:
+			{
+				_pps.IgnoreAll();
+				_pps.ReadFromBuffer(pData, dataLength);
+				if ((GETAVAILABLEBYTESCOUNT(_sps) == 0) || (GETAVAILABLEBYTESCOUNT(_pps) == 0)) {
+					_sps.IgnoreAll();
+					_pps.IgnoreAll();
+					break;
+				}
+				if (!_capabilities.AddTrackVideoH264(
+						GETIBPOINTER(_sps),
+						GETAVAILABLEBYTESCOUNT(_sps),
+						GETIBPOINTER(_pps),
+						GETAVAILABLEBYTESCOUNT(_pps),
+						90000,
+						this
+						)) {
+					_sps.IgnoreAll();
+					_pps.IgnoreAll();
+					WARN("Unable to initialize SPS/PPS for the video track");
+				}
+				_sps.IgnoreAll();
+				_pps.IgnoreAll();
+				break;
+			}
+			default:
+			{
+				break;
+			}
+		}
+	}
+
 	switch (_rtcpPresence) {
 		case RTCP_PRESENCE_UNKNOWN:
 		{
 			DEBUG_RTCP_PRESENCE("RTCP_PRESENCE_UNKNOWN: %"PRIz"u", (time(NULL) - _rtcpDetectionStart));
 			if (_rtcpDetectionInterval == 0) {
-				WARN("RTCP disabled on stream %s(%"PRIu32") with name %s. A/V drifting may occur over long periods of time",
-						STR(tagToString(GetType())), GetUniqueId(), STR(GetName()));
+				WARN("RTCP disabled on stream %s. A/V drifting may occur over long periods of time",
+						STR(*this));
 				_rtcpPresence = RTCP_PRESENCE_ABSENT;
-				return true;
+				return InternalFeedData(pData, dataLength, processedLength,
+						totalLength, pts, isAudio);
 			}
 			if (_rtcpDetectionStart == 0) {
 				_rtcpDetectionStart = time(NULL);
 				return true;
 			}
 			if ((time(NULL) - _rtcpDetectionStart) > _rtcpDetectionInterval) {
-				WARN("Stream %s(%"PRIu32") with name %s doesn't have RTCP. A/V drifting may occur over long periods of time",
-						STR(tagToString(GetType())), GetUniqueId(), STR(GetName()));
+				WARN("Stream %s doesn't have RTCP. A/V drifting may occur over long periods of time",
+						STR(*this));
 				_rtcpPresence = RTCP_PRESENCE_ABSENT;
 				return true;
 			}
 			bool audioRTCPPresent = false;
 			bool videoRTCPPresent = false;
 			if (_hasAudio) {
-				if (_audioNTP != 0)
-					DEBUG_RTCP_PRESENCE("Audio RTCP detected");
+				//				if (_audioNTP != 0)
+				//					DEBUG_RTCP_PRESENCE("Audio RTCP detected");
 				audioRTCPPresent = (_audioNTP != 0);
 			} else {
 				audioRTCPPresent = true;
 			}
 			if (_hasVideo) {
-				if (_videoNTP != 0)
-					DEBUG_RTCP_PRESENCE("Video RTCP detected");
+				//				if (_videoNTP != 0)
+				//					DEBUG_RTCP_PRESENCE("Video RTCP detected");
 				videoRTCPPresent = (_videoNTP != 0);
 			} else {
 				videoRTCPPresent = true;
 			}
 			if (audioRTCPPresent && videoRTCPPresent) {
-				DEBUG_RTCP_PRESENCE("RTCP available on stream %s(%"PRIu32") with name %s.",
-						STR(tagToString(GetType())), GetUniqueId(), STR(GetName()));
+				DEBUG_RTCP_PRESENCE("RTCP available on stream %s", STR(*this));
 				_rtcpPresence = RTCP_PRESENCE_AVAILABLE;
+				return InternalFeedData(pData, dataLength, processedLength,
+						totalLength, pts, isAudio);
 			}
 			return true;
-			break;
 		}
 		case RTCP_PRESENCE_AVAILABLE:
 		{
@@ -553,46 +563,12 @@ bool InNetRTPStream::InternalFeedData(uint8_t *pData, uint32_t dataLength,
 	}
 	lastDts = dts;
 
-	if (_hasAudio && (_audioLastDts < 0))
-		return true;
-	if (_hasVideo && (_videoLastDts < 0))
-		return true;
-
-	if (_hasAudio && _hasVideo) {
-		if ((_audioLastDts < 0) || (_videoLastDts < 0))
+	if (isAudio) {
+		if (_hasAudio && (_audioLastDts < 0))
 			return true;
-	}
-
-	if ((!isAudio)&&(dataLength > 0)&&(_hasVideo)) {
-		switch (NALU_TYPE(pData[0])) {
-			case NALU_TYPE_SPS:
-			{
-				_pps.IgnoreAll();
-				_sps.IgnoreAll();
-				_sps.ReadFromBuffer(pData, dataLength);
-				break;
-			}
-			case NALU_TYPE_PPS:
-			{
-				_pps.IgnoreAll();
-				_pps.ReadFromBuffer(pData, dataLength);
-				if (!_capabilities.AddTrackVideoH264(
-						GETIBPOINTER(_sps),
-						GETAVAILABLEBYTESCOUNT(_sps),
-						GETIBPOINTER(_pps),
-						GETAVAILABLEBYTESCOUNT(_pps),
-						90000,
-						this
-						)) {
-					WARN("Unable to initialize SPS/PPS for the video track");
-				}
-				break;
-			}
-			default:
-			{
-				break;
-			}
-		}
+	} else {
+		if (_hasVideo && (_videoLastDts < 0))
+			return true;
 	}
 
 	LinkedListNode<BaseOutStream *> *pTemp = _pOutStreams;
@@ -616,7 +592,7 @@ uint64_t InNetRTPStream::ComputeRTP(uint32_t &currentRtp, uint32_t &lastRtp,
 		uint32_t &rtpRollCount) {
 	if (lastRtp > currentRtp) {
 		if (((lastRtp >> 31) == 0x01) && ((currentRtp >> 31) == 0x00)) {
-			FINEST("RollOver");
+			FINEST("RTP roll over on for stream %s", STR(*this));
 			rtpRollCount++;
 		}
 	}

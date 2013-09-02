@@ -48,7 +48,6 @@ private:
 	vector<string> _aliases;
 	map<uint64_t, BaseAppProtocolHandler *> _protocolsHandlers;
 	StreamsManager _streamsManager;
-	bool _allowDuplicateInboundNetworkStreams;
 	map<string, string> _streamAliases;
 	bool _hasStreamAliases;
 	StreamMetadataResolver *_pStreamMetadataResolver;
@@ -109,11 +108,6 @@ public:
 	void UnRegisterAppProtocolHandler(uint64_t protocolType);
 
 	/*!
-		@brief Get the ability to handle duplicate inbound network streams
-	 */
-	bool GetAllowDuplicateInboundNetworkStreams();
-
-	/*!
 		@brief Checks and see if the duplicate inbound network streams are available. Always returns true if allowDuplicateNetworkStreams is set to true inside the config file
 		@param streamName - The stream name we want to see is free or not
 		@param pProtocol - The protocol associated with this request (can be NULL)
@@ -128,6 +122,7 @@ public:
 	}
 	BaseAppProtocolHandler *GetProtocolHandler(BaseProtocol *pProtocol);
 	BaseAppProtocolHandler *GetProtocolHandler(uint64_t protocolType);
+	bool HasProtocolHandler(uint64_t protocolType);
 
 	template<class T>
 	T *GetProtocolHandler(string &scheme) {
@@ -178,9 +173,12 @@ public:
 	 */
 	static void Shutdown(BaseClientApplication *pApplication);
 
-	string GetStreamNameByAlias(string &streamName, bool remove = true);
-	void SetStreamAlias(string &streamName, string &streamAlias);
-	void RemoveStreamAlias(string &streamAlias);
+	/*!
+	 * Stream aliasing for playback
+	 */
+	virtual string GetStreamNameByAlias(string &streamName, bool remove = true);
+	bool SetStreamAlias(string &streamName, string &streamAlias);
+	bool RemoveStreamAlias(string &streamAlias);
 	map<string, string> & GetAllStreamAliases();
 
 	OperationType GetOperationType(BaseProtocol *pProtocol, Variant &streamConfig);

@@ -51,7 +51,6 @@ public:
 	virtual bool SignalOutputData() = 0;
 	virtual bool OnEvent(struct epoll_event &event) = 0;
 	static string IOHTToString(IOHandlerType type);
-	virtual operator string() = 0;
 	virtual void GetStats(Variant &info, uint32_t namespaceId = 0) = 0;
 };
 

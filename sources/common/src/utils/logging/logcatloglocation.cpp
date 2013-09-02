@@ -18,7 +18,7 @@
  */
 
 #ifdef ANDROID
-#include "utils/logging/logcatloglocation.h"
+#include "common.h"
 #include <android/log.h>
 
 int LogCatLogLocation::_levelsMap[] = {
@@ -39,19 +39,14 @@ LogCatLogLocation::LogCatLogLocation(Variant &configuration)
 LogCatLogLocation::~LogCatLogLocation() {
 }
 
-void LogCatLogLocation::Log(int32_t level, string fileName, uint32_t lineNumber,
-		string functionName, string message) {
+void LogCatLogLocation::Log(int32_t level, const char *pFileName,
+		uint32_t lineNumber, const char *pFunctionName, string &message) {
 	if (_level < 0 || level > _level) {
 		return;
 	}
 
-	__android_log_write(_levelsMap[level], "rtmpd",
-			STR(format("%s:%u %s", STR(fileName), lineNumber, STR(message))));
-}
-
-void LogCatLogLocation::Log(int32_t level, string fileName, uint32_t lineNumber,
-		string functionName, Variant &le) {
-	return;
+	__android_log_write(_levelsMap[level], "evostream",
+			STR(format("%s:%u %s", pFileName, lineNumber, STR(message))));
 }
 
 void LogCatLogLocation::SignalFork() {

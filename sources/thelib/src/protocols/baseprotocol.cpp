@@ -265,31 +265,40 @@ Variant &BaseProtocol::GetCustomParameters() {
 
 BaseProtocol::operator string() {
 	string result = "";
-	if (GetIOHandler() != NULL) {
-		switch (GetIOHandler()->GetType()) {
+	IOHandler *pHandler = NULL;
+	if ((pHandler = GetIOHandler()) != NULL) {
+		switch (pHandler->GetType()) {
 			case IOHT_ACCEPTOR:
-				result = format("A(%d) <-> ", GetIOHandler()->GetInboundFd());
+				result = format("A(%d) <-> ", pHandler->GetInboundFd());
 				break;
 			case IOHT_TCP_CARRIER:
-				result = format("CTCP(%d) <-> ", GetIOHandler()->GetInboundFd());
+				result = format("(Far: %s:%"PRIu16"; Near: %s:%"PRIu16") CTCP(%d) <-> ",
+						STR(((TCPCarrier *) pHandler)->GetFarEndpointAddressIp()),
+						((TCPCarrier *) pHandler)->GetFarEndpointPort(),
+						STR(((TCPCarrier *) pHandler)->GetNearEndpointAddressIp()),
+						((TCPCarrier *) pHandler)->GetNearEndpointPort(),
+						pHandler->GetInboundFd());
 				break;
 			case IOHT_UDP_CARRIER:
-				result = format("CUDP(%d) <-> ", GetIOHandler()->GetInboundFd());
+				result = format("(Bound on: %s:%"PRIu16") CUDP(%d) <-> ",
+						STR(((UDPCarrier *) pHandler)->GetNearEndpointAddress()),
+						((UDPCarrier *) pHandler)->GetNearEndpointPort(),
+						pHandler->GetInboundFd());
 				break;
 			case IOHT_TCP_CONNECTOR:
-				result = format("CO(%d) <-> ", GetIOHandler()->GetInboundFd());
+				result = format("CO(%d) <-> ", pHandler->GetInboundFd());
 				break;
 			case IOHT_TIMER:
-				result = format("T(%d) <-> ", GetIOHandler()->GetInboundFd());
+				result = format("T(%d) <-> ", pHandler->GetInboundFd());
 				break;
 			case IOHT_STDIO:
 				result = format("STDIO <-> ");
 				break;
 			default:
 				result = format("#unknown %hhu#(%d,%d) <-> ",
-						GetIOHandler()->GetType(),
-						GetIOHandler()->GetInboundFd(),
-						GetIOHandler()->GetOutboundFd());
+						pHandler->GetType(),
+						pHandler->GetInboundFd(),
+						pHandler->GetOutboundFd());
 				break;
 		}
 	}
@@ -397,8 +406,8 @@ void BaseProtocol::SetApplication(BaseClientApplication *pApplication) {
 
 	//5. Register to it
 	if (_pApplication != NULL) {
-		_pApplication->RegisterProtocol(this);
 		_lastKnownApplicationId = _pApplication->GetId();
+		_pApplication->RegisterProtocol(this);
 	}
 
 	//6. Trigger log to production

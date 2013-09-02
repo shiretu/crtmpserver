@@ -147,7 +147,7 @@ bool ConfigFile::ConfigInstances() {
 	if (_configuration.HasKeyChain(_V_NUMERIC, false, 1, "instancesCount")) {
 		instancesCount = (int8_t) _configuration.GetValue("instancesCount", false);
 	}
-	if (instancesCount > 8) {
+	if (instancesCount > 64) {
 		FATAL("Invalid number of instances count. Max value is 8");
 		return false;
 	}
@@ -159,7 +159,7 @@ bool ConfigFile::ConfigInstances() {
 		instancesCount = getCPUCount();
 	}
 
-	if ((instancesCount < 0) || (instancesCount > 16)) {
+	if ((instancesCount < 0) || (instancesCount > 64)) {
 		FATAL("unable to correctly compute the number of instances");
 		return false;
 	}

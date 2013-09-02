@@ -118,7 +118,6 @@ bool PopVariant(lua_State *pLuaState, Variant &variant, int32_t idx, bool pop) {
 		{
 			WARN("Element type not supported: %d (0x%x)", type, type);
 			return false;
-			break;
 		}
 	}
 	return true;
@@ -149,13 +148,11 @@ bool PushVariant(lua_State *pLuaState,
 			else
 				lua_pushnil(pLuaState);
 			return true;
-			break;
 		}
 		case V_STRING:
 		{
 			lua_pushstring(pLuaState, STR(variant));
 			return true;
-			break;
 		}
 		case V_INT8:
 		case V_INT16:
@@ -169,13 +166,11 @@ bool PushVariant(lua_State *pLuaState,
 		{
 			lua_pushnumber(pLuaState, (double) variant);
 			return true;
-			break;
 		}
 		case V_BOOL:
 		{
 			lua_pushboolean(pLuaState, (bool)variant);
 			return true;
-			break;
 		}
 		case V_TIMESTAMP:
 		{
@@ -216,7 +211,6 @@ bool PushVariant(lua_State *pLuaState,
 			lua_settable(pLuaState, -3);
 
 			return true;
-			break;
 		}
 		case V_DATE:
 		{
@@ -240,7 +234,6 @@ bool PushVariant(lua_State *pLuaState,
 			lua_pushnumber(pLuaState, tempTm.tm_mday);
 			lua_settable(pLuaState, -3);
 			return true;
-			break;
 		}
 		case V_TIME:
 		{
@@ -281,7 +274,6 @@ bool PushVariant(lua_State *pLuaState,
 			lua_settable(pLuaState, -3);
 
 			return true;
-			break;
 		}
 		case V_TYPED_MAP:
 		case V_MAP:
@@ -310,13 +302,11 @@ bool PushVariant(lua_State *pLuaState,
 				lua_settable(pLuaState, -3);
 			}
 			return true;
-			break;
 		}
 		default:
 		{
 			FATAL("Unknown type %d", (VariantType) variant);
 			return false;
-			break;
 		}
 	}
 }

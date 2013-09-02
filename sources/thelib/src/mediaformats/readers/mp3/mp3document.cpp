@@ -272,7 +272,6 @@ bool MP3Document::FindFrameData() {
 		//7. Jack pot!
 		return true;
 	}
-	return false;
 }
 
 bool MP3Document::ParseMetadata() {

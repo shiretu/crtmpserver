@@ -79,7 +79,6 @@ public:
 		@param type: Type of IO handler. E.g. acceptor, tct carrier, udp carrier, etc.
 	 */
 	static string IOHTToString(IOHandlerType type);
-	virtual operator string() = 0;
 	virtual void GetStats(Variant &info, uint32_t namespaceId = 0) = 0;
 };
 

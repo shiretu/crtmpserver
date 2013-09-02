@@ -102,6 +102,9 @@ private:
 	uint64_t _tsChunkSize;
 	double _tsPts;
 	double _tsDts;
+
+	Metadata _metadata;
+	uint64_t _servedBytesCount;
 public:
 	BaseInFileStream(BaseProtocol *pProtocol, uint64_t type, string name);
 	virtual ~BaseInFileStream();
@@ -128,6 +131,8 @@ public:
 
 	virtual bool InitializeTimer(int32_t clientSideBufferLength, TimerType timerType,
 			uint32_t granularity);
+
+	double GetPosition();
 
 	/*!
 		@brief Called when a play command was issued

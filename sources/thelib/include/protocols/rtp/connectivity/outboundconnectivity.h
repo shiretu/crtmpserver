@@ -25,7 +25,6 @@
 
 class BaseOutNetRTPUDPStream;
 class RTSPProtocol;
-class NATTraversalProtocol;
 
 struct RTPClient {
 	uint32_t protocolId;
@@ -89,8 +88,8 @@ private:
 	uint16_t _videoDataPort;
 	SOCKET _videoRTCPFd;
 	uint16_t _videoRTCPPort;
-	NATTraversalProtocol *_pVideoNATData;
-	NATTraversalProtocol *_pVideoNATRTCP;
+	uint32_t _videoNATDataId;
+	uint32_t _videoNATRTCPId;
 	double _videoSampleRate;
 
 	bool _hasAudio;
@@ -98,16 +97,17 @@ private:
 	uint16_t _audioDataPort;
 	SOCKET _audioRTCPFd;
 	uint16_t _audioRTCPPort;
-	NATTraversalProtocol *_pAudioNATData;
-	NATTraversalProtocol *_pAudioNATRTCP;
+	uint32_t _audioNATDataId;
+	uint32_t _audioNATRTCPId;
 	double _audioSampleRate;
 
 	int32_t _amountSent;
+	uint32_t _dummyValue;
 public:
 	OutboundConnectivity(bool forceTcp, RTSPProtocol *pRTSPProtocol);
 	virtual ~OutboundConnectivity();
 	bool Initialize();
-	void Enable();
+	void Enable(bool value);
 	void SetOutStream(BaseOutNetRTPUDPStream *pOutStream);
 	string GetVideoPorts();
 	string GetAudioPorts();
@@ -131,8 +131,8 @@ public:
 	void ReadyForSend();
 private:
 	bool InitializePorts(SOCKET &dataFd, uint16_t &dataPort,
-			NATTraversalProtocol **ppNATData, SOCKET &RTCPFd, uint16_t &RTCPPort,
-			NATTraversalProtocol **ppNATRTCP);
+			uint32_t &natDataId, SOCKET &RTCPFd, uint16_t &RTCPPort,
+			uint32_t &natRTCPId);
 	bool FeedData(MSGHDR &message, double pts, double dts, bool isAudio);
 };
 

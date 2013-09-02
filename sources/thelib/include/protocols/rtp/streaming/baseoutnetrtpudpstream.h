@@ -41,7 +41,7 @@ public:
 	BaseOutNetRTPUDPStream(BaseProtocol *pProtocol, string name);
 	virtual ~BaseOutNetRTPUDPStream();
 
-	void Enable();
+	void Enable(bool value);
 
 	OutboundConnectivity *GetConnectivity();
 	void SetConnectivity(OutboundConnectivity *pConnectivity);

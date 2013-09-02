@@ -35,14 +35,26 @@ private:
 	static uint32_t _uniqueIdGenerator;
 	Variant _connectionType;
 protected:
-	string _ip;
-	uint16_t _port;
+	string _nearIp;
+	uint16_t _nearPort;
+	string _farIp;
+	uint16_t _farPort;
 	StreamsManager *_pStreamsManager;
 	uint64_t _type;
 	uint32_t _uniqueId;
 	BaseProtocol *_pProtocol;
 	string _name;
 	double _creationTimestamp;
+
+	struct {
+
+		struct {
+			uint64_t bytesCount;
+			uint64_t droppedBytesCount;
+			uint64_t packetsCount;
+			uint64_t droppedPacketsCount;
+		} audio, video;
+	} _stats;
 public:
 	BaseStream(BaseProtocol *pProtocol, uint64_t type, string name);
 	virtual ~BaseStream();
@@ -188,9 +200,11 @@ public:
 		@param type - the target type to which this strem must be linked against
 	 */
 	virtual bool IsCompatibleWithType(uint64_t type) = 0;
+
+	operator string();
 private:
 	void StoreConnectionType();
-	void GetIpPort();
+	void GetIpPortInfo();
 };
 
 #endif	/* _BASESTREAM_H */

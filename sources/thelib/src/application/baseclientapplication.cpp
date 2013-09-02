@@ -44,11 +44,6 @@ BaseClientApplication::BaseClientApplication(Variant &configuration)
 	_isDefault = false;
 	if (configuration.HasKeyChain(V_BOOL, false, 1, CONF_APPLICATION_DEFAULT))
 		_isDefault = (bool)configuration[CONF_APPLICATION_DEFAULT];
-	_allowDuplicateInboundNetworkStreams = false;
-	if (configuration.HasKeyChain(V_BOOL, false, 1,
-			CONF_APPLICATION_ALLOW_DUPLICATE_INBOUND_NETWORK_STREAMS))
-		_allowDuplicateInboundNetworkStreams =
-			(bool)configuration[CONF_APPLICATION_ALLOW_DUPLICATE_INBOUND_NETWORK_STREAMS];
 	_hasStreamAliases = false;
 	if (configuration.HasKeyChain(V_BOOL, false, 1, CONF_APPLICATION_HAS_STREAM_ALIASES))
 		_hasStreamAliases = (bool)configuration[CONF_APPLICATION_HAS_STREAM_ALIASES];
@@ -170,14 +165,8 @@ void BaseClientApplication::UnRegisterAppProtocolHandler(uint64_t protocolType) 
 	_protocolsHandlers.erase(protocolType);
 }
 
-bool BaseClientApplication::GetAllowDuplicateInboundNetworkStreams() {
-	return _allowDuplicateInboundNetworkStreams;
-}
-
 bool BaseClientApplication::StreamNameAvailable(string streamName,
 		BaseProtocol *pProtocol) {
-	if (_allowDuplicateInboundNetworkStreams)
-		return true;
 	if (MAP_HAS1(_streamAliases, streamName))
 		return false;
 	return _streamsManager.StreamNameAvailable(streamName);
@@ -197,6 +186,10 @@ BaseAppProtocolHandler *BaseClientApplication::GetProtocolHandler(uint64_t proto
 		return NULL;
 	}
 	return _protocolsHandlers[protocolType];
+}
+
+bool BaseClientApplication::HasProtocolHandler(uint64_t protocolType) {
+	return MAP_HAS1(_protocolsHandlers, protocolType);
 }
 
 BaseAppProtocolHandler *BaseClientApplication::GetProtocolHandler(string &scheme) {
@@ -247,25 +240,13 @@ void BaseClientApplication::UnRegisterProtocol(BaseProtocol *pProtocol) {
 }
 
 void BaseClientApplication::SignalStreamRegistered(BaseStream *pStream) {
-	INFO("Stream %s(%"PRIu32") with name `%s` registered to application `%s` from protocol %s(%"PRIu32")",
-			STR(tagToString(pStream->GetType())),
-			pStream->GetUniqueId(),
-			STR(pStream->GetName()),
-			STR(_name),
-			(pStream->GetProtocol() != NULL) ? STR(tagToString(pStream->GetProtocol()->GetType())) : "",
-			(pStream->GetProtocol() != NULL) ? pStream->GetProtocol()->GetId() : (uint32_t) 0
-			);
+	if ((pStream != NULL)&&(pStream->GetType() != ST_NEUTRAL_RTMP))
+		INFO("Stream %s registered to application `%s`", STR(*pStream), STR(_name));
 }
 
 void BaseClientApplication::SignalStreamUnRegistered(BaseStream *pStream) {
-	INFO("Stream %s(%"PRIu32") with name `%s` unregistered from application `%s` from protocol %s(%"PRIu32")",
-			STR(tagToString(pStream->GetType())),
-			pStream->GetUniqueId(),
-			STR(pStream->GetName()),
-			STR(_name),
-			(pStream->GetProtocol() != NULL) ? STR(tagToString(pStream->GetProtocol()->GetType())) : "",
-			(pStream->GetProtocol() != NULL) ? pStream->GetProtocol()->GetId() : (uint32_t) 0
-			);
+	if ((pStream != NULL)&&(pStream->GetType() != ST_NEUTRAL_RTMP))
+		INFO("Stream %s unregistered from application `%s`", STR(*pStream), STR(_name));
 }
 
 bool BaseClientApplication::PullExternalStreams() {
@@ -292,12 +273,10 @@ bool BaseClientApplication::PullExternalStreams() {
 			continue;
 		}
 		string localStreamName = (string) temp.GetValue("localStreamName", false);
-		if (!GetAllowDuplicateInboundNetworkStreams()) {
-			if (streamConfigs.HasKey(localStreamName)) {
-				WARN("External stream configuration produces duplicated stream names\n%s",
-						STR(temp.ToString()));
-				continue;
-			}
+		if (streamConfigs.HasKey(localStreamName)) {
+			WARN("External stream configuration produces duplicated stream names\n%s",
+					STR(temp.ToString()));
+			continue;
 		}
 		streamConfigs[localStreamName] = temp;
 	}
@@ -324,9 +303,13 @@ bool BaseClientApplication::PullExternalStream(Variant &streamConfig) {
 		return false;
 	}
 
+	bool resolveHost = (!streamConfig.HasKeyChain(V_STRING, true, 1, "httpProxy"))
+			|| (streamConfig["httpProxy"] == "")
+			|| (streamConfig["httpProxy"] == "self");
+
 	//2. Split the URI
 	URI uri;
-	if (!URI::FromString(streamConfig["uri"], true, uri)) {
+	if (!URI::FromString(streamConfig["uri"], resolveHost, uri)) {
 		FATAL("Invalid URI: %s", STR(streamConfig["uri"].ToString()));
 		return false;
 	}
@@ -501,13 +484,20 @@ string BaseClientApplication::GetStreamNameByAlias(string &streamName, bool remo
 	return result;
 }
 
-void BaseClientApplication::SetStreamAlias(string &streamName, string &streamAlias) {
-	if (_hasStreamAliases)
-		_streamAliases[streamAlias] = streamName;
+bool BaseClientApplication::SetStreamAlias(string &streamName, string &streamAlias) {
+	if (!_hasStreamAliases) {
+		FATAL(CONF_APPLICATION_HAS_STREAM_ALIASES" property was not set up inside the configuration file");
+		return false;
+	}
+	_streamAliases[streamAlias] = streamName;
+	return true;
 }
 
-void BaseClientApplication::RemoveStreamAlias(string &streamAlias) {
+bool BaseClientApplication::RemoveStreamAlias(string &streamAlias) {
+	if (!_hasStreamAliases)
+		return false;
 	_streamAliases.erase(streamAlias);
+	return true;
 }
 
 map<string, string> & BaseClientApplication::GetAllStreamAliases() {

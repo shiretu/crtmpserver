@@ -16,11 +16,6 @@
             <sourceRootList>
                 <sourceRootElem>../../../../sources/crtmpserver/include</sourceRootElem>
                 <sourceRootElem>../../../../sources/crtmpserver/src</sourceRootElem>
-                <sourceRootElem>../../../cmake</sourceRootElem>
-                <sourceRootElem>../../../../appscaffold</sourceRootElem>
-                <sourceRootElem>../../../../docs</sourceRootElem>
-                <sourceRootElem>../../../../constants</sourceRootElem>
-                <sourceRootElem>../../../make</sourceRootElem>
             </sourceRootList>
             <confList>
                 <confElem>

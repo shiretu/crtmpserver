@@ -13,6 +13,7 @@
             <sourceRootList>
                 <sourceRootElem>../../../../sources/common/include</sourceRootElem>
                 <sourceRootElem>../../../../sources/common/src</sourceRootElem>
+                <sourceRootElem>../../../cmake</sourceRootElem>
             </sourceRootList>
             <confList>
                 <confElem>

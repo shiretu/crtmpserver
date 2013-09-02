@@ -123,7 +123,7 @@ bool InboundRTMPProtocol::PerformHandshake(IOBuffer &buffer) {
 
 bool InboundRTMPProtocol::ValidateClient(IOBuffer &inputBuffer) {
 	if (_currentFPVersion == 0) {
-		WARN("This version of player doesn't support validation");
+		//WARN("This version of player doesn't support validation");
 		return false;
 	}
 	if (ValidateClientScheme(inputBuffer, 0)) {

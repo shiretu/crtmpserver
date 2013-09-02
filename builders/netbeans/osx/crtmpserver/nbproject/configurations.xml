@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configurationDescriptor version="88">
+<configurationDescriptor version="89">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
-    <logicalFolder name="include" displayName="include" projectFiles="true">
+    <logicalFolder name="HeaderFiles"
+                   displayName="Header Files"
+                   projectFiles="true">
     </logicalFolder>
-    <logicalFolder name="src" displayName="src" projectFiles="true">
+    <logicalFolder name="SourceFiles"
+                   displayName="Source Files"
+                   projectFiles="true">
       <itemPath>../../../../sources/crtmpserver/src/crtmpserver.cpp</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
@@ -15,11 +19,6 @@
   <sourceRootList>
     <Elem>../../../../sources/crtmpserver/include</Elem>
     <Elem>../../../../sources/crtmpserver/src</Elem>
-    <Elem>../../../cmake</Elem>
-    <Elem>../../../../appscaffold</Elem>
-    <Elem>../../../../docs</Elem>
-    <Elem>../../../../constants</Elem>
-    <Elem>../../../make</Elem>
   </sourceRootList>
   <projectmakefile>Makefile.nb</projectmakefile>
   <confs>
@@ -27,6 +26,8 @@
       <toolsSet>
         <remote-sources-mode>LOCAL_SOURCES</remote-sources-mode>
         <compilerSet>GNU|GNU</compilerSet>
+        <dependencyChecking>true</dependencyChecking>
+        <rebuildPropChanged>false</rebuildPropChanged>
       </toolsSet>
       <compileType>
         <ccTool>
@@ -38,9 +39,9 @@
           </incDir>
           <preprocessorList>
             <Elem>COMPILE_STATIC</Elem>
-            <Elem>HAS_APP_AGX</Elem>
+            <Elem>HAS_APP_EVOROUTER</Elem>
             <Elem>HAS_APP_HTTPTESTS</Elem>
-            <Elem>HAS_APP_VBRICK</Elem>
+            <Elem>HAS_APP_LMINTERFACE</Elem>
             <Elem>NET_KQUEUE</Elem>
             <Elem>OSX</Elem>
           </preprocessorList>
@@ -86,6 +87,8 @@
       <toolsSet>
         <remote-sources-mode>LOCAL_SOURCES</remote-sources-mode>
         <compilerSet>GNU|GNU</compilerSet>
+        <dependencyChecking>true</dependencyChecking>
+        <rebuildPropChanged>false</rebuildPropChanged>
       </toolsSet>
       <compileType>
         <cTool>
