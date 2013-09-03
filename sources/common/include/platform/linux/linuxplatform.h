@@ -64,6 +64,7 @@
 #include <sys/wait.h>
 #include <spawn.h>
 #include <time.h>
+#include <sys/resource.h>
 using namespace std;
 
 
