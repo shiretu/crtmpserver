@@ -41,5 +41,6 @@ post-install:
 	@if [ ! -f ${PREFIX}/etc/crtmpserver.lua ]; then \
 		${CP} -p ${PREFIX}/etc/crtmpserver.lua.sample ${PREFIX}/etc/crtmpserver.lua ; \
 	fi
+	@mkdir -p ${PREFIX}/var/log/crtmpserver
 
 .include <bsd.port.mk>

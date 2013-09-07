@@ -61,6 +61,7 @@ cd $OUTPUT_DIR/tmp;
 cp $PORT_TEMPLATE/conf.pkg-plist $OUTPUT_DIR/pkg-plist
 find . -type f|sed "s/^\.\/\(.*\)$/\1/"|grep -v "\.sample"|grep -v "/man" >> $OUTPUT_DIR/pkg-plist
 find . -d -type d -exec echo @dirrmtry {} \; |sed "s/^@\(.*\) \.\/\(.*\)$/@\1 \2/"|grep -v "\.$"|grep -v "lib$"|grep -v "sbin$"|grep -v "etc$"|grep -v " man" >> $OUTPUT_DIR/pkg-plist
+echo "@dirrmtry var/log/crtmpserver" >>$OUTPUT_DIR/pkg-plist
 rm -rf $OUTPUT_DIR/tmp
 echo "Done"
 
