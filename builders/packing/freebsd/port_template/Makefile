@@ -9,7 +9,7 @@ PORTNAME=	##_PORTNAME_##
 PORTVERSION=	##_PORTVERSION_##
 PORTREVISION=	1
 CATEGORIES=	##_PORTCATEGORIES_##
-MASTER_SITES=	http://freebsd.rtmpd.com/
+MASTER_SITES=	http://rtmpd.com/assets/sources/
 
 MAINTAINER=	support@rtmpd.com
 COMMENT=	C++ RTSP/RTMP/MPEG-TS Server
@@ -35,6 +35,7 @@ MAN1=	crtmpserver.1
 
 pre-install:
 	@sh $(WRKSRC)/fixConfFile.sh "${WRKSRC}/builders/cmake/crtmpserver/crtmpserver.lua" "${PREFIX}" "${WRKSRC}"
+	@sh $(WRKSRC)/fixConfFile.sh "${WRKSRC}/builders/cmake/crtmpserver/all.debug.lua" "${PREFIX}" "${WRKSRC}"
 
 post-install:
 	@if [ ! -f ${PREFIX}/etc/crtmpserver.lua ]; then \

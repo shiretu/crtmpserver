@@ -6,7 +6,7 @@
 
 ESCAPED_PREFIX=`echo $2|sed "s/\//\\\\\\\\\//g"`
 
-echo "ESCAPED_PREFIX: $ESCAPED_PREFIX"
+#echo "ESCAPED_PREFIX: $ESCAPED_PREFIX"
 
 cat $1|sed "s/^\(.*\)rootDirectory=\".*\",.*/\1rootDirectory=\"$ESCAPED_PREFIX\/lib\/crtmpserver\/applications\",/" >$3/tempconf
 mv $3/tempconf $1

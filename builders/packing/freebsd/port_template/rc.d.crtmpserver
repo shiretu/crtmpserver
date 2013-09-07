@@ -36,7 +36,7 @@ load_rc_config $name
 
 : ${crtmpserver_enable="NO"}
 : ${crtmpserver_config="%%PREFIX%%/etc/crtmpserver.lua"}
-: ${crtmpserver_username="%%USERS%%"}
+: ${crtmpserver_username="crtmpserver"}
 
 required_files="$crtmpserver_config"
 
