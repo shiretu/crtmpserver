@@ -33,7 +33,14 @@ public:
 	virtual ~InboundJSONCLIProtocol();
 
 	virtual bool Initialize(Variant &parameters);
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Woverloaded-virtual"
+#endif /* __clang__ */
 	virtual bool SignalInputData(IOBuffer &buffer);
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif /* __clang__ */
 	virtual bool SendMessage(Variant &message);
 private:
 	bool ParseCommand(string &command);
