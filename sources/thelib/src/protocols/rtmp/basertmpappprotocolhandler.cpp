@@ -1744,6 +1744,12 @@ bool BaseRTMPAppProtocolHandler::ProcessInvokeCreateStreamResult(BaseRTMPProtoco
 			return false;
 		}
 		parameters["uri"]["documentWithFullParameters"] = streamName;
+		double rangeStart = (double) parameters["rangeStart"];
+		double rangeEnd = (double) parameters["rangeEnd"];
+		if ((rangeStart == rangeEnd)&&(rangeStart == 0)) {
+			parameters["rangeStart"] = -2;
+			parameters["rangeEnd"] = -1;
+		}
 		publishPlayRequest = StreamMessageFactory::GetInvokePlay(3, rtmpStreamId,
 				parameters["uri"]["documentWithFullParameters"],
 				(double) parameters["rangeStart"]*1000.0,

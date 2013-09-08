@@ -1559,6 +1559,10 @@ bool BaseRTSPAppProtocolHandler::HandleRTSPResponse200Setup(
 		string uri = (string) pFrom->GetCustomParameters()["uri"]["fullUri"];
 		int64_t rangeStart = (int64_t) pFrom->GetCustomParameters()["customParameters"]["externalStreamConfig"]["rangeStart"];
 		int64_t rangeEnd = (int64_t) pFrom->GetCustomParameters()["customParameters"]["externalStreamConfig"]["rangeEnd"];
+		if ((rangeStart == rangeEnd)&&(rangeStart == 0)) {
+			rangeStart = -2;
+			rangeEnd = -1;
+		}
 		string range = format("npt=%s-%s",
 				(rangeStart < 0) ? "now" : STR(format("%"PRId64, rangeStart)),
 				(rangeEnd < 0) ? "" : STR(format("%"PRId64, rangeEnd)));
