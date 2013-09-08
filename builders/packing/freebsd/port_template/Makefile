@@ -34,13 +34,13 @@ USE_RC_SUBR=	crtmpserver
 MAN1=	crtmpserver.1
 
 pre-install:
-	@sh $(WRKSRC)/fixConfFile.sh "${WRKSRC}/builders/cmake/crtmpserver/crtmpserver.lua" "${PREFIX}" "${WRKSRC}"
-	@sh $(WRKSRC)/fixConfFile.sh "${WRKSRC}/builders/cmake/crtmpserver/all.debug.lua" "${PREFIX}" "${WRKSRC}"
+	@${SH} $(WRKSRC)/fixConfFile.sh "${WRKSRC}/builders/cmake/crtmpserver/crtmpserver.lua" "${PREFIX}" "${WRKSRC}"
+	@${SH} $(WRKSRC)/fixConfFile.sh "${WRKSRC}/builders/cmake/crtmpserver/all.debug.lua" "${PREFIX}" "${WRKSRC}"
 
 post-install:
 	@if [ ! -f ${PREFIX}/etc/crtmpserver.lua ]; then \
 		${CP} -p ${PREFIX}/etc/crtmpserver.lua.sample ${PREFIX}/etc/crtmpserver.lua ; \
 	fi
-	@mkdir -p ${PREFIX}/var/log/crtmpserver
+	@${MKDIR} ${PREFIX}/var/log/crtmpserver
 
 .include <bsd.port.mk>
