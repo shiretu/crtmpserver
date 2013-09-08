@@ -10,7 +10,7 @@
 # to enable this service:
 #
 # crtmpserver_enable (bool):   Set to NO by default.
-#               Set it to YES to enable doormand.
+#               Set it to YES to enable crtmpserver.
 # crtmpserver_config (path):   Set to %%PREFIX%%/etc/crtmpserver.lua
 #               by default.
 # crtmpserver_username (username): Set to crtmpserver

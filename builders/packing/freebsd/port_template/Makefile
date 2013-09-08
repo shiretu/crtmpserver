@@ -16,7 +16,7 @@ COMMENT=	C++ RTSP/RTMP/MPEG-TS Server
 
 LIB_DEPENDS=	execinfo:${PORTSDIR}/devel/libexecinfo
 
-USE_LUA=	5.1-5.1
+USE_LUA=	5.1
 WANT_LUA_VER=	5.1
 
 USE_CMAKE=	yes
