@@ -83,7 +83,7 @@ void InNetRTMPStream::SetChunkSize(uint32_t chunkSize) {
 	}
 }
 
-bool InNetRTMPStream::SendStreamMessage(Variant &completeMessage, bool persistent) {
+bool InNetRTMPStream::SendStreamMessage(Variant &completeMessage) {
 	//2. Loop on the subscribed streams and send the message
 	LinkedListNode<BaseOutStream *> *pTemp = _pOutStreams;
 	while ((pTemp != NULL) && (!IsEnqueueForDelete())) {
@@ -107,10 +107,6 @@ bool InNetRTMPStream::SendStreamMessage(Variant &completeMessage, bool persisten
 	if (IsEnqueueForDelete())
 		return false;
 
-	//4. Save the message for future use if necessary
-	if (persistent)
-		_lastStreamMessage = completeMessage;
-
 	if ((uint32_t) VH_MT(completeMessage) == RM_HEADER_MESSAGETYPE_NOTIFY) {
 		Variant &params = M_NOTIFY_PARAMS(completeMessage);
 		if ((params == V_MAP) && (params.MapSize() >= 2)) {
@@ -118,6 +114,7 @@ bool InNetRTMPStream::SendStreamMessage(Variant &completeMessage, bool persisten
 			if ((notify == V_STRING) && (lowerCase((string) notify) == "onmetadata")) {
 				//ASSERT("\n%s", STR(completeMessage.ToString()));
 				Variant &metadata = MAP_VAL(++params.begin());
+				_streamCapabilities.SetRTMPMetadata(metadata);
 				if (metadata == V_MAP) {
 					if (metadata.HasKeyChain(_V_NUMERIC, false, 1, "bandwidth")) {
 						_streamCapabilities.SetTransferRate((double) metadata["bandwidth"]*1024.0);
@@ -142,14 +139,13 @@ bool InNetRTMPStream::SendStreamMessage(Variant &completeMessage, bool persisten
 	return true;
 }
 
-bool InNetRTMPStream::SendStreamMessage(string functionName, Variant &parameters,
-		bool persistent) {
+bool InNetRTMPStream::SendStreamMessage(string functionName, Variant &parameters) {
 
 	//1. Prepare the message
 	Variant message = StreamMessageFactory::GetFlexStreamSend(0, 0, 0, true,
 			functionName, parameters);
 
-	return SendStreamMessage(message, persistent);
+	return SendStreamMessage(message);
 }
 
 bool InNetRTMPStream::SendOnStatusStreamPublished() {
@@ -210,15 +206,6 @@ bool InNetRTMPStream::RecordMP4(Metadata &meta) {
 }
 
 void InNetRTMPStream::SignalOutStreamAttached(BaseOutStream *pOutStream) {
-	if (_lastStreamMessage != V_NULL) {
-		if (TAG_KIND_OF(pOutStream->GetType(), ST_OUT_NET_RTMP)) {
-			if (!((BaseOutNetRTMPStream *) pOutStream)->SendStreamMessage(
-					_lastStreamMessage)) {
-				FATAL("Unable to send notify on stream. The connection will go down");
-				pOutStream->EnqueueForDelete();
-			}
-		}
-	}
 }
 
 void InNetRTMPStream::SignalOutStreamDetached(BaseOutStream *pOutStream) {

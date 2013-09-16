@@ -163,6 +163,7 @@ private:
 	VideoCodecInfo *_pVideoTrack;
 	AudioCodecInfo *_pAudioTrack;
 	double _transferRate;
+	Variant _baseMetadata;
 public:
 	StreamCapabilities();
 	virtual ~StreamCapabilities();
@@ -235,6 +236,7 @@ public:
 	 * @param destination where the information will be stored
 	 */
 	void GetRTMPMetadata(Variant &destination);
+	void SetRTMPMetadata(Variant &baseMetadata);
 
 	VideoCodecInfoPassThrough * AddTrackVideoPassThrough(
 			BaseInStream *pInStream);

@@ -37,7 +37,6 @@ private:
 	uint32_t _channelId;
 	string _clientId;
 	int32_t _videoCts;
-	Variant _lastStreamMessage;
 
 	bool _dummy;
 	uint8_t _lastAudioCodec;
@@ -58,9 +57,8 @@ public:
 	uint32_t GetChunkSize();
 	void SetChunkSize(uint32_t chunkSize);
 
-	bool SendStreamMessage(Variant &message, bool persistent = true);
-	virtual bool SendStreamMessage(string functionName, Variant &parameters,
-			bool persistent = true);
+	bool SendStreamMessage(Variant &message);
+	virtual bool SendStreamMessage(string functionName, Variant &parameters);
 	bool SendOnStatusStreamPublished();
 	bool RecordFLV(Metadata &meta, bool append);
 	bool RecordMP4(Metadata &meta);

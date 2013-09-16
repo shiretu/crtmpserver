@@ -1440,6 +1440,8 @@ void StreamCapabilities::ClearVideo() {
 		delete _pVideoTrack;
 		_pVideoTrack = NULL;
 	}
+	_baseMetadata.Reset();
+	_baseMetadata.IsArray(false);
 }
 
 void StreamCapabilities::ClearAudio() {
@@ -1447,6 +1449,8 @@ void StreamCapabilities::ClearAudio() {
 		delete _pAudioTrack;
 		_pAudioTrack = NULL;
 	}
+	_baseMetadata.Reset();
+	_baseMetadata.IsArray(false);
 }
 
 bool StreamCapabilities::Serialize(IOBuffer & buffer) {
@@ -1744,6 +1748,7 @@ AudioCodecInfo *StreamCapabilities::GetAudioCodec() {
 }
 
 void StreamCapabilities::GetRTMPMetadata(Variant &destination) {
+	destination = _baseMetadata;
 	destination[HTTP_HEADERS_SERVER] = BRANDING_BANNER;
 	if (_pAudioTrack != NULL) {
 		_pAudioTrack->GetRTMPMetadata(destination);
@@ -1752,6 +1757,14 @@ void StreamCapabilities::GetRTMPMetadata(Variant &destination) {
 		_pVideoTrack->GetRTMPMetadata(destination);
 	}
 	destination["bandwidth"] = (uint32_t) (GetTransferRate() / 1024.0);
+}
+
+void StreamCapabilities::SetRTMPMetadata(Variant &baseMetadata) {
+	_baseMetadata = baseMetadata;
+	if (_baseMetadata != V_MAP) {
+		_baseMetadata.Reset();
+		_baseMetadata.IsArray(false);
+	}
 }
 
 VideoCodecInfoPassThrough * StreamCapabilities::AddTrackVideoPassThrough(
