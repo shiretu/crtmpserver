@@ -207,6 +207,8 @@ bool InFileRTMPStream::Initialize(Metadata &metadata, TimerType timerType,
 		return false;
 	}
 
+	pCapabilities->SetRTMPMetadata(_completeMetadata.publicMetadata());
+
 	//3. Create the video builder
 	uint64_t videoCodec = pCapabilities->GetVideoCodecType();
 	if ((videoCodec != 0)
