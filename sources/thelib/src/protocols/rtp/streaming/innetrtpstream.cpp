@@ -570,20 +570,22 @@ bool InNetRTPStream::InternalFeedData(uint8_t *pData, uint32_t dataLength,
 		if (_hasVideo && (_videoLastDts < 0))
 			return true;
 	}
-
-	LinkedListNode<BaseOutStream *> *pTemp = _pOutStreams;
-	while (pTemp != NULL) {
-		if (!pTemp->info->IsEnqueueForDelete()) {
-			if (!pTemp->info->FeedData(pData, dataLength, processedLength, totalLength,
-					pts, dts, isAudio)) {
-				WARN("Unable to feed OS: %p", pTemp->info);
-				pTemp->info->EnqueueForDelete();
-				if (GetProtocol() == pTemp->info->GetProtocol()) {
+	LinkedListNode<BaseOutStream *> *pIterator = _pOutStreams;
+	LinkedListNode<BaseOutStream *> *pCurrent = NULL;
+	while (pIterator != NULL) {
+		pCurrent = pIterator;
+		pIterator = pIterator->pPrev;
+		if (pCurrent->info->IsEnqueueForDelete())
+			continue;
+		if (!pCurrent->info->FeedData(pData, dataLength, processedLength, totalLength,
+				pts, dts, isAudio)) {
+			if ((pIterator != NULL)&&(pIterator->pNext == pCurrent)) {
+				pCurrent->info->EnqueueForDelete();
+				if (GetProtocol() == pCurrent->info->GetProtocol()) {
 					return false;
 				}
 			}
 		}
-		pTemp = pTemp->pPrev;
 	}
 	return true;
 }

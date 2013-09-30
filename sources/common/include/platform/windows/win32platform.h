@@ -240,6 +240,7 @@ DLLEXP string upperCase(string value);
 DLLEXP string changeCase(string &value, bool lowerCase);
 DLLEXP string tagToString(uint64_t tag);
 DLLEXP bool setMaxFdCount(uint32_t &current, uint32_t &max);
+DLLEXP bool enableCoreDumps();
 DLLEXP bool setFdJoinMulticast(SOCKET sock, string bindIp, uint16_t bindPort, string ssmIp);
 DLLEXP bool setFdCloseOnExec(int fd);
 DLLEXP bool setFdNonBlock(SOCKET fd);

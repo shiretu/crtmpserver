@@ -55,10 +55,16 @@ bool BaseCLIAppProtocolHandler::Send(BaseProtocol *pTo, string status, string de
 	message["description"] = description;
 	message["data"] = data;
 
-	//2. Send it
+	//3. Send it
+	bool result;
 	switch (pTo->GetType()) {
 		case PT_INBOUND_JSONCLI:
-			return ((InboundBaseCLIProtocol *) pTo)->SendMessage(message);
+			result = ((InboundBaseCLIProtocol *) pTo)->SendMessage(message);
+			if ((pTo->GetFarProtocol())->GetType() == PT_HTTP_4_CLI) {
+				// If this is an http based CLI, enqueue it for delete
+				pTo->GracefullyEnqueueForDelete();
+			}
+			return result;
 		default:
 			WARN("Protocol %s not supported yet", STR(tagToString(pTo->GetType())));
 			return false;

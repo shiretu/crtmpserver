@@ -326,10 +326,12 @@ bool BaseRTMPProtocol::TimePeriodElapsed() {
 }
 
 void BaseRTMPProtocol::ReadyForSend() {
-	LinkedListNode<BaseOutNetRTMPStream *> *pTemp = _pSignaledRTMPOutNetStream;
-	while (pTemp != NULL) {
-		pTemp->info->ReadyForSend();
-		pTemp = pTemp->pPrev;
+	LinkedListNode<BaseOutNetRTMPStream *> *pIterator = _pSignaledRTMPOutNetStream;
+	LinkedListNode<BaseOutNetRTMPStream *> *pCurrent = NULL;
+	while (pIterator != NULL) {
+		pCurrent = pIterator;
+		pIterator = pIterator->pPrev;
+		pCurrent->info->ReadyForSend();
 	}
 }
 
@@ -508,14 +510,15 @@ bool BaseRTMPProtocol::CloseStream(uint32_t streamId, bool createNeutralStream) 
 
 	if (TAG_KIND_OF(_streams[streamId]->GetType(), ST_OUT_NET_RTMP)) {
 		//2. Remove it from signaled streams
-		LinkedListNode<BaseOutNetRTMPStream *> *pTemp = _pSignaledRTMPOutNetStream;
-		while (pTemp != NULL) {
-			if (pTemp->info->GetRTMPStreamId() == streamId) {
-				_pSignaledRTMPOutNetStream =
-						RemoveLinkedList<BaseOutNetRTMPStream *>(pTemp);
+		LinkedListNode<BaseOutNetRTMPStream *> *pIterator = _pSignaledRTMPOutNetStream;
+		LinkedListNode<BaseOutNetRTMPStream *> *pCurrent = NULL;
+		while (pIterator != NULL) {
+			pCurrent = pIterator;
+			pIterator = pIterator->pPrev;
+			if (pCurrent->info->GetRTMPStreamId() == streamId) {
+				_pSignaledRTMPOutNetStream = LastLinkedList(RemoveLinkedList<BaseOutNetRTMPStream *>(pCurrent));
 				break;
 			}
-			pTemp = pTemp->pPrev;
 		}
 
 		//3. If this is an outbound network stream and his publisher
@@ -657,13 +660,16 @@ BaseOutNetRTMPStream * BaseRTMPProtocol::CreateONS(uint32_t streamId,
 }
 
 void BaseRTMPProtocol::SignalONS(BaseOutNetRTMPStream *pONS) {
-	LinkedListNode<BaseOutNetRTMPStream *> *pTemp = _pSignaledRTMPOutNetStream;
-	while (pTemp != NULL) {
-		if (pTemp->info == pONS) {
+	LinkedListNode<BaseOutNetRTMPStream *> *pIterator = _pSignaledRTMPOutNetStream;
+	LinkedListNode<BaseOutNetRTMPStream *> *pCurrent = NULL;
+	while (pIterator != NULL) {
+		pCurrent = pIterator;
+		pIterator = pIterator->pPrev;
+		if (pCurrent->info == pONS) {
 			return;
 		}
-		pTemp = pTemp->pPrev;
 	}
+
 	_pSignaledRTMPOutNetStream = AddLinkedList<BaseOutNetRTMPStream *>(
 			_pSignaledRTMPOutNetStream, pONS, true);
 }

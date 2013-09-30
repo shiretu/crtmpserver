@@ -23,11 +23,18 @@ string format(const char *pFormat, ...) {
 	char *pBuffer = NULL;
 	va_list arguments;
 	va_start(arguments, pFormat);
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wformat-nonliteral"
+#endif /* __clang__ */
 	if (vasprintf(&pBuffer, pFormat, arguments) == -1) {
 		va_end(arguments);
 		o_assert(false);
 		return "";
 	}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif /* __clang__ */
 	va_end(arguments);
 	string result;
 	if (pBuffer != NULL) {
@@ -39,10 +46,17 @@ string format(const char *pFormat, ...) {
 
 string vFormat(const char *pFormat, va_list args) {
 	char *pBuffer = NULL;
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wformat-nonliteral"
+#endif /* __clang__ */
 	if (vasprintf(&pBuffer, pFormat, args) == -1) {
 		o_assert(false);
 		return "";
 	}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif /* __clang__ */
 	string result;
 	if (pBuffer != NULL) {
 		result = pBuffer;

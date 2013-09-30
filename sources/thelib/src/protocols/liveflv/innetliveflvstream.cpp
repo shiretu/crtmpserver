@@ -73,20 +73,22 @@ bool InNetLiveFLVStream::FeedData(uint8_t *pData, uint32_t dataLength,
 		_lastVideoPts = pts;
 		_lastVideoDts = dts;
 	}
-
-	LinkedListNode<BaseOutStream *> *pTemp = _pOutStreams;
-	while (pTemp != NULL) {
-		if (!pTemp->info->IsEnqueueForDelete()) {
-			if (!pTemp->info->FeedData(pData, dataLength, processedLength, totalLength,
-					pts, dts, isAudio)) {
-				FINEST("Unable to feed OS: %p", pTemp->info);
-				pTemp->info->EnqueueForDelete();
-				if (GetProtocol() == pTemp->info->GetProtocol()) {
+	LinkedListNode<BaseOutStream *> *pIterator = _pOutStreams;
+	LinkedListNode<BaseOutStream *> *pCurrent = NULL;
+	while (pIterator != NULL) {
+		pCurrent = pIterator;
+		pIterator = pIterator->pPrev;
+		if (pCurrent->info->IsEnqueueForDelete())
+			continue;
+		if (!pCurrent->info->FeedData(pData, dataLength, processedLength, totalLength,
+				pts, dts, isAudio)) {
+			if ((pIterator != NULL)&&(pIterator->pNext == pCurrent)) {
+				pCurrent->info->EnqueueForDelete();
+				if (GetProtocol() == pCurrent->info->GetProtocol()) {
 					return false;
 				}
 			}
 		}
-		pTemp = pTemp->pPrev;
 	}
 	return true;
 }
@@ -139,18 +141,17 @@ bool InNetLiveFLVStream::SignalStop() {
 
 bool InNetLiveFLVStream::SendStreamMessage(Variant &completeMessage, bool persistent) {
 	//2. Loop on the subscribed streams and send the message
-	LinkedListNode<BaseOutStream *> *pTemp = _pOutStreams;
-	while ((pTemp != NULL) && (!IsEnqueueForDelete())) {
-		if (pTemp->info->IsEnqueueForDelete()) {
+	LinkedListNode<BaseOutStream *> *pIterator = _pOutStreams;
+	LinkedListNode<BaseOutStream *> *pCurrent = NULL;
+	while (pIterator != NULL) {
+		pCurrent = pIterator;
+		pIterator = pIterator->pPrev;
+		if ((pCurrent->info->IsEnqueueForDelete()) || (!TAG_KIND_OF(pCurrent->info->GetType(), ST_OUT_NET_RTMP)))
 			continue;
+		if (!((BaseOutNetRTMPStream *) pCurrent->info)->SendStreamMessage(completeMessage)) {
+			FATAL("Unable to send notify on stream. The connection will go down");
+			pCurrent->info->EnqueueForDelete();
 		}
-		if (TAG_KIND_OF(pTemp->info->GetType(), ST_OUT_NET_RTMP)) {
-			if (!((BaseOutNetRTMPStream *) pTemp->info)->SendStreamMessage(completeMessage)) {
-				FATAL("Unable to send notify on stream. The connection will go down");
-				pTemp->info->EnqueueForDelete();
-			}
-		}
-		pTemp = pTemp->pPrev;
 	}
 
 	//3. Test to see if we are still alive. One of the target streams might

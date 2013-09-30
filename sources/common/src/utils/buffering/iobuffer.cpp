@@ -25,12 +25,8 @@
 #define SANITY_INPUT_BUFFER \
 o_assert(_consumed<=_published); \
 o_assert(_published<=_size);
-#define SANITY_INPUT_BUFFER_INDEX \
-o_assert(index >= 0); \
-o_assert((_published - _consumed - index) > 0);
 #else
 #define SANITY_INPUT_BUFFER
-#define SANITY_INPUT_BUFFER_INDEX
 #endif
 
 //#define TRACK_ALLOCATIONS
@@ -368,6 +364,9 @@ bool IOBuffer::ReadFromInputBufferWithIgnore(IOBuffer &src) {
 			&&(_sendLimit == 0xffffffff)
 			&&(src._sendLimit == 0xffffffff)
 			) {
+		//this is the ideal case in which "this" (the destiantion) doesn't
+		//have anything inside it and bot the source and the destination
+		//don't have any send limit. We just swap the guts
 		uint8_t *_pTempBuffer = src._pBuffer;
 		src._pBuffer = _pBuffer;
 		_pBuffer = _pTempBuffer;
@@ -388,16 +387,20 @@ bool IOBuffer::ReadFromInputBufferWithIgnore(IOBuffer &src) {
 		TRACK_SMART_COPY(this, true);
 		return true;
 	} else {
+		//here we have either some bytes in the destination (this) or the source
+		//has a send limit. We just copy the data and than call ignore
+		//on the source which MUST take care of _sendLimit accordingly
 		if ((src._published == src._consumed) || (src._sendLimit == 0)) {
 			SANITY_INPUT_BUFFER;
 			return true;
 		}
-		if (!ReadFromBuffer(GETIBPOINTER(src), GETAVAILABLEBYTESCOUNT(src))) {
+		uint32_t ceil = min(GETAVAILABLEBYTESCOUNT(src), GETIBSENDLIMIT(src));
+		if (!ReadFromBuffer(GETIBPOINTER(src), ceil)) {
 			FATAL("Unable to copy data");
 			SANITY_INPUT_BUFFER;
 			return false;
 		}
-		if (!src.Ignore(GETAVAILABLEBYTESCOUNT(src))) {
+		if (!src.Ignore(ceil)) {
 			FATAL("Unable to ignore data");
 			SANITY_INPUT_BUFFER;
 			return false;
@@ -533,6 +536,8 @@ uint8_t *IOBuffer::GetPointer() {
 bool IOBuffer::Ignore(uint32_t size) {
 	SANITY_INPUT_BUFFER;
 	_consumed += size;
+	if (_sendLimit != 0xffffffff)
+		_sendLimit -= size;
 	Recycle();
 	SANITY_INPUT_BUFFER;
 

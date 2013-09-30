@@ -1032,8 +1032,8 @@ bool BaseRTMPAppProtocolHandler::ProcessInvokePlay(BaseRTMPProtocol *pFrom,
 		return false;
 	}
 
-	INFO("Play request for stream name `%s`. Start: %.0f; length: %.0f",
-			STR(streamName), startTime, length);
+	INFO("Play request for stream name `%s`. Start: %.0f; length: %.0f. Protocol: %s",
+			STR(streamName), startTime, length, STR(*pFrom));
 
 	//5. bind the network outbound stream to the inbound stream
 	//depending on the type of the outbound stream

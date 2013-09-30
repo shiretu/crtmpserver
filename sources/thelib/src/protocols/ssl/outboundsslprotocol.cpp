@@ -73,7 +73,7 @@ bool OutboundSSLProtocol::InitGlobalContext(Variant &parameters) {
 				}
 			}
 		}
-
+		
 		string key;
 		string cert;
 		if ((parameters.HasKeyChain(V_STRING, false, 1, CONF_SSL_KEY))

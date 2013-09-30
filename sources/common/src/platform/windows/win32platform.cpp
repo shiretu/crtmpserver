@@ -262,6 +262,10 @@ bool setMaxFdCount(uint32_t &current, uint32_t &max) {
 	return true;
 }
 
+bool enableCoreDumps() {
+	return true;
+}
+
 bool setFdJoinMulticast(SOCKET sock, string bindIp, uint16_t bindPort, string ssmIp) {
 	if (ssmIp == "") {
 		struct ip_mreq group;
@@ -829,11 +833,12 @@ void GetFinishedProcesses(vector<pid_t> &pids, bool &noMorePids) {
 
 bool LaunchProcess(string fullBinaryPath, vector<string> &arguments, vector<string> &envVars, pid_t &pid) {
 	// Wrap fullBinaryPath within qoutes so that spaces will be honored
-	fullBinaryPath="\""+fullBinaryPath+"\"";
+	fullBinaryPath = "\"" + fullBinaryPath + "\"";
 
 	// For arguments, qoute as needed as well
+
 	FOR_VECTOR(arguments, i) {
-		fullBinaryPath+=" \""+arguments[i]+"\"";
+		fullBinaryPath += " \"" + arguments[i] + "\"";
 	}
 
 	// Actual number of characters to be reserved for the environment variables
@@ -873,6 +878,7 @@ bool LaunchProcess(string fullBinaryPath, vector<string> &arguments, vector<stri
 	}
 
 	// Add the passed env variables to the size to be reserved
+
 	FOR_VECTOR(envVars, i) {
 		blockSize += envVars[i].length() + 1;
 	}
@@ -880,8 +886,8 @@ bool LaunchProcess(string fullBinaryPath, vector<string> &arguments, vector<stri
 	char *envBlock = NULL;
 
 	// Sanity check: if limit reached
-	if ((pvSize == 0x0FFFFFFFF) || ((uint32_t)(pvSize + blockSize) < pvSize)) {
-			WARN("Passed environment variables will not be considered.");
+	if ((pvSize == 0x0FFFFFFFF) || ((uint32_t) (pvSize + blockSize) < pvSize)) {
+		WARN("Passed environment variables will not be considered.");
 	} else {
 		// Add to the target blocksize
 		blockSize += pvSize;
@@ -894,12 +900,14 @@ bool LaunchProcess(string fullBinaryPath, vector<string> &arguments, vector<stri
 			char *p = envBlock;
 
 			// First the parent
+
 			FOR_VECTOR(parentVars, i) {
 				memcpy(p, parentVars[i].c_str(), parentVars[i].length());
 				p += parentVars[i].length() + 1;
 			}
 
 			// Then append the passed envVars
+
 			FOR_VECTOR(envVars, i) {
 				memcpy(p, envVars[i].c_str(), envVars[i].length());
 				p += envVars[i].length() + 1;
@@ -913,12 +921,12 @@ bool LaunchProcess(string fullBinaryPath, vector<string> &arguments, vector<stri
 	STARTUPINFO si = {0};
 	si.cb = sizeof (si);
 	PROCESS_INFORMATION pi = {0};
-	char *pTemp=new char[fullBinaryPath.size()+1];
-	memset(pTemp,0,fullBinaryPath.size()+1);
-	memcpy(pTemp,fullBinaryPath.data(),fullBinaryPath.size());
+	char *pTemp = new char[fullBinaryPath.size() + 1];
+	memset(pTemp, 0, fullBinaryPath.size() + 1);
+	memcpy(pTemp, fullBinaryPath.data(), fullBinaryPath.size());
 	//FINEST("pTemp: `%s`",pTemp);
 	if (!CreateProcess(NULL, pTemp, NULL, NULL, false, 0, envBlock, NULL, &si, &pi)) {
-		DWORD error=GetLastError();
+		DWORD error = GetLastError();
 		FATAL("Unable to launch proces. Error: %"PRIu32, error);
 		delete[] pTemp;
 		if (envBlock != NULL)

@@ -183,10 +183,11 @@ bool BaseOutNetRTMPStream::SendStreamMessage(Variant &message) {
 	VH_CI(message) = (uint32_t) 3;
 
 	//2. Reset the timer
-	VH_TS(message) = (uint32_t) 0;
+	VH_TS(message) = (uint32_t) _pChannelAudio->lastOutAbsTs > _pChannelVideo->lastOutAbsTs ?
+			_pChannelAudio->lastOutAbsTs : _pChannelVideo->lastOutAbsTs;
 
-	//3. Set as relative ts
-	VH_IA(message) = false;
+	//3. Set as absolute ts
+	VH_IA(message) = true;
 
 	//4. Set the stream id
 	VH_SI(message) = _rtmpStreamId;

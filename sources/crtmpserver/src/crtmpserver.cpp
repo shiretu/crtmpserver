@@ -170,8 +170,9 @@ bool Initialize() {
 
 	uint32_t currentFdCount = 0;
 	uint32_t maxFdCount = 0;
-	if (!setMaxFdCount(currentFdCount, maxFdCount)) {
-		WARN("Unable to apply file descriptors count limits");
+	if ((!setMaxFdCount(currentFdCount, maxFdCount))
+			|| (!enableCoreDumps())) {
+		WARN("Unable to apply file descriptors count limits and activate core dumps");
 	}
 
 #ifndef WIN32

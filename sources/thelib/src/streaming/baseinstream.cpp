@@ -44,22 +44,26 @@ BaseInStream::~BaseInStream() {
 
 vector<BaseOutStream *> BaseInStream::GetOutStreams() {
 	vector<BaseOutStream *> result;
-	LinkedListNode<BaseOutStream *> *pTemp = _pOutStreams;
-	while (pTemp != NULL) {
-		ADD_VECTOR_END(result, pTemp->info);
-		pTemp = pTemp->pPrev;
+	LinkedListNode<BaseOutStream *> *pIterator = _pOutStreams;
+	LinkedListNode<BaseOutStream *> *pCurrent = NULL;
+	while (pIterator != NULL) {
+		pCurrent = pIterator;
+		pIterator = pIterator->pPrev;
+		ADD_VECTOR_END(result, pCurrent->info);
 	}
 	return result;
 }
 
 void BaseInStream::GetStats(Variant &info, uint32_t namespaceId) {
 	BaseStream::GetStats(info, namespaceId);
-	LinkedListNode<BaseOutStream *> *pTemp = _pOutStreams;
 	info["outStreamsUniqueIds"] = Variant();
-	while (pTemp != NULL) {
+	LinkedListNode<BaseOutStream *> *pIterator = _pOutStreams;
+	LinkedListNode<BaseOutStream *> *pCurrent = NULL;
+	while (pIterator != NULL) {
+		pCurrent = pIterator;
+		pIterator = pIterator->pPrev;
 		info["outStreamsUniqueIds"].PushToArray(
-				((((uint64_t) namespaceId) << 32) | pTemp->info->GetUniqueId()));
-		pTemp = pTemp->pPrev;
+				((((uint64_t) namespaceId) << 32) | pCurrent->info->GetUniqueId()));
 	}
 	StreamCapabilities *pCapabilities = GetCapabilities();
 	if (pCapabilities != NULL)
@@ -102,13 +106,15 @@ bool BaseInStream::UnLink(BaseOutStream *pOutStream, bool reverseUnLink) {
 	_pStreamsManager->SignalUnLinkingStreams(this, pOutStream);
 
 	_linkedStreams.erase(pOutStream->GetUniqueId());
-	LinkedListNode<BaseOutStream *> *pTemp = _pOutStreams;
-	while (pTemp != NULL) {
-		if (pTemp->info->GetUniqueId() == pOutStream->GetUniqueId()) {
-			_pOutStreams = RemoveLinkedList<BaseOutStream *>(pTemp);
+	LinkedListNode<BaseOutStream *> *pIterator = _pOutStreams;
+	LinkedListNode<BaseOutStream *> *pCurrent = NULL;
+	while (pIterator != NULL) {
+		pCurrent = pIterator;
+		pIterator = pIterator->pPrev;
+		if (pCurrent->info->GetUniqueId() == pOutStream->GetUniqueId()) {
+			_pOutStreams = LastLinkedList<BaseOutStream *>(RemoveLinkedList<BaseOutStream *>(pCurrent));
 			break;
 		}
-		pTemp = pTemp->pPrev;
 	}
 
 	if (reverseUnLink) {
@@ -129,12 +135,14 @@ bool BaseInStream::Play(double dts, double length) {
 		FATAL("Unable to signal play");
 		return false;
 	}
-	LinkedListNode<BaseOutStream *> *pTemp = _pOutStreams;
-	while (pTemp != NULL) {
-		if (!pTemp->info->SignalPlay(dts, length)) {
+	LinkedListNode<BaseOutStream *> *pIterator = _pOutStreams;
+	LinkedListNode<BaseOutStream *> *pCurrent = NULL;
+	while (pIterator != NULL) {
+		pCurrent = pIterator;
+		pIterator = pIterator->pPrev;
+		if (!pCurrent->info->SignalPlay(dts, length)) {
 			WARN("Unable to signal play on an outbound stream");
 		}
-		pTemp = pTemp->pPrev;
 	}
 	return true;
 }
@@ -144,12 +152,14 @@ bool BaseInStream::Pause() {
 		FATAL("Unable to signal pause");
 		return false;
 	}
-	LinkedListNode<BaseOutStream *> *pTemp = _pOutStreams;
-	while (pTemp != NULL) {
-		if (!pTemp->info->SignalPause()) {
+	LinkedListNode<BaseOutStream *> *pIterator = _pOutStreams;
+	LinkedListNode<BaseOutStream *> *pCurrent = NULL;
+	while (pIterator != NULL) {
+		pCurrent = pIterator;
+		pIterator = pIterator->pPrev;
+		if (!pCurrent->info->SignalPause()) {
 			WARN("Unable to signal pause on an outbound stream");
 		}
-		pTemp = pTemp->pPrev;
 	}
 	return true;
 }
@@ -159,23 +169,27 @@ bool BaseInStream::Resume() {
 		FATAL("Unable to signal resume");
 		return false;
 	}
-	LinkedListNode<BaseOutStream *> *pTemp = _pOutStreams;
-	while (pTemp != NULL) {
-		if (!pTemp->info->SignalResume()) {
+	LinkedListNode<BaseOutStream *> *pIterator = _pOutStreams;
+	LinkedListNode<BaseOutStream *> *pCurrent = NULL;
+	while (pIterator != NULL) {
+		pCurrent = pIterator;
+		pIterator = pIterator->pPrev;
+		if (!pCurrent->info->SignalResume()) {
 			WARN("Unable to signal resume on an outbound stream");
 		}
-		pTemp = pTemp->pPrev;
 	}
 	return true;
 }
 
 bool BaseInStream::Seek(double dts) {
-	LinkedListNode<BaseOutStream *> *pTemp = _pOutStreams;
-	while (pTemp != NULL) {
-		if (!pTemp->info->SignalSeek(dts)) {
+	LinkedListNode<BaseOutStream *> *pIterator = _pOutStreams;
+	LinkedListNode<BaseOutStream *> *pCurrent = NULL;
+	while (pIterator != NULL) {
+		pCurrent = pIterator;
+		pIterator = pIterator->pPrev;
+		if (!pCurrent->info->SignalSeek(dts)) {
 			WARN("Unable to signal seek on an outbound stream");
 		}
-		pTemp = pTemp->pPrev;
 	}
 
 	if (!SignalSeek(dts)) {
@@ -191,12 +205,14 @@ bool BaseInStream::Stop() {
 		FATAL("Unable to signal stop");
 		return false;
 	}
-	LinkedListNode<BaseOutStream *> *pTemp = _pOutStreams;
-	while (pTemp != NULL) {
-		if (!pTemp->info->SignalStop()) {
+	LinkedListNode<BaseOutStream *> *pIterator = _pOutStreams;
+	LinkedListNode<BaseOutStream *> *pCurrent = NULL;
+	while (pIterator != NULL) {
+		pCurrent = pIterator;
+		pIterator = pIterator->pPrev;
+		if (!pCurrent->info->SignalStop()) {
 			WARN("Unable to signal stop on an outbound stream");
 		}
-		pTemp = pTemp->pPrev;
 	}
 	return true;
 }
@@ -204,26 +220,30 @@ bool BaseInStream::Stop() {
 void BaseInStream::AudioStreamCapabilitiesChanged(
 		StreamCapabilities *pCapabilities, AudioCodecInfo *pOld,
 		AudioCodecInfo *pNew) {
-	LinkedListNode<BaseOutStream *> *pTemp = _pOutStreams;
-	while (pTemp != NULL) {
-		pTemp->info->SignalAudioStreamCapabilitiesChanged(pCapabilities, pOld,
+	LinkedListNode<BaseOutStream *> *pIterator = _pOutStreams;
+	LinkedListNode<BaseOutStream *> *pCurrent = NULL;
+	while (pIterator != NULL) {
+		pCurrent = pIterator;
+		pIterator = pIterator->pPrev;
+		pCurrent->info->SignalAudioStreamCapabilitiesChanged(pCapabilities, pOld,
 				pNew);
 		if (IsEnqueueForDelete())
 			return;
-		pTemp = pTemp->pPrev;
 	}
 }
 
 void BaseInStream::VideoStreamCapabilitiesChanged(
 		StreamCapabilities *pCapabilities, VideoCodecInfo *pOld,
 		VideoCodecInfo *pNew) {
-	LinkedListNode<BaseOutStream *> *pTemp = _pOutStreams;
-	while (pTemp != NULL) {
-		pTemp->info->SignalVideoStreamCapabilitiesChanged(pCapabilities, pOld,
+	LinkedListNode<BaseOutStream *> *pIterator = _pOutStreams;
+	LinkedListNode<BaseOutStream *> *pCurrent = NULL;
+	while (pIterator != NULL) {
+		pCurrent = pIterator;
+		pIterator = pIterator->pPrev;
+		pCurrent->info->SignalVideoStreamCapabilitiesChanged(pCapabilities, pOld,
 				pNew);
 		if (IsEnqueueForDelete())
 			return;
-		pTemp = pTemp->pPrev;
 	}
 }
 

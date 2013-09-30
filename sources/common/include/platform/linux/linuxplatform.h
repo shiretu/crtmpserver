@@ -187,6 +187,7 @@ string upperCase(string value);
 string changeCase(string &value, bool lowerCase);
 string tagToString(uint64_t tag);
 bool setMaxFdCount(uint32_t &current, uint32_t &max);
+bool enableCoreDumps();
 bool setFdJoinMulticast(SOCKET sock, string bindIp, uint16_t bindPort, string ssmIp);
 bool setFdCloseOnExec(int fd);
 bool setFdNonBlock(SOCKET fd);

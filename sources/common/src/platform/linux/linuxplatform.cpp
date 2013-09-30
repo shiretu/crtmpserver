@@ -129,6 +129,34 @@ bool setMaxFdCount(uint32_t &current, uint32_t &max) {
 	return true;
 }
 
+bool enableCoreDumps() {
+	struct rlimit limits;
+	memset(&limits, 0, sizeof (limits));
+
+	memset(&limits, 0, sizeof (limits));
+	if (getrlimit(RLIMIT_CORE, &limits) != 0) {
+		int err = errno;
+		FATAL("getrlimit failed: (%d) %s", err, strerror(err));
+		return false;
+	}
+
+	limits.rlim_cur = limits.rlim_max = RLIM_INFINITY;
+	if (setrlimit(RLIMIT_CORE, &limits) != 0) {
+		int err = errno;
+		FATAL("setrlimit failed: (%d) %s", err, strerror(err));
+		return false;
+	}
+
+	memset(&limits, 0, sizeof (limits));
+	if (getrlimit(RLIMIT_CORE, &limits) != 0) {
+		int err = errno;
+		FATAL("getrlimit failed: (%d) %s", err, strerror(err));
+		return false;
+	}
+
+	return limits.rlim_cur == RLIM_INFINITY;
+}
+
 bool setFdJoinMulticast(SOCKET sock, string bindIp, uint16_t bindPort, string ssmIp) {
 	if (ssmIp == "") {
 		struct ip_mreq group;
