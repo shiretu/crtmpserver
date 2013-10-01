@@ -64,6 +64,7 @@
 #include <ifaddrs.h>
 #include <spawn.h>
 #include <sys/resource.h>
+#include <unistd.h>
 using namespace std;
 
 //platform defines

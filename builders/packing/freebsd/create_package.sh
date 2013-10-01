@@ -51,6 +51,7 @@ echo -n "Build the project ..."
 cd "$OUTPUT_DIR/$PORT_VERSIONED_NAME/builders/cmake"
 sh cleanup.sh
 cmake -DCRTMPSERVER_INSTALL_PREFIX=$OUTPUT_DIR/tmp .
+make -j32
 make install
 sh cleanup.sh
 echo "Done"
@@ -62,6 +63,8 @@ cp $PORT_TEMPLATE/conf.pkg-plist $OUTPUT_DIR/pkg-plist
 find . -type f|sed "s/^\.\/\(.*\)$/\1/"|grep -v "\.sample"|grep -v "/man" >> $OUTPUT_DIR/pkg-plist
 find . -d -type d -exec echo @dirrmtry {} \; |sed "s/^@\(.*\) \.\/\(.*\)$/@\1 \2/"|grep -v "\.$"|grep -v "lib$"|grep -v "sbin$"|grep -v "etc$"|grep -v " man" >> $OUTPUT_DIR/pkg-plist
 echo "@dirrmtry var/log/crtmpserver" >>$OUTPUT_DIR/pkg-plist
+echo "@dirrmtry var/crtmpserver/media" >>$OUTPUT_DIR/pkg-plist
+echo "@dirrmtry var/crtmpserver" >>$OUTPUT_DIR/pkg-plist
 rm -rf $OUTPUT_DIR/tmp
 echo "Done"
 
@@ -70,6 +73,7 @@ echo -n "Create $PORT_VERSIONED_NAME.tar.gz and upload it... "
 cd $OUTPUT_DIR
 tar -czf $PORT_VERSIONED_NAME.tar.gz $PORT_VERSIONED_NAME/
 scp $OUTPUT_DIR/$PORT_VERSIONED_NAME.tar.gz $1
+sudo cp $OUTPUT_DIR/$PORT_VERSIONED_NAME.tar.gz /usr/ports/distfiles/
 echo "Done"
 
 #Create the Makefile
