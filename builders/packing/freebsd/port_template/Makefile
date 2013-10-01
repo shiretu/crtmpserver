@@ -16,6 +16,7 @@ LIB_DEPENDS=	libexecinfo.so:${PORTSDIR}/devel/libexecinfo
 USE_LUA=	5.1
 WANT_LUA_VER=	5.1
 
+MAKE_JOBS_UNSAFE=	yes
 USE_LDCONFIG=	yes
 USES=		cmake:outsource
 CMAKE_SOURCE_PATH=	${WRKSRC}/builders/cmake
