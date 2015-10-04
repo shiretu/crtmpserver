@@ -17,9 +17,9 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #ifdef ANDROID
-#ifndef _LOGCATLOGLOCATION_H
-#define	_LOGCATLOGLOCATION_H
 
 #include "utils/logging/baseloglocation.h"
 
@@ -33,9 +33,8 @@ public:
 
 	virtual void Log(int32_t level, const char *pFileName, uint32_t lineNumber,
 			const char *pFunctionName, string &message);
-	virtual void SignalFork();
+	virtual void SignalFork(uint32_t forkId);
 
 };
 
-#endif	/* _LOGCATLOGLOCATION_H */
 #endif /* ANDROID */

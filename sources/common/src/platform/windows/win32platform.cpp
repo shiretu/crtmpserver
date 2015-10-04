@@ -24,6 +24,7 @@
 #include <Strsafe.h>
 #include <stdio.h>
 #include <TlHelp32.h>
+#include <io.h>
 
 static map<uint32_t, SignalFnc> _signalHandlers;
 static vector<pid_t> _pids;
@@ -52,78 +53,8 @@ int vasprintf(char **strp, const char *fmt, va_list ap, int size) {
 	}
 }
 
-bool fileExists(string path) {
-#ifdef UNICODE
-	//TODO: Add the unicode implementation here
-	NYIR;
-#else
-	if (PathFileExists(STR(path)))
-		return true;
-	else
-		return false;
-#endif /* UNICODE */
-}
-
-string tagToString(uint64_t tag) {
-	string result;
-	for (uint32_t i = 0; i < 8; i++) {
-		uint8_t v = (tag >> ((7 - i)*8)&0xff);
-		if (v == 0)
-			break;
-		result += (char) v;
-	}
-	return result;
-}
-
-uint64_t getTagMask(uint64_t tag) {
-	uint64_t result = 0xffffffffffffffffULL;
-	for (int8_t i = 56; i >= 0; i -= 8) {
-		if (((tag >> i)&0xff) == 0)
-			break;
-		result = result >> 8;
-	}
-	return ~result;
-}
-
-bool isNumeric(string value) {
-	return value == format("%d", atoi(STR(value)));
-}
-
-string lowerCase(string value) {
-	return changeCase(value, true);
-}
-
-string upperCase(string value) {
-	return changeCase(value, false);
-}
-
-void lTrim(string &value) {
-	string::size_type i = 0;
-	for (i = 0; i < value.length(); i++) {
-		if (value[i] != ' ' &&
-				value[i] != '\t' &&
-				value[i] != '\n' &&
-				value[i] != '\r')
-			break;
-	}
-	value = value.substr(i);
-}
-
-void rTrim(string &value) {
-	int32_t i = 0;
-	for (i = (int32_t) value.length() - 1; i >= 0; i--) {
-		if (value[i] != ' ' &&
-				value[i] != '\t' &&
-				value[i] != '\n' &&
-				value[i] != '\r')
-			break;
-	}
-	value = value.substr(0, i + 1);
-}
-
-void trim(string &value) {
-	lTrim(value);
-	rTrim(value);
+bool fileExists(const string &path) {
+	return PathFileExists(path.c_str()) != 0;
 }
 
 int8_t getCPUCount() {
@@ -131,74 +62,13 @@ int8_t getCPUCount() {
 	return 0;
 }
 
-void replace(string &target, string search, string replacement) {
-	if (search == replacement)
-		return;
-	if (search == "")
-		return;
-	string::size_type i = string::npos;
-	string::size_type lastPos = 0;
-	while ((i = target.find(search, lastPos)) != string::npos) {
-		target.replace(i, search.length(), replacement);
-		lastPos = i + replacement.length();
-	}
-}
-
-void split(string str, string separator, vector<string> &result) {
-	result.clear();
-	string::size_type position = str.find(separator);
-	string::size_type lastPosition = 0;
-	uint32_t separatorLength = (uint32_t) separator.length();
-
-	while (position != str.npos) {
-		ADD_VECTOR_END(result, str.substr(lastPosition, position - lastPosition));
-		lastPosition = position + separatorLength;
-		position = str.find(separator, lastPosition);
-	}
-	ADD_VECTOR_END(result, str.substr(lastPosition, string::npos));
-}
-
-map<string, string> mapping(string str, string separator1, string separator2, bool trimStrings) {
-	map<string, string> result;
-
-	vector<string> pairs;
-	split(str, separator1, pairs);
-
-	FOR_VECTOR_ITERATOR(string, pairs, i) {
-		if (VECTOR_VAL(i) != "") {
-			if (VECTOR_VAL(i).find(separator2) != string::npos) {
-				string key = VECTOR_VAL(i).substr(0, VECTOR_VAL(i).find(separator2));
-				string value = VECTOR_VAL(i).substr(VECTOR_VAL(i).find(separator2) + 1);
-				if (trimStrings) {
-					trim(key);
-					trim(value);
-				}
-				result[key] = value;
-			} else {
-				if (trimStrings) {
-					trim(VECTOR_VAL(i));
-				}
-				result[VECTOR_VAL(i)] = "";
-			}
-		}
-	}
-	return result;
-}
-
-string changeCase(string &value, bool lowerCase) {
-	//int32_t len = (int32_t)value.length();
-	string newvalue(value);
-	for (string::size_type i = 0, l = newvalue.length(); i < l; ++i)
-		newvalue[i] = (char) (lowerCase ? tolower(newvalue[i]) : toupper(newvalue[i]));
-	return newvalue;
-}
-
 int gettimeofday(struct timeval *tv, void* tz) {
+#define _W32_FT_OFFSET (116444736000000000ULL)
 	FILETIME ft;
 	GetSystemTimeAsFileTime(&ft);
 	uint64_t value = ((uint64_t) ft.dwHighDateTime << 32) | ft.dwLowDateTime;
-	tv->tv_usec = (long) ((value / 10LL) % 1000000LL);
-	tv->tv_sec = (long) ((value - 116444736000000000LL) / 10000000LL);
+	tv->tv_usec = (long) ((value / 10ULL) % 1000000ULL);
+	tv->tv_sec = (long) ((value - _W32_FT_OFFSET) / 10000000ULL);
 	return (0);
 }
 
@@ -220,9 +90,9 @@ void installQuitSignal(SignalFnc pQuitSignalFnc) {
 	SetConsoleCtrlHandler((PHANDLER_ROUTINE) HandlerRoutine, TRUE);
 }
 
-double getFileModificationDate(string path) {
+double getFileModificationDate(const string &path) {
 	struct _stat64 s;
-	if (_stat64(STR(path), &s) != 0) {
+	if (_stat64(path.c_str(), &s) != 0) {
 		FATAL("Unable to stat file %s", STR(path));
 		return 0;
 	}
@@ -266,236 +136,22 @@ bool enableCoreDumps() {
 	return true;
 }
 
-bool setFdJoinMulticast(SOCKET sock, string bindIp, uint16_t bindPort, string ssmIp) {
-	if (ssmIp == "") {
-		struct ip_mreq group;
-		group.imr_multiaddr.s_addr = inet_addr(STR(bindIp));
-		group.imr_interface.s_addr = INADDR_ANY;
-		if (setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP,
-				(char *) &group, sizeof (group)) < 0) {
-			int err = LASTSOCKETERROR;
-			FATAL("Adding multicast failed. Error was: %d", err);
-			return false;
-		}
-		return true;
-	} else {
-		struct group_source_req multicast;
-		struct sockaddr_in *pGroup = (struct sockaddr_in*) &multicast.gsr_group;
-		struct sockaddr_in *pSource = (struct sockaddr_in*) &multicast.gsr_source;
-
-		memset(&multicast, 0, sizeof (multicast));
-
-		//Setup the group we want to join
-		pGroup->sin_family = AF_INET;
-		pGroup->sin_addr.s_addr = inet_addr(STR(bindIp));
-		pGroup->sin_port = EHTONS(bindPort);
-
-		//setup the source we want to listen
-		pSource->sin_family = AF_INET;
-		pSource->sin_addr.s_addr = inet_addr(STR(ssmIp));
-		if (pSource->sin_addr.s_addr == INADDR_NONE) {
-			FATAL("Unable to SSM on address %s", STR(ssmIp));
-			return false;
-		}
-		pSource->sin_port = 0;
-
-		INFO("Try to SSM on ip %s", STR(ssmIp));
-
-		if (setsockopt(sock, IPPROTO_IP, MCAST_JOIN_SOURCE_GROUP, (char *) &multicast,
-				sizeof (multicast)) < 0) {
-			int err = LASTSOCKETERROR;
-			FATAL("Adding multicast failed. Error was: (%d)", err);
-			return false;
-		}
-
-		return true;
-	}
-}
-
-bool setFdCloseOnExec(int fd) {
+bool setFdCloseOnExec(SOCKET_TYPE fd) {
 	return true;
 }
 
-bool setFdNonBlock(SOCKET fd) {
+bool setFdNonBlock(SOCKET_TYPE fd1) {
 	u_long iMode = 1; // 0 for blocking, anything else for nonblocking
 
-	if (ioctlsocket(fd, FIONBIO, &iMode) < 0) {
-		int err = LASTSOCKETERROR;
+	if (ioctlsocket(fd1, FIONBIO, &iMode) < 0) {
+		int err = SOCKET_LAST_ERROR;
 		FATAL("Unable to set fd flags: %d", err);
 		return false;
 	}
 	return true;
 }
 
-bool setFdNoSIGPIPE(SOCKET fd) {
-	return true;
-}
-
-bool setFdKeepAlive(SOCKET fd, bool isUdp) {
-	if (isUdp)
-		return true;
-	int value = 1;
-	if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (char *) &value, sizeof (int)) != 0) {
-		DWORD err = WSAGetLastError();
-		FATAL("setsockopt failed with error %"PRIu32, err);
-		return false;
-	}
-	return true;
-}
-
-bool setFdNoNagle(SOCKET fd, bool isUdp) {
-	if (isUdp)
-		return true;
-	BOOL value = TRUE;
-	if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (char *) &value, sizeof (BOOL)) == SOCKET_ERROR) {
-		DWORD err = WSAGetLastError();
-		FATAL("Unable to disable Nagle algorithm. Error was: %"PRIu32, err);
-		return false;
-	}
-
-	return true;
-}
-
-bool setFdReuseAddress(SOCKET fd) {
-	BOOL value = TRUE;
-	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *) &value, sizeof (BOOL)) == SOCKET_ERROR) {
-		FATAL("Error #%u", WSAGetLastError());
-		return false;
-	}
-	return true;
-}
-
-bool setFdTTL(SOCKET fd, uint8_t ttl) {
-	NYI;
-	return true;
-}
-
-bool setFdMulticastTTL(SOCKET fd, uint8_t ttl) {
-	NYI
-	return true;
-}
-
-bool setFdTOS(SOCKET fd, uint8_t tos) {
-	NYI
-	return true;
-}
-
-int32_t __maxSndBufValUdp = 0;
-int32_t __maxRcvBufValUdp = 0;
-int32_t __maxSndBufValTcp = 0;
-int32_t __maxRcvBufValTcp = 0;
-SOCKET __maxSndBufSocket = (SOCKET) - 1;
-
-bool testSetsockopt(int option, int32_t testing) {
-	if (setsockopt(__maxSndBufSocket, SOL_SOCKET, option, (const char*) & testing, sizeof (testing)) != 0)
-		return false;
-	int32_t retValue = 0;
-	int retValueSize = sizeof (retValue);
-	if (getsockopt(__maxSndBufSocket, SOL_SOCKET, option, (char*) & retValue, &retValueSize) != 0)
-		return false;
-	return retValue == testing;
-}
-
-bool DetermineMaxRcvSndBuff(int option, bool isUdp) {
-	int32_t &maxVal = isUdp ?
-			((option == SO_SNDBUF) ? __maxSndBufValUdp : __maxRcvBufValUdp)
-			: ((option == SO_SNDBUF) ? __maxSndBufValTcp : __maxRcvBufValTcp);
-	CLOSE_SOCKET(__maxSndBufSocket);
-	__maxSndBufSocket = (SOCKET) - 1;
-	__maxSndBufSocket = socket(AF_INET, isUdp ? SOCK_DGRAM : SOCK_STREAM, 0);
-	if (__maxSndBufSocket < 0) {
-		FATAL("Unable to create testing socket");
-		return false;
-	}
-
-	int32_t known = 0;
-	int32_t testing = 1024 * 1024 * 16;
-	int32_t prevTesting = testing;
-	//	FINEST("---- isUdp: %d; option: %s ----", isUdp, (option == SO_SNDBUF ? "SO_SNDBUF" : "SO_RCVBUF"));
-	while (known != testing) {
-		//		assert(known <= testing);
-		//		assert(known <= prevTesting);
-		//		assert(testing <= prevTesting);
-		//		FINEST("%"PRId32" (%"PRId32") %"PRId32, known, testing, prevTesting);
-		if (testSetsockopt(option, testing)) {
-			known = testing;
-			testing = known + (prevTesting - known) / 2;
-			//FINEST("---------");
-		} else {
-			prevTesting = testing;
-			testing = known + (testing - known) / 2;
-		}
-	}
-	CLOSE_SOCKET(__maxSndBufSocket);
-	__maxSndBufSocket = (SOCKET) - 1;
-	maxVal = known;
-	//	FINEST("%s maxVal: %"PRId32, (option == SO_SNDBUF ? "SO_SNDBUF" : "SO_RCVBUF"), maxVal);
-	return maxVal > 0;
-}
-
-bool setFdMaxSndRcvBuff(SOCKET fd, bool isUdp) {
-	int32_t &maxSndBufVal = isUdp ? __maxSndBufValUdp : __maxSndBufValTcp;
-	int32_t &maxRcvBufVal = isUdp ? __maxRcvBufValUdp : __maxRcvBufValTcp;
-	if (maxSndBufVal == 0) {
-		if (!DetermineMaxRcvSndBuff(SO_SNDBUF, isUdp)) {
-			FATAL("Unable to determine maximum value for SO_SNDBUF");
-			return false;
-		}
-	}
-
-	if (maxRcvBufVal == 0) {
-		if (!DetermineMaxRcvSndBuff(SO_RCVBUF, isUdp)) {
-			FATAL("Unable to determine maximum value for SO_SNDBUF");
-			return false;
-		}
-	}
-
-	if (setsockopt(fd, SOL_SOCKET, SO_SNDBUF, (const char*) & maxSndBufVal,
-			sizeof (maxSndBufVal)) != 0) {
-		FATAL("Unable to set SO_SNDBUF");
-		return false;
-	}
-
-	if (setsockopt(fd, SOL_SOCKET, SO_RCVBUF, (const char*) & maxRcvBufVal,
-			sizeof (maxSndBufVal)) != 0) {
-		FATAL("Unable to set SO_RCVBUF");
-		return false;
-	}
-	return true;
-}
-
-bool setFdOptions(SOCKET fd, bool isUdp) {
-	if (!isUdp) {
-		if (!setFdNonBlock(fd)) {
-			FATAL("Unable to set non block");
-			return false;
-		}
-	}
-
-	if (!setFdNoSIGPIPE(fd)) {
-		FATAL("Unable to set no SIGPIPE");
-		return false;
-	}
-
-	if (!setFdKeepAlive(fd, isUdp)) {
-		FATAL("Unable to set keep alive");
-		return false;
-	}
-
-	if (!setFdNoNagle(fd, isUdp)) {
-		WARN("Unable to disable Nagle algorithm");
-	}
-
-	if (!setFdReuseAddress(fd)) {
-		FATAL("Unable to enable reuse address");
-		return false;
-	}
-
-	if (!setFdMaxSndRcvBuff(fd, isUdp)) {
-		FATAL("Unable to set max SO_SNDBUF on UDP socket");
-		return false;
-	}
-
+bool setFdNoSIGPIPE(SOCKET_TYPE fd) {
 	return true;
 }
 
@@ -533,67 +189,29 @@ void killProcess(pid_t pid) {
 	CloseHandle(hProcess);
 }
 
-string alowedCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+string normalizePath(const string &base, const string &file) {
+#define MAX_WINDOWS_PATH 1024
+	if (base == "")
+		return normalizePath(".\\", file);
+	if (base[base.size() - 1] != PATH_SEPARATOR)
+		return normalizePath(base + PATH_SEPARATOR, file);
 
-string generateRandomString(uint32_t length) {
-	string result = "";
-	for (uint32_t i = 0; i < length; i++)
-		result += alowedCharacters[rand() % alowedCharacters.length()];
+	char *pBase = new char[MAX_WINDOWS_PATH];
+	char *pFile = new char[MAX_WINDOWS_PATH];
+	if ((GetFullPathName(base.c_str(), MAX_WINDOWS_PATH, pBase, NULL) == 0)
+			|| (GetFullPathName((base + file).c_str(), MAX_WINDOWS_PATH, pFile, NULL) == 0)) {
+		delete[] pBase;
+		delete[] pFile;
+		return "";
+	}
+
+	string result = (memcmp(pBase, pFile, strlen(pBase)) == 0) ? (fileExists(pFile) ? pFile : "") : "";
+	delete[] pBase;
+	delete[] pFile;
 	return result;
 }
 
-string getHostByName(string name) {
-	struct hostent *pHostEnt = gethostbyname(STR(name));
-	if (pHostEnt == NULL)
-		return "";
-	if (pHostEnt->h_length <= 0)
-		return "";
-	string result = format("%hhu.%hhu.%hhu.%hhu",
-			(uint8_t) pHostEnt->h_addr_list[0][0],
-			(uint8_t) pHostEnt->h_addr_list[0][1],
-			(uint8_t) pHostEnt->h_addr_list[0][2],
-			(uint8_t) pHostEnt->h_addr_list[0][3]);
-	return result;
-}
-
-void splitFileName(string fileName, string &name, string & extension, char separator) {
-	size_t dotPosition = fileName.find_last_of(separator);
-	if (dotPosition == string::npos) {
-		name = fileName;
-		extension = "";
-		return;
-	}
-	name = fileName.substr(0, dotPosition);
-	extension = fileName.substr(dotPosition + 1);
-}
-
-string normalizePath(string base, string file) {
-	char dummy1[MAX_PATH ];
-	char dummy2[MAX_PATH ];
-	if (GetFullPathName(STR(base), MAX_PATH, dummy1, NULL) == 0)
-		return "";
-	if (GetFullPathName(STR(base + file), MAX_PATH, dummy2, NULL) == 0)
-		return "";
-
-	base = dummy1;
-	file = dummy2;
-
-	if (file == "" || base == "") {
-		return "";
-	}
-
-	if (file.find(base) != 0) {
-		return "";
-	} else {
-		if (!fileExists(file)) {
-			return "";
-		} else {
-			return file;
-		}
-	}
-}
-
-bool listFolder(string path, vector<string> &result, bool normalizeAllPaths,
+bool listFolder(const string &path, vector<string> &result, bool normalizeAllPaths,
 		bool includeFolders, bool recursive) {
 	WIN32_FIND_DATA ffd;
 	TCHAR szDir[MAX_PATH];
@@ -661,15 +279,7 @@ bool listFolder(string path, vector<string> &result, bool normalizeAllPaths,
 	return true;
 }
 
-bool deleteFile(string path) {
-	if (remove(STR(path)) != 0) {
-		FATAL("Unable to delete file `%s`", STR(path));
-		return false;
-	}
-	return true;
-}
-
-bool deleteFolder(string path, bool force) {
+bool deleteFolder(const string &path, bool force) {
 	string fileFound;
 	WIN32_FIND_DATA info;
 	HANDLE hp;
@@ -711,7 +321,7 @@ bool deleteFolder(string path, bool force) {
 	return true;
 }
 
-bool createFolder(string path, bool recursive) {
+bool createFolder(const string &path, bool recursive) {
 	char DirName[256];
 	const char* p = path.c_str();
 	char* q = DirName;
@@ -728,42 +338,13 @@ bool createFolder(string path, bool recursive) {
 	return true;
 }
 
-bool moveFile(string src, string dst) {
-	if (rename(STR(src), STR(dst)) != 0) {
-		FATAL("Unable to move file from `%s` to `%s`",
-				STR(src), STR(dst));
-		return false;
-	}
-	return true;
-}
-
-bool isAbsolutePath(string &path) {
+bool isAbsolutePath(const string &path) {
 	if (path.size() < 4)
 		return false;
 	return (((path[0] >= 'A')&&(path[0] <= 'Z')) || ((path[0] >= 'a')&&(path[0] <= 'z')))
 			&&(path[1] == ':')
-			&&(path[2] == '\\');
-}
-
-static time_t _gUTCOffset = -1;
-
-void computeUTCOffset() {
-	//time_t now = time(NULL);
-	//struct tm *pTemp = localtime(&now);
-	//_gUTCOffset = pTemp->tm_gmtoff;
-	NYIA;
-}
-
-time_t getlocaltime() {
-	if (_gUTCOffset == -1)
-		computeUTCOffset();
-	return getutctime() + _gUTCOffset;
-}
-
-time_t gettimeoffset() {
-	if (_gUTCOffset == -1)
-		computeUTCOffset();
-	return _gUTCOffset;
+			&&((path[2] == '\\') || (path[2] == '/')
+			);
 }
 
 void GetFinishedProcesses(vector<pid_t> &pids, bool &noMorePids) {
@@ -930,7 +511,7 @@ bool LaunchProcess(string fullBinaryPath, vector<string> &arguments, vector<stri
 		FATAL("Unable to launch proces. Error: %"PRIu32, error);
 		delete[] pTemp;
 		if (envBlock != NULL)
-			delete envBlock;
+			delete[] envBlock;
 		return false;
 	}
 
@@ -938,7 +519,7 @@ bool LaunchProcess(string fullBinaryPath, vector<string> &arguments, vector<stri
 	// Cleanup
 	delete[] pTemp;
 	if (envBlock != NULL)
-		delete envBlock;
+		delete[] envBlock;
 	pid = pi.dwProcessId;
 
 	_pids.push_back(pid);
@@ -946,4 +527,364 @@ bool LaunchProcess(string fullBinaryPath, vector<string> &arguments, vector<stri
 	CloseHandle(pi.hThread);
 	return true;
 }
+
+bool OpenSysLog(const string name) {
+	return true;
+}
+
+void Syslog(int32_t level, const char *message, ...) {
+}
+
+void CloseSysLog() {
+}
+
+string realPath(const string &path) {
+	char *pResult = new char[MAX_WINDOWS_PATH];
+	string result;
+
+	if (GetFullPathName(path.c_str(), MAX_WINDOWS_PATH, pResult, NULL) != 0)
+		result = pResult;
+
+	delete[] pResult;
+	return result;
+}
+
+static unsigned int get_interface_flags(const IP_ADAPTER_ADDRESSES *pap) {
+	unsigned int flags = IFF_UP;
+	if (pap->IfType == IF_TYPE_SOFTWARE_LOOPBACK)
+		flags |= IFF_LOOPBACK;
+	else if (pap->IfType == IF_TYPE_PPP
+			|| pap->IfType == IF_TYPE_SLIP)
+		flags |= IFF_POINTOPOINT;
+	if (!(pap->Flags & IP_ADAPTER_NO_MULTICAST))
+		flags |= IFF_MULTICAST;
+	if (pap->OperStatus == IfOperStatusUp
+			|| pap->OperStatus == IfOperStatusUnknown)
+		flags |= IFF_RUNNING;
+	return flags;
+
+
+
+	/*if (pap->OperStatus != IfOperStatusLowerLayerDown)
+		flags |= IFF_LOWER_UP;
+	if (pap->OperStatus == IfOperStatusDormant)
+		flags |= IFF_DORMANT;*/
+}
+
+struct sockaddr *get_net_mask(const sockaddr *pIp, int prefixLength) {
+	struct sockaddr_in *pResult4 = NULL;
+	struct sockaddr_in6 *pResult6 = NULL;
+	if (pIp->sa_family == AF_INET) {
+		pResult4 = new sockaddr_in;
+		memset(pResult4, 0, sizeof (struct sockaddr_in));
+		pResult4->sin_family = AF_INET;
+		uint64_t address = (1ULL << prefixLength) - 1;
+		pResult4->sin_addr.S_un.S_addr = (ULONG) address;
+	} else if (pIp->sa_family == AF_INET6) {
+		pResult6 = new sockaddr_in6;
+		memset(pResult6, 0, sizeof (struct sockaddr_in6));
+	} else {
+		return NULL;
+	}
+	return (pIp->sa_family == AF_INET) ? (struct sockaddr *) pResult4 : (struct sockaddr *) pResult6;
+}
+
+int getifaddrs(struct ifaddrs **ppIfap) {
+	//set the result to NULL before anything
+	*ppIfap = NULL;
+
+	//the flags
+	ULONG flags = GAA_FLAG_INCLUDE_PREFIX;
+	//GAA_FLAG_SKIP_ANYCAST |
+	//GAA_FLAG_SKIP_UNICAST |
+	//GAA_FLAG_SKIP_MULTICAST |
+	//GAA_FLAG_SKIP_FRIENDLY_NAME;
+
+	//get the required memory size
+	ULONG needed = 0;
+	if ((GetAdaptersAddresses(AF_INET, flags, NULL, NULL, &needed) != ERROR_BUFFER_OVERFLOW) || (needed == 0)) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	//allocate the memory
+	IP_ADAPTER_ADDRESSES *pTemp = (IP_ADAPTER_ADDRESSES *) HeapAlloc(GetProcessHeap(), 0, needed);
+
+	//call it again
+	if (GetAdaptersAddresses(AF_INET, flags, NULL, pTemp, &needed) != ERROR_SUCCESS) {
+		HeapFree(GetProcessHeap(), 0, pTemp);
+		errno = EINVAL;
+		return -1;
+	}
+
+	//cycle over the returned stuff
+	struct ifaddrs *pCursor = NULL;
+	IP_ADAPTER_ADDRESSES *pAdapterCursor = pTemp;
+	while (pAdapterCursor != NULL) {
+		//create and 0 out struct ifaddrs
+		if (pCursor == NULL) {
+			pCursor = new struct ifaddrs;
+			*ppIfap = pCursor;
+		} else {
+			pCursor->ifa_next = new struct ifaddrs;
+			pCursor = pCursor->ifa_next;
+		}
+
+		//set its members
+		pCursor->pRawItem = pAdapterCursor;
+		pCursor->pRawHead = pTemp;
+		pCursor->ifa_flags = get_interface_flags(pCursor->pRawItem);
+		if (pCursor->pRawItem->FirstUnicastAddress != NULL) {
+			pCursor->ifa_addr = pCursor->pRawItem->FirstUnicastAddress->Address.lpSockaddr;
+			pCursor->ifa_netmask = get_net_mask(pCursor->ifa_addr, pCursor->pRawItem->FirstUnicastAddress->OnLinkPrefixLength);
+		}
+		pCursor->_data.ifi_mtu = pCursor->pRawItem->Mtu;
+		if (pCursor->ifa_addr != NULL) {
+			if (pCursor->ifa_addr->sa_family == AF_INET)
+				pCursor->_data.ifi_metric = pCursor->pRawItem->Ipv4Metric;
+			else if (pCursor->ifa_addr->sa_family == AF_INET6)
+				pCursor->_data.ifi_metric = pCursor->pRawItem->Ipv6Metric;
+		}
+
+		pAdapterCursor = pAdapterCursor->Next;
+	}
+	//done
+	return 0;
+}
+
+void freeifaddrs(struct ifaddrs *ifp) {
+	if (ifp == NULL)
+		return;
+	HeapFree(GetProcessHeap(), 0, ifp->pRawHead);
+	struct ifaddrs *pCursor = ifp;
+	while (pCursor != NULL) {
+		struct ifaddrs *pTemp = pCursor;
+		pCursor = pCursor->ifa_next;
+		delete pTemp;
+	}
+}
+
+struct WSABUFWrapper {
+	WSABUF *_pSendMsgBuffers;
+	size_t _count;
+
+	WSABUFWrapper() {
+		_pSendMsgBuffers = NULL;
+		_count = 0;
+	}
+
+	~WSABUFWrapper() {
+		Clean();
+	}
+
+	void Clean() {
+		if (_pSendMsgBuffers != NULL) {
+			delete[] _pSendMsgBuffers;
+			_pSendMsgBuffers = NULL;
+		}
+		_count = 0;
+	}
+
+	void Init(const struct iovec *pBuffers, size_t count) {
+		if ((pBuffers == NULL) || (count == 0))
+			return;
+		if (count > _count) {
+			Clean();
+			_pSendMsgBuffers = new WSABUF[count];
+			_count = count;
+		}
+		for (size_t i = 0; i < count; i++) {
+			_pSendMsgBuffers[i].buf = (CHAR *) pBuffers[i].iov_base;
+			_pSendMsgBuffers[i].len = (ULONG) pBuffers[i].iov_len;
+		}
+	}
+};
+static MUTEX_TYPE _gWsaBufferLock = MUTEX_STATIC_INIT;
+static WSABUFWrapper _gWsaBuffer;
+
+ssize_t sendmsg(SOCKET socket, const struct msghdr *msg, int flags) {
+	LOCK(&_gWsaBufferLock);
+	_gWsaBuffer.Init(msg->msg_iov, msg->msg_iovlen);
+	DWORD bytesSent = 0;
+	if (WSASendTo(socket, _gWsaBuffer._pSendMsgBuffers, (DWORD) msg->msg_iovlen, &bytesSent, flags, (const sockaddr *) msg->msg_name, (DWORD) msg->msg_namelen, NULL, NULL) != 0) {
+		DWORD err = WSAGetLastError();
+		FINEST("WSASendTo failed: %d", err);
+		errno = EINVAL;
+		return -1;
+	}
+	return (ssize_t) bytesSent;
+}
+
+void usleep(uint64_t microSeconds) {
+	Sleep((DWORD) (microSeconds / 1000));
+}
+
+struct ThreadProcInfo {
+	void *(*start_routine)(void *);
+	void *pArguments;
+};
+
+DWORD WINAPI __ThreadProc__(LPVOID lpParameter) {
+	ThreadProcInfo info = *((ThreadProcInfo *) lpParameter);
+	delete (ThreadProcInfo *) lpParameter;
+	info.start_routine(info.pArguments);
+	return 0;
+}
+
+int THREAD_CREATE(THREAD_TYPE *pThread, void *pReserved, void *(*start_routine)(void *), void *pArguments) {
+	if ((pThread == NULL) || (start_routine == NULL))
+		return EINVAL;
+	ThreadProcInfo *pInfo = new ThreadProcInfo;
+	pInfo->start_routine = start_routine;
+	pInfo->pArguments = pArguments;
+	*pThread = CreateThread(NULL, 0, __ThreadProc__, pInfo, 0, NULL);
+	if (*pThread == NULL) {
+		delete pInfo;
+		return GetLastError();
+	}
+	return 0;
+}
+
+int THREAD_JOIN(THREAD_TYPE thread, void **ppReserved) {
+	DWORD result = WaitForSingleObject(thread, INFINITE);
+	if (result != WAIT_OBJECT_0)
+		return result;
+	CloseHandle(thread);
+	return 0;
+}
+
+void THREAD_EXIT(void *pReserved) {
+	ExitThread(0);
+}
+
+int64_t getFileSize(int fd) {
+	LARGE_INTEGER fileSize;
+	if (GetFileSizeEx((HANDLE) _get_osfhandle(fd), &fileSize) == 0) {
+		DWORD err = GetLastError();
+		FATAL("Unable to obtain file size. Error was %"PRIu32, err);
+		return -1;
+	}
+	return (int64_t) fileSize.QuadPart;
+}
+
+overlapped_wrapper_t::overlapped_wrapper_t() {
+	_pOverlapped = NULL;
+	_pEvents = NULL;
+	_count = 0;
+	_fd = -1;
+	_fdHandle = INVALID_HANDLE_VALUE;
+}
+
+overlapped_wrapper_t::~overlapped_wrapper_t() {
+	Free();
+}
+
+bool overlapped_wrapper_t::Init(size_t count) {
+	//sanitize the parameter
+	if (count == 0)
+		return true;
+
+	//if we have enough space, just return
+	if (count <= _count)
+		return true;
+
+	//free existing overlapped structures and events
+	Free();
+
+	//set the new count
+	_count = count;
+
+	//allocate the overlapped structures
+	_pOverlapped = new OVERLAPPED[_count];
+	memset(_pOverlapped, 0, sizeof (OVERLAPPED) * _count);
+
+	//allocate the events
+	_pEvents = new HANDLE[_count];
+	memset(_pEvents, 0, sizeof (HANDLE) * _count);
+
+	//initialize the overlapped structures and events
+	for (size_t i = 0; i < _count; i++) {
+		_pOverlapped[i].Offset = 0xffffffff;
+		_pOverlapped[i].OffsetHigh = 0xffffffff;
+		_pOverlapped[i].hEvent = _pEvents[i] = CreateEvent(
+				NULL, // default security attribute
+				TRUE, // manual-reset event
+				TRUE, // initial state = signaled
+				NULL); // unnamed event object
+		if (_pEvents[i] == INVALID_HANDLE_VALUE) {
+			FATAL("Unable to create event");
+			return false;
+		}
+	}
+
+	//done
+	return true;
+}
+
+void overlapped_wrapper_t::Free() {
+	//free the overlapped structures
+	if (_pOverlapped != NULL) {
+		delete[] _pOverlapped;
+	}
+	_pOverlapped = NULL;
+
+	//free the events
+	if (_pEvents != NULL) {
+		for (size_t i = 0; i < _count; i++) {
+			CloseHandle(_pEvents[i]);
+		}
+		delete[] _pEvents;
+	}
+	_pEvents = NULL;
+
+	//reset the count
+	_count = 0;
+}
+
+ssize_t writev_ex(overlapped_wrapper_t &ow, const struct iovec *iov, int iovcnt) {
+	//see if we have any vectors to write
+	if (iovcnt <= 0)
+		return 0;
+
+	//initialize the vectors
+	if (!ow.Init(iovcnt)) {
+		FATAL("Initialization of overlapped windows structures failed");
+		return -1;
+	}
+
+	//get the HANDLE from the file descriptor
+	if (ow._fdHandle == INVALID_HANDLE_VALUE)
+		ow._fdHandle = (HANDLE) _get_osfhandle(ow._fd);
+
+	//do the overlapped writes
+	ssize_t totalWritten = 0;
+	for (int i = 0; i < iovcnt; i++) {
+		//do the write
+		if (!WriteFileEx(ow._fdHandle, iov[i].iov_base, (int) iov[i].iov_len, &ow._pOverlapped[i], NULL)) {
+			DWORD err = GetLastError();
+			FINEST("WriteFileEx failed: %d", (int) err);
+			return -1;
+		}
+		totalWritten += iov[i].iov_len;
+	}
+
+	//wait for all writes to complete
+	DWORD waitResult = WaitForMultipleObjects(iovcnt, ow._pEvents, true, INFINITE);
+	if (waitResult != WAIT_OBJECT_0) {
+		FINEST("WaitForMultipleObjects failed: %d", (int) waitResult);
+		totalWritten = -1;
+	}
+
+	//done
+	return totalWritten;
+}
+
+int fsync_ex(overlapped_wrapper_t &ow) {
+	return 0;
+	////get the HANDLE from the file descriptor
+	//if (ow._fdHandle == INVALID_HANDLE_VALUE)
+	//	ow._fdHandle = (HANDLE) _get_osfhandle(ow._fd);
+	//return FlushFileBuffers(ow._fdHandle) != 0 ? 0 : -1;
+}
+
 #endif /* WIN32 */

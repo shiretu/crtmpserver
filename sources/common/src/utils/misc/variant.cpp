@@ -18,22 +18,40 @@
  */
 
 
-#include "defines.h"
-#include "utils/misc/variant.h"
+#include "common.h"
 #include "utils/misc/variantmap.h"
-#include "utils/logging/logging.h"
-#include "utils/misc/file.h"
-#include "utils/misc/crypto.h"
 #define TIXML_USE_STL
 #include "tinyxml.h"
-#ifdef FREEBSD
-#include "platform/freebsd/max.h"
-#endif /* FREEBSD */
 
 #ifdef LOG_VARIANT_MEMORY_MANAGEMENT
 int Variant::_constructorCount = 0;
 int Variant::_dynamicAllocationCount = 0;
 #endif
+
+static const char *kBool1 = "bool";
+static const char *kTrue = "true";
+static const char *kFalse = "false";
+static const char *kNull = "null";
+static const char *kUndefined = "undefined";
+static const char *kInt8 = "int8";
+static const char *kInt16 = "int16";
+static const char *kInt32 = "int32";
+static const char *kInt64 = "int64";
+static const char *kUInt8 = "uint8";
+static const char *kUInt16 = "uint16";
+static const char *kUInt32 = "uint32";
+static const char *kUInt64 = "uint64";
+static const char *kDouble = "double";
+static const char *kTimestamp = "timestamp";
+static const char *kDate = "date";
+static const char *kTime = "time";
+static const char *kStr = "str";
+static const char *kBytearray = "bytearray";
+static const char *kMap = "map";
+static const char *kTyped_map = "typed_map";
+static const char *kIsarray = "isarray";
+static const char *kTypename = "typename";
+static const char *kName = "name";
 
 Variant::Variant() {
 	CONSTRUCTOR;
@@ -116,12 +134,12 @@ Variant::Variant(const double &val) {
 	_value.d = val;
 }
 
-Variant::Variant(const Timestamp &val) {
+Variant::Variant(const struct tm &val) {
 	CONSTRUCTOR;
 	_type = V_TIMESTAMP;
 	memset(&_value, 0, sizeof (_value));
 	DYNAMIC_ALLOC("_value.t");
-	_value.t = new Timestamp;
+	_value.t = new struct tm;
 	*_value.t = val;
 	NormalizeTs();
 }
@@ -131,8 +149,8 @@ Variant::Variant(const uint16_t year, const uint8_t month, const uint8_t day) {
 	_type = V_DATE;
 	memset(&_value, 0, sizeof (_value));
 	DYNAMIC_ALLOC("_value.t");
-	_value.t = new Timestamp;
-	memset(_value.t, 0, sizeof (Timestamp));
+	_value.t = new struct tm;
+	memset(_value.t, 0, sizeof (struct tm));
 	_value.t->tm_year = year - 1900;
 	_value.t->tm_mon = month - 1;
 	_value.t->tm_mday = day;
@@ -147,8 +165,8 @@ Variant::Variant(const uint8_t hour, const uint8_t min, const uint8_t sec, const
 	_type = V_TIME;
 	memset(&_value, 0, sizeof (_value));
 	DYNAMIC_ALLOC("_value.t");
-	_value.t = new Timestamp;
-	memset(_value.t, 0, sizeof (Timestamp));
+	_value.t = new struct tm;
+	memset(_value.t, 0, sizeof (struct tm));
 	_value.t->tm_year = 70;
 	_value.t->tm_mon = 0;
 	_value.t->tm_mday = 1;
@@ -164,8 +182,8 @@ Variant::Variant(const uint16_t year, const uint8_t month, const uint8_t day,
 	_type = V_TIMESTAMP;
 	memset(&_value, 0, sizeof (_value));
 	DYNAMIC_ALLOC("_value.t");
-	_value.t = new Timestamp;
-	memset(_value.t, 0, sizeof (Timestamp));
+	_value.t = new struct tm;
+	memset(_value.t, 0, sizeof (struct tm));
 	_value.t->tm_year = year - 1900;
 	_value.t->tm_mon = month - 1;
 	_value.t->tm_mday = day;
@@ -264,19 +282,19 @@ string Variant::ToString(string name, uint32_t indent) {
 		}
 		case V_INT8:
 		{
-			result += format("%s<INT8 name=\"%s\">%hhd</INT8>",
+			result += format("%s<INT8 name=\"%s\">%"PRId8"</INT8>",
 					STR(strIndent), STR(name), _value.i8);
 			break;
 		}
 		case V_INT16:
 		{
-			result += format("%s<INT16 name=\"%s\">%hd</INT16>",
+			result += format("%s<INT16 name=\"%s\">%"PRId16"</INT16>",
 					STR(strIndent), STR(name), _value.i16);
 			break;
 		}
 		case V_INT32:
 		{
-			result += format("%s<INT32 name=\"%s\">%d</INT32>",
+			result += format("%s<INT32 name=\"%s\">%"PRId32"</INT32>",
 					STR(strIndent), STR(name), _value.i32);
 			break;
 		}
@@ -288,19 +306,19 @@ string Variant::ToString(string name, uint32_t indent) {
 		}
 		case V_UINT8:
 		{
-			result += format("%s<UINT8 name=\"%s\">%hhu</UINT8>",
+			result += format("%s<UINT8 name=\"%s\">%"PRIu8"</UINT8>",
 					STR(strIndent), STR(name), _value.ui8);
 			break;
 		}
 		case V_UINT16:
 		{
-			result += format("%s<UINT16 name=\"%s\">%hu</UINT16>",
+			result += format("%s<UINT16 name=\"%s\">%"PRIu16"</UINT16>",
 					STR(strIndent), STR(name), _value.ui16);
 			break;
 		}
 		case V_UINT32:
 		{
-			result += format("%s<UINT32 name=\"%s\">%u</UINT32>",
+			result += format("%s<UINT32 name=\"%s\">%"PRIu32"</UINT32>",
 					STR(strIndent), STR(name), _value.ui32);
 			break;
 		}
@@ -455,11 +473,11 @@ Variant& Variant::operator=(const double &val) {
 	return *this;
 }
 
-Variant& Variant::operator=(const Timestamp &val) {
+Variant& Variant::operator=(const struct tm &val) {
 	Reset();
 	_type = V_TIMESTAMP;
 	DYNAMIC_ALLOC("_value.t");
-	_value.t = new Timestamp;
+	_value.t = new struct tm;
 	*_value.t = val;
 	NormalizeTs();
 	return *this;
@@ -603,14 +621,15 @@ OPERATOR_DEF(uint32_t);
 OPERATOR_DEF(uint64_t);
 OPERATOR_DEF(double);
 
-Variant::operator Timestamp() {
+Variant::operator struct tm() {
 	if ((_type == V_DATE)
 			|| (_type == V_TIME)
 			|| (_type == V_TIMESTAMP)) {
 		return *_value.t;
 	} else {
 		ASSERT("Cast to struct tm failed: %s", STR(ToString()));
-		Timestamp temp = Timestamp_init;
+		struct tm temp;
+		memset(&temp, 0, sizeof (temp));
 		return temp;
 	}
 }
@@ -625,7 +644,7 @@ Variant::operator string() {
 		case V_INT16:
 		case V_INT32:
 		{
-			return format("%d", this->operator int32_t());
+			return format("%"PRId32, this->operator int32_t());
 		}
 		case V_INT64:
 		{
@@ -635,7 +654,7 @@ Variant::operator string() {
 		case V_UINT16:
 		case V_UINT32:
 		{
-			return format("%u", this->operator uint32_t());
+			return format("%"PRIu32, this->operator uint32_t());
 		}
 		case V_UINT64:
 		{
@@ -736,7 +755,7 @@ Variant &Variant::GetValue(string key, bool caseSensitive) {
 	} else {
 
 		FOR_MAP(*this, string, Variant, i) {
-			if (lowerCase(MAP_KEY(i)) == lowerCase(key))
+			if (EMSStringEqual(MAP_KEY(i), key, false))
 				return MAP_VAL(i);
 		}
 
@@ -853,7 +872,6 @@ bool Variant::operator!=(const string &value) const {
 bool Variant::operator==(const VariantType value) const {
 	if (value == _V_NUMERIC) {
 		return (_type == V_INT8)
-				|| (_type == V_INT8)
 				|| (_type == V_INT16)
 				|| (_type == V_INT32)
 				|| (_type == V_INT64)
@@ -915,7 +933,7 @@ bool Variant::HasKey(const string &key, bool caseSensitive) {
 	} else {
 
 		FOR_MAP(*this, string, Variant, i) {
-			if (lowerCase(MAP_KEY(i)) == lowerCase(key))
+			if (EMSStringEqual(MAP_KEY(i), key, false))
 				return true;
 		}
 		return false;
@@ -964,15 +982,12 @@ void Variant::RemoveKey(const string &key, bool caseSensitive) {
 	if (caseSensitive) {
 		_value.m->children.erase(key);
 	} else {
-		vector<string> keys;
-
-		FOR_MAP(*this, string, Variant, i) {
-			if (lowerCase(MAP_KEY(i)) == lowerCase(key))
-				ADD_VECTOR_END(keys, MAP_KEY(i));
-		}
-
-		FOR_VECTOR(keys, i) {
-			RemoveKey(keys[i], true);
+		map<string, Variant>::iterator it = _value.m->children.begin();
+		while (it != _value.m->children.end()) {
+			if (EMSStringEqual(it->first, key, false))
+				_value.m->children.erase(it++);
+			else
+				it++;
 		}
 	}
 }
@@ -1173,7 +1188,8 @@ bool Variant::ConvertToTimestamp() {
 	if (!IsTimestamp(detectedType))
 		return false;
 
-	Timestamp temp = Timestamp_init;
+	struct tm temp;
+	memset(&temp, 0, sizeof (temp));
 
 	if ((detectedType == V_DATE) || (detectedType == V_TIMESTAMP)) {
 		temp.tm_year = (int) ((int32_t) (*this)["year"] - 1900);
@@ -1195,7 +1211,10 @@ bool Variant::ConvertToTimestamp() {
 
 	//Set UTC
 	char * oldTZ = getenv("TZ");
-	PutEnv((char*) "TZ=UTC");
+	if (PutEnv((char*) "TZ=UTC") != 0){
+		FATAL("putenv failed");
+		return false;
+	}
 	TzSet();
 
 	//Normalize time
@@ -1205,17 +1224,23 @@ bool Variant::ConvertToTimestamp() {
 	}
 	//Reset Timezone
 	if (oldTZ == NULL) {
-		PutEnv((char*) "TZ=");
+		if (PutEnv((char*) "TZ=") != 0){
+			FATAL("putenv failed");
+			return false;
+		}
 	} else {
 		char buff[50];
 		sprintf(buff, "TZ=%s", oldTZ);
-		PutEnv(buff);
+		if (PutEnv(buff) != 0){
+			FATAL("putenv failed");
+			return false;
+		}
 	}
 	TzSet();
 
 	Reset();
 	DYNAMIC_ALLOC("_value.t");
-	_value.t = new Timestamp;
+	_value.t = new struct tm;
 	*_value.t = temp;
 
 	_type = detectedType;
@@ -1753,12 +1778,12 @@ bool Variant::DeserializeFromJSON(string &raw, Variant &result, uint32_t &start)
 		case 't':
 		case 'T':
 		{
-			return ReadJSONBool(raw, result, start, "true");
+			return ReadJSONBool(raw, result, start, kTrue, strlen(kTrue));
 		}
 		case 'f':
 		case 'F':
 		{
-			return ReadJSONBool(raw, result, start, "false");
+			return ReadJSONBool(raw, result, start, kFalse, strlen(kFalse));
 		}
 		case 'n':
 		case 'N':
@@ -1773,7 +1798,7 @@ bool Variant::DeserializeFromJSON(string &raw, Variant &result, uint32_t &start)
 	}
 }
 
-bool Variant::SerializeToJSON(string &result) {
+bool Variant::SerializeToJSON(string &result, bool quotedKeys) {
 	switch (_type) {
 		case V_NULL:
 		case V_UNDEFINED:
@@ -1825,7 +1850,7 @@ bool Variant::SerializeToJSON(string &result) {
 		case V_STRING:
 		{
 			string value = (string) (*this);
-			EscapeJSON(value);
+			EscapeJSON(value, true);
 			result += value;
 			break;
 		}
@@ -1836,10 +1861,10 @@ bool Variant::SerializeToJSON(string &result) {
 			FOR_MAP(_value.m->children, string, Variant, i) {
 				if (!IsArray()) {
 					string key = MAP_KEY(i);
-					EscapeJSON(key);
+					EscapeJSON(key, quotedKeys);
 					result += key + ":";
 				}
-				if (!MAP_VAL(i).SerializeToJSON(result)) {
+				if (!MAP_VAL(i).SerializeToJSON(result, quotedKeys)) {
 					FATAL("Unable to serialize to JSON");
 					return false;
 				}
@@ -1887,7 +1912,7 @@ bool Variant::DeserializeFromCmdLineArgs(uint32_t count, const char **pArguments
 
 bool Variant::ParseTime(const char *pRaw, const char *pFormat, Variant &result) {
 	result.Reset();
-	Timestamp t;
+	struct tm t;
 	time_t now = getutctime();
 	gmtime_r(&now, &t);
 	FINEST("pRaw: %s; pFormat: %s", pRaw, pFormat);
@@ -1921,19 +1946,19 @@ TiXmlElement *Variant::SerializeToXmlElement(string &name) {
 		case V_INT8:
 		{
 			pResult = new TiXmlElement("INT8");
-			pResult->LinkEndChild(new TiXmlText(format("%hhd", _value.i8)));
+			pResult->LinkEndChild(new TiXmlText(format("%"PRId8, _value.i8)));
 			break;
 		}
 		case V_INT16:
 		{
 			pResult = new TiXmlElement("INT16");
-			pResult->LinkEndChild(new TiXmlText(format("%hd", _value.i16)));
+			pResult->LinkEndChild(new TiXmlText(format("%"PRId16, _value.i16)));
 			break;
 		}
 		case V_INT32:
 		{
 			pResult = new TiXmlElement("INT32");
-			pResult->LinkEndChild(new TiXmlText(format("%d", _value.i32)));
+			pResult->LinkEndChild(new TiXmlText(format("%"PRId32, _value.i32)));
 			break;
 		}
 		case V_INT64:
@@ -1945,19 +1970,19 @@ TiXmlElement *Variant::SerializeToXmlElement(string &name) {
 		case V_UINT8:
 		{
 			pResult = new TiXmlElement("UINT8");
-			pResult->LinkEndChild(new TiXmlText(format("%hhu", _value.ui8)));
+			pResult->LinkEndChild(new TiXmlText(format("%"PRIu8, _value.ui8)));
 			break;
 		}
 		case V_UINT16:
 		{
 			pResult = new TiXmlElement("UINT16");
-			pResult->LinkEndChild(new TiXmlText(format("%hu", _value.ui16)));
+			pResult->LinkEndChild(new TiXmlText(format("%"PRIu16, _value.ui16)));
 			break;
 		}
 		case V_UINT32:
 		{
 			pResult = new TiXmlElement("UINT32");
-			pResult->LinkEndChild(new TiXmlText(format("%u", _value.ui32)));
+			pResult->LinkEndChild(new TiXmlText(format("%"PRIu32, _value.ui32)));
 			break;
 		}
 		case V_UINT64:
@@ -2056,19 +2081,19 @@ TiXmlElement *Variant::SerializeToXmlRpcElement() {
 		case V_INT8:
 		{
 			pResult = new TiXmlElement("int");
-			pResult->LinkEndChild(new TiXmlText(format("%hhd", _value.i8)));
+			pResult->LinkEndChild(new TiXmlText(format("%"PRId8, _value.i8)));
 			break;
 		}
 		case V_INT16:
 		{
 			pResult = new TiXmlElement("int");
-			pResult->LinkEndChild(new TiXmlText(format("%hd", _value.i16)));
+			pResult->LinkEndChild(new TiXmlText(format("%"PRId16, _value.i16)));
 			break;
 		}
 		case V_INT32:
 		{
 			pResult = new TiXmlElement("int");
-			pResult->LinkEndChild(new TiXmlText(format("%d", _value.i32)));
+			pResult->LinkEndChild(new TiXmlText(format("%"PRId32, _value.i32)));
 			break;
 		}
 		case V_INT64:
@@ -2080,19 +2105,19 @@ TiXmlElement *Variant::SerializeToXmlRpcElement() {
 		case V_UINT8:
 		{
 			pResult = new TiXmlElement("int");
-			pResult->LinkEndChild(new TiXmlText(format("%hhu", _value.ui8)));
+			pResult->LinkEndChild(new TiXmlText(format("%"PRIu8, _value.ui8)));
 			break;
 		}
 		case V_UINT16:
 		{
 			pResult = new TiXmlElement("int");
-			pResult->LinkEndChild(new TiXmlText(format("%hu", _value.ui16)));
+			pResult->LinkEndChild(new TiXmlText(format("%"PRIu16, _value.ui16)));
 			break;
 		}
 		case V_UINT32:
 		{
 			pResult = new TiXmlElement("int");
-			pResult->LinkEndChild(new TiXmlText(format("%u", _value.ui32)));
+			pResult->LinkEndChild(new TiXmlText(format("%"PRIu32, _value.ui32)));
 			break;
 		}
 		case V_UINT64:
@@ -2305,7 +2330,7 @@ bool Variant::DeserializeFromBin(uint8_t *pBuffer, uint32_t bufferSize,
 			VARIANT_CHECK_BOUNDS(8);
 			time_t val = (time_t) ENTOHLLP(PTR); //----MARKED-LONG---
 			cursor += 8;
-			variant = *((Timestamp *) gmtime(&val));
+			variant = *((struct tm *) gmtime(&val));
 			variant._type = type;
 			return true;
 		}
@@ -2387,91 +2412,92 @@ bool Variant::DeserializeFromBin(uint8_t *pBuffer, uint32_t bufferSize,
 }
 
 bool Variant::DeserializeFromXml(TiXmlElement *pNode, Variant &variant) {
-	string nodeName = lowerCase(pNode->ValueStr());
 
 	union {
 		int64_t i64;
 		uint64_t ui64;
 		double d;
-		Timestamp t;
+		struct tm t;
 	} val;
 
 	const char *pText = pNode->GetText();
 	string text = pText == NULL ? "" : pText;
 
-	if (nodeName == "bool") {
-		variant = (bool)(lowerCase(text) == "true");
+
+
+	if (EMSStringEqual(pNode->ValueStr(), kBool1, strlen(kBool1), false)) {
+		variant = EMSStringEqual(text, kTrue, strlen(kTrue), false);
 		return true;
-	} else if (nodeName == "null") {
+	} else if (EMSStringEqual(pNode->ValueStr(), kNull, strlen(kNull), false)) {
 		variant.Reset();
 		return true;
-	} else if (nodeName == "undefined") {
+	} else if (EMSStringEqual(pNode->ValueStr(), kUndefined, strlen(kUndefined), false)) {
 		variant.Reset(true);
 		return true;
-	} else if (nodeName == "int8") {
+	} else if (EMSStringEqual(pNode->ValueStr(), kInt8, strlen(kInt8), false)) {
 		if (sscanf(STR(text), "%"PRId64, &val.i64) != 1) {
 			FATAL("Invalid number");
 			return false;
 		}
 		variant = (int8_t) val.i64;
 		return true;
-	} else if (nodeName == "int16") {
+	} else if (EMSStringEqual(pNode->ValueStr(), kInt16, strlen(kInt16), false)) {
 		if (sscanf(STR(text), "%"PRId64, &val.i64) != 1) {
 			FATAL("Invalid number");
 			return false;
 		}
 		variant = (int16_t) val.i64;
 		return true;
-	} else if (nodeName == "int32") {
+	} else if (EMSStringEqual(pNode->ValueStr(), kInt32, strlen(kInt32), false)) {
 		if (sscanf(STR(text), "%"PRId64, &val.i64) != 1) {
 			FATAL("Invalid number");
 			return false;
 		}
 		variant = (int32_t) val.i64;
 		return true;
-	} else if (nodeName == "int64") {
+	} else if (EMSStringEqual(pNode->ValueStr(), kInt64, strlen(kInt64), false)) {
 		if (sscanf(STR(text), "%"PRId64, &val.i64) != 1) {
 			FATAL("Invalid number");
 			return false;
 		}
 		variant = (int64_t) val.i64;
 		return true;
-	} else if (nodeName == "uint8") {
+	} else if (EMSStringEqual(pNode->ValueStr(), kUInt8, strlen(kUInt8), false)) {
 		if (sscanf(STR(text), "%"PRIu64, &val.ui64) != 1) {
 			FATAL("Invalid number");
 			return false;
 		}
 		variant = (uint8_t) val.ui64;
 		return true;
-	} else if (nodeName == "uint16") {
+	} else if (EMSStringEqual(pNode->ValueStr(), kUInt16, strlen(kUInt16), false)) {
 		if (sscanf(STR(text), "%"PRIu64, &val.ui64) != 1) {
 			FATAL("Invalid number");
 			return false;
 		}
 		variant = (uint16_t) val.ui64;
 		return true;
-	} else if (nodeName == "uint32") {
+	} else if (EMSStringEqual(pNode->ValueStr(), kUInt32, strlen(kUInt32), false)) {
 		if (sscanf(STR(text), "%"PRIu64, &val.ui64) != 1) {
 			FATAL("Invalid number");
 			return false;
 		}
 		variant = (uint32_t) val.ui64;
 		return true;
-	} else if (nodeName == "uint64") {
+	} else if (EMSStringEqual(pNode->ValueStr(), kUInt64, strlen(kUInt64), false)) {
 		if (sscanf(STR(text), "%"PRIu64, &val.ui64) != 1) {
 			FATAL("Invalid number");
 			return false;
 		}
 		variant = (uint64_t) val.ui64;
 		return true;
-	} else if (nodeName == "double") {
+	} else if (EMSStringEqual(pNode->ValueStr(), kDouble, strlen(kDouble), false)) {
 		if (sscanf(STR(text), "%lf", &val.d) != 1) {
 			FATAL("Invalid number");
 			return false;
 		}
 		variant = (double) val.d;
 		return true;
-	} else if (nodeName == "timestamp") {
+	} else if (EMSStringEqual(pNode->ValueStr(), kTimestamp, strlen(kTimestamp), false)) {
 		memset(&val.t, 0, sizeof (val.t));
 		if (strptime(STR(text), "%Y-%m-%dT%T.000", &val.t) == NULL) {
 			FATAL("Invalid timestamp (date, time or timestamp)");
@@ -2480,7 +2506,7 @@ bool Variant::DeserializeFromXml(TiXmlElement *pNode, Variant &variant) {
 		variant = Variant((uint16_t) (val.t.tm_year + 1900), (uint8_t) (val.t.tm_mon + 1), (uint8_t) val.t.tm_mday,
 				(uint8_t) val.t.tm_hour, (uint8_t) val.t.tm_min, (uint8_t) val.t.tm_sec, 0);
 		return true;
-	} else if (nodeName == "date") {
+	} else if (EMSStringEqual(pNode->ValueStr(), kDate, strlen(kDate), false)) {
 		memset(&val.t, 0, sizeof (val.t));
 		if (strptime(STR(text), "%Y-%m-%d", &val.t) == NULL) {
 			FATAL("Invalid timestamp (date, time or timestamp)");
@@ -2488,7 +2514,7 @@ bool Variant::DeserializeFromXml(TiXmlElement *pNode, Variant &variant) {
 		}
 		variant = Variant((uint16_t) (val.t.tm_year + 1900), (uint8_t) (val.t.tm_mon + 1), (uint8_t) val.t.tm_mday);
 		return true;
-	} else if (nodeName == "time") {
+	} else if (EMSStringEqual(pNode->ValueStr(), kTime, strlen(kTime), false)) {
 		memset(&val.t, 0, sizeof (val.t));
 		if (strptime(STR(text), "%T.000", &val.t) == NULL) {
 			FATAL("Invalid timestamp (date, time or timestamp)");
@@ -2496,22 +2522,22 @@ bool Variant::DeserializeFromXml(TiXmlElement *pNode, Variant &variant) {
 		}
 		variant = Variant((uint8_t) val.t.tm_hour, (uint8_t) val.t.tm_min, (uint8_t) val.t.tm_sec, 0);
 		return true;
-	} else if (nodeName == "str") {
+	} else if (EMSStringEqual(pNode->ValueStr(), kStr, strlen(kStr), false)) {
 		variant = text;
 		return true;
-	} else if (nodeName == "bytearray") {
+	} else if (EMSStringEqual(pNode->ValueStr(), kBytearray, strlen(kBytearray), false)) {
 		variant = unb64(text);
 		variant.IsByteArray(true);
 		return true;
-	} else if ((nodeName == "map") || (nodeName == "typed_map")) {
+	} else if ((EMSStringEqual(pNode->ValueStr(), kMap, strlen(kMap), false)) || (EMSStringEqual(pNode->ValueStr(), kTyped_map, strlen(kTyped_map), false))) {
 		TiXmlAttribute *pAttribute = pNode->FirstAttribute();
 
 		//isArray and typename
 		variant.IsArray(false);
 		for (TiXmlAttribute *pI = pAttribute; pI != NULL; pI = pI->Next()) {
-			if (lowerCase(pI->NameTStr()) == "isarray") {
-				variant.IsArray(lowerCase(pI->ValueStr()) == "true");
-			} else if (lowerCase(pI->NameTStr()) == "typename") {
+			if (EMSStringEqual(pI->NameTStr(), kIsarray, strlen(kIsarray), false)) {
+				variant.IsArray(EMSStringEqual(pI->ValueStr(), kTrue, strlen(kTrue), false));
+			} else if (EMSStringEqual(pI->NameTStr(), kTypename, strlen(kTypename), false)) {
 				variant.SetTypeName(pI->Value());
 			}
 		}
@@ -2521,7 +2547,7 @@ bool Variant::DeserializeFromXml(TiXmlElement *pNode, Variant &variant) {
 			//search for the name
 			string key = "";
 			for (TiXmlAttribute *pA = pE->FirstAttribute(); pA != NULL; pA = pA->Next()) {
-				if (lowerCase(pA->NameTStr()) == "name") {
+				if (EMSStringEqual(pA->NameTStr(), kName, strlen(kName), false)) {
 					key = pA->ValueStr();
 					break;
 				}
@@ -2535,7 +2561,7 @@ bool Variant::DeserializeFromXml(TiXmlElement *pNode, Variant &variant) {
 
 		return true;
 	} else {
-		FATAL("Invalid node name: %s", STR(nodeName));
+		FATAL("Invalid node name: %s", STR(pNode->ValueStr()));
 
 		return false;
 	}
@@ -2550,7 +2576,7 @@ void Variant::InternalCopy(const Variant &val) {
 		case V_TIMESTAMP:
 		{
 			DYNAMIC_ALLOC("_value.t");
-			_value.t = new Timestamp(*val._value.t);
+			_value.t = new struct tm(*val._value.t);
 			break;
 		}
 		case V_BYTEARRAY:
@@ -2583,7 +2609,7 @@ void Variant::NormalizeTs() {
 	gmtime_r(&val, _value.t);
 }
 
-void Variant::EscapeJSON(string &value) {
+void Variant::EscapeJSON(string &value, bool quotedKeys) {
 	replace(value, "\\", "\\\\");
 	replace(value, "/", "\\/");
 	replace(value, "\"", "\\\"");
@@ -2592,10 +2618,12 @@ void Variant::EscapeJSON(string &value) {
 	replace(value, "\n", "\\n");
 	replace(value, "\r", "\\r");
 	replace(value, "\t", "\\t");
-	value = "\"" + value + "\"";
+	if (quotedKeys)
+		value = "\"" + value + "\"";
 }
 
 void Variant::UnEscapeJSON(string &value) {
+	replace(value, "\\\\", "#double_slash#");
 	replace(value, "\\/", "/");
 	replace(value, "\\\"", "\"");
 	replace(value, "\\b", "\b");
@@ -2603,7 +2631,7 @@ void Variant::UnEscapeJSON(string &value) {
 	replace(value, "\\n", "\n");
 	replace(value, "\\r", "\r");
 	replace(value, "\\t", "\t");
-	replace(value, "\\\\", "\\");
+	replace(value, "#double_slash#","\\");
 }
 
 bool Variant::ReadJSONWhiteSpace(string &raw, uint32_t &start) {
@@ -2782,18 +2810,18 @@ bool Variant::ReadJSONArray(string &raw, Variant &result, uint32_t &start) {
 	return false;
 }
 
-bool Variant::ReadJSONBool(string &raw, Variant &result, uint32_t &start, string wanted) {
-	if ((raw.size() - start) < wanted.size()) {
+bool Variant::ReadJSONBool(string &raw, Variant &result, uint32_t &start, const char *pWanted, size_t wantedSize) {
+	if ((raw.size() - start) < wantedSize) {
 		FATAL("Invalid JSON bool");
 		return false;
 	}
-	string temp = lowerCase(raw.substr(start, wanted.size()));
-	if (temp != wanted) {
+
+	if (!EMSStringEqual(raw.substr(start, wantedSize), pWanted, wantedSize, false)) {
 		FATAL("Invalid JSON bool");
 		return false;
 	}
-	start += (uint32_t) wanted.size();
-	result = (bool)(wanted == "true");
+	start += (uint32_t) wantedSize;
+	result = (wantedSize == 4);
 	return true;
 }
 
@@ -2802,8 +2830,8 @@ bool Variant::ReadJSONNull(string &raw, Variant &result, uint32_t &start) {
 		FATAL("Invalid JSON null");
 		return false;
 	}
-	string temp = lowerCase(raw.substr(start, 4));
-	if (temp != "null") {
+
+	if (!EMSStringEqual(raw.substr(start, 4), kNull, strlen(kNull), false)) {
 		FATAL("Invalid JSON null");
 		return false;
 	}

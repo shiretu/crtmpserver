@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -17,11 +17,10 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _LITTLE_ENDIAN_BYTE_ALIGNED_H
-#define	_LITTLE_ENDIAN_BYTE_ALIGNED_H
+#pragma once
 
 //64 bit
-#ifndef DONT_DEFINE_HTONLL
+#ifndef htonll
 #define htonll(x) \
 					((uint64_t)( \
                     ((((uint64_t)(x)) & 0xff00000000000000LL) >> 56) | \
@@ -34,7 +33,7 @@
                     ((((uint64_t)(x)) & 0x00000000000000ffLL) << 56) \
 					))
 #define ntohll(x)   htonll(x)
-#endif /* DONT_DEFINE_HTONLL */
+#endif /* htonll */
 
 //64 bit
 #define EHTONLL(x) htonll(x)
@@ -79,6 +78,3 @@ do {\
 //adobe pointer
 #define EHTONAP(pNetworkPointer,hostAdobeValue) (*((uint32_t*)(pNetworkPointer)) = EHTONA(hostAdobeValue))
 #define ENTOHAP(pNetworkPointer) ENTOHA(*((uint32_t *)(pNetworkPointer)))
-
-#endif	/* _LITTLE_ENDIAN_BYTE_ALIGNED_H */
-

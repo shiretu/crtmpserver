@@ -17,11 +17,12 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #ifdef HAS_LUA
-#ifndef _LUAUTILS_H
-#define	_LUAUTILS_H
 
 struct lua_State;
+struct luaL_Reg;
 #include "platform/platform.h"
 #include "utils/misc/variant.h"
 
@@ -38,6 +39,4 @@ DLLEXP bool LoadLuaScriptFromString(string luaScript, lua_State *pLuaState, bool
 DLLEXP bool ReadLuaFile(string fileName, string section, Variant &configuration);
 DLLEXP bool ReadLuaString(string script, string section, Variant &configuration);
 
-#endif	/* _LUAUTILS_H */
 #endif /* HAS_LUA */
-

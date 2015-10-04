@@ -17,9 +17,7 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#ifndef _FILE_H
-#define	_FILE_H
+#pragma once
 
 #include "platform/platform.h"
 
@@ -45,15 +43,15 @@ public:
 	void SuppressLogErrorsOnInit();
 
 	//Init
-	bool Initialize(string path);
-	bool Initialize(string path, FILE_OPEN_MODE mode);
+	bool Initialize(const string &path);
+	bool Initialize(const string &path, FILE_OPEN_MODE mode);
 	void Close();
 
 	//info
 	uint64_t Size();
 	uint64_t Cursor();
 	bool IsEOF();
-	string GetPath();
+	const string &GetPath();
 	bool IsOpen();
 
 	//seeking
@@ -108,12 +106,7 @@ public:
 	bool WriteUI32(uint32_t value, bool networkOrder = true);
 	bool WriteSUI32(uint32_t value);
 	bool WriteUI64(uint64_t value, bool networkOrder = true);
-	bool WriteString(string &value);
+	bool WriteString(const string &value);
 	bool WriteBuffer(const uint8_t *pBuffer, uint64_t count);
 	bool Flush();
 };
-
-
-#endif	/* _FILE_H */
-
-

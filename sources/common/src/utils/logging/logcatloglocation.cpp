@@ -49,7 +49,7 @@ void LogCatLogLocation::Log(int32_t level, const char *pFileName,
 			STR(format("%s:%u %s", pFileName, lineNumber, STR(message))));
 }
 
-void LogCatLogLocation::SignalFork() {
+void LogCatLogLocation::SignalFork(uint32_t forkId) {
 
 }
 

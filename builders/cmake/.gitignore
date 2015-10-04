@@ -11,7 +11,6 @@ evostreamms/evostreamms
 hlstool/hlstool
 mp4writer/mp4writer
 tests/tests
-ubnt_webrtc_tests/ubnt_webrtc_tests
 *.ninja
 .ninja_*
 s3

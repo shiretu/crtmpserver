@@ -18,8 +18,7 @@
  */
 
 
-#ifndef _CRYPTO_H
-#define	_CRYPTO_H
+#pragma once
 
 #include "platform/platform.h"
 #include <openssl/bn.h>
@@ -40,13 +39,17 @@
  */
 class DLLEXP DHWrapper {
 private:
-	int32_t _bitsCount;
+	const int32_t _bitsCount;
+	const uint8_t *_pP;
+	const size_t _sizeP;
+	const uint8_t *_pG;
+	const size_t _sizeG;
 	DH *_pDH;
 	uint8_t *_pSharedKey;
-	int32_t _sharedKeyLength;
-	BIGNUM *_peerPublickey;
+	size_t _sharedKeyLength;
 public:
-	DHWrapper(int32_t bitsCount);
+	DHWrapper(const int32_t bitsCount, const uint8_t *pP, const size_t sizeP,
+			const uint8_t *pG, const size_t sizeG);
 	virtual ~DHWrapper();
 
 	/*!
@@ -62,48 +65,54 @@ public:
 	bool CopyPublicKey(uint8_t *pDst, int32_t dstLength);
 
 	/*!
-		@brief Copies the private key.
-		@param pDst - Where the copied key is stored
-		@param dstLength
+		@brief returns the public key length in bytes
 	 */
-	bool CopyPrivateKey(uint8_t *pDst, int32_t dstLength);
+	size_t GetPublicKeyLength();
 
 	/*!
 		@brief Creates a shared secret key
 		@param pPeerPublicKey
 		@param length
 	 */
-	bool CreateSharedKey(uint8_t *pPeerPublicKey, int32_t length);
+	bool CreateSharedKey(const uint8_t *pPeerPublicKey, size_t peerPublicKeySize);
 
 	/*!
 		@brief Copies the shared secret key.
 		@param pDst - Where the copied key is stored
 		@param dstLength
 	 */
-	bool CopySharedKey(uint8_t *pDst, int32_t dstLength);
+	bool CopySharedKey(uint8_t *pDst, size_t dstLength);
+
+	/*!
+		@brief returns the shared key length in bytes
+	 */
+	size_t GetSharedKeyLength();
 private:
 	void Cleanup();
 	bool CopyKey(BIGNUM *pNum, uint8_t *pDst, int32_t dstLength);
 };
 
+DLLEXP void InitSSL();
 DLLEXP void InitRC4Encryption(uint8_t *secretKey, uint8_t *pubKeyIn, uint8_t *pubKeyOut,
 		RC4_KEY *rc4keyIn, RC4_KEY *rc4keyOut);
-DLLEXP string md5(string source, bool textResult);
-DLLEXP string md5(uint8_t *pBuffer, uint32_t length, bool textResult);
-DLLEXP void HMACsha256(const void *pData, uint32_t dataLength, const void *pKey,
-		uint32_t keyLength, void *pResult);
-DLLEXP string sha256(string source);
-DLLEXP string b64(string source);
+DLLEXP string DigestMD5(const string &source, bool textResult);
+DLLEXP string DigestMD5(uint8_t *pBuffer, uint32_t length, bool textResult);
+DLLEXP bool DigestHMACSHA1(const uint8_t *pInputKey, size_t inputKeyLength,
+		uint8_t *pDigest, size_t count, ...);
+DLLEXP bool DigestHMACSHA256(const uint8_t *pInputKey, size_t inputKeyLength,
+		uint8_t *pDigest, size_t count, ...);
+DLLEXP uint32_t DigestCRC32Update(uint32_t start, const uint8_t* pBuffer, size_t length);
+DLLEXP uint32_t DigestCRC32String(const std::string &src);
+DLLEXP string b64(const string &source);
 DLLEXP string b64(uint8_t *pBuffer, uint32_t length);
-DLLEXP string unb64(string source);
+DLLEXP string unb64(const string &source);
 DLLEXP string unb64(uint8_t *pBuffer, uint32_t length);
-DLLEXP string hex(string source);
+DLLEXP string hex(const string &source);
 DLLEXP string hex(const uint8_t *pBuffer, uint32_t length);
-DLLEXP string bits(string source);
+DLLEXP string bits(const string &source);
 DLLEXP string bits(const uint8_t *pBuffer, uint32_t length);
-DLLEXP string unhex(string source);
+DLLEXP string unhex(const string &source);
 DLLEXP string unhex(const uint8_t *pBuffer, uint32_t length);
+DLLEXP string urlDecode(const string &source);
+DLLEXP string urlDecode(const uint8_t *pBuffer, size_t length);
 DLLEXP void CleanupSSL();
-
-#endif /* _CRYPTO_H */
-

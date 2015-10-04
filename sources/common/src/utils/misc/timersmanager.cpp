@@ -18,8 +18,7 @@
  */
 
 
-#include "utils/misc/timersmanager.h"
-#include "utils/logging/logging.h"
+#include "common.h"
 
 TimerEvent::operator string() {
 	return format("id: %4"PRIu32"; period: %6"PRIu32"; nextRun: %"PRIu64,

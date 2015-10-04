@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -18,8 +18,7 @@
  */
 
 
-#ifndef _ENDIANESS_H
-#define	_ENDIANESS_H
+#pragma once
 
 //LITTLE ENDIAN SYSTEMS
 #ifdef LITTLE_ENDIAN_BYTE_ALIGNED
@@ -37,7 +36,3 @@
 #ifdef BIG_ENDIAN_SHORT_ALIGNED
 #include "platform/endianess/big_endian_short_aligned.h"
 #endif
-
-#endif	/* _ENDIANESS_H */
-
-

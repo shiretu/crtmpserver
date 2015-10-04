@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -18,11 +18,10 @@
  */
 
 
-#ifndef _LITTLE_ENDIAN_SHORT_ALIGNED_H
-#define	_LITTLE_ENDIAN_SHORT_ALIGNED_H
+#pragma once
 
 //64 bit
-#ifndef DONT_DEFINE_HTONLL
+#ifndef htonll
 #define htonll(x) \
 					((uint64_t)( \
                     ((((uint64_t)(x)) & 0xff00000000000000LL) >> 56) | \
@@ -35,7 +34,7 @@
                     ((((uint64_t)(x)) & 0x00000000000000ffLL) << 56) \
 					))
 #define ntohll(x)   htonll(x)
-#endif /* DONT_DEFINE_HTONLL */
+#endif /* htonll */
 
 //64 bit
 #define EHTONLL(x) htonll(x)
@@ -174,8 +173,4 @@ do{ \
         (((uint32_t)(((uint8_t *)(pNetworkPointer))[0]))<<16)| \
         (((uint32_t)(((uint8_t *)(pNetworkPointer))[1]))<<8)| \
         ((uint32_t)(((uint8_t *)(pNetworkPointer))[2])) \
-        )) 
-
-#endif	/* _LITTLE_ENDIAN_SHORT_ALIGNED_H */
-
-
+        ))

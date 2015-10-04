@@ -17,10 +17,7 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-
-#ifndef _MMAPFILE_H
-#define	_MMAPFILE_H
+#pragma once
 
 #include "platform/platform.h"
 
@@ -120,8 +117,3 @@ public:
 	bool PeekBuffer(uint8_t *pBuffer, uint64_t count);
 };
 #endif /* HAS_MMAP */
-
-#endif	/* _MMAPFILE_H */
-
-
-

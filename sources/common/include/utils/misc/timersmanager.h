@@ -18,8 +18,7 @@
  */
 
 
-#ifndef _TIMERSMANAGER_H
-#define	_TIMERSMANAGER_H
+#pragma once
 
 #include "platform/platform.h"
 
@@ -50,7 +49,3 @@ public:
 private:
 	string DumpTimers();
 };
-
-#endif	/* _TIMERSMANAGER_H */
-
-

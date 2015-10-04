@@ -18,184 +18,185 @@
  */
 
 
-#ifndef _LINKEDLIST_H
-#define	_LINKEDLIST_H
+#pragma once
 
-#include <stdlib.h>
+#include "utils/logging/logging.h"
 
-template<typename T>
+template<typename K, typename V>
 struct LinkedListNode {
-	LinkedListNode<T> *pPrev;
-	LinkedListNode<T> *pNext;
-	T info;
+	LinkedListNode *pPrev;
+	LinkedListNode *pNext;
+	V value;
+	K key;
 };
 
-template<typename T>
-LinkedListNode<T> *AddLinkedList(LinkedListNode<T> *pTo, T info, bool after) {
-	LinkedListNode<T> *pResult = new LinkedListNode<T>;
-	pResult->pNext = NULL;
-	pResult->pPrev = NULL;
-	pResult->info = info;
-
-	if (pTo != NULL) {
-		if (after) {
-			if (pTo->pNext != NULL) {
-				pTo->pNext->pPrev = pResult;
-				pResult->pNext = pTo->pNext;
-				pTo->pNext = pResult;
-				pResult->pPrev = pTo;
-			} else {
-				pTo->pNext = pResult;
-				pResult->pPrev = pTo;
-			}
-
-		} else {
-			if (pTo->pPrev != NULL) {
-				pTo->pPrev->pNext = pResult;
-				pResult->pPrev = pTo->pPrev;
-				pTo->pPrev = pResult;
-				pResult->pNext = pTo;
-			} else {
-				pTo->pPrev = pResult;
-				pResult->pNext = pTo;
-			}
-		}
-	}
-
-	return pResult;
-}
-
-template<typename T>
-LinkedListNode<T> *FirstLinkedList(LinkedListNode<T> *pNode) {
-	while (pNode != NULL) {
-		if (pNode->pPrev == NULL)
-			return pNode;
-		pNode = pNode->pPrev;
-	}
-	return NULL;
-}
-
-template<typename T>
-LinkedListNode<T> *LastLinkedList(LinkedListNode<T> *pNode) {
-	while (pNode != NULL) {
-		if (pNode->pNext == NULL)
-			return pNode;
-		pNode = pNode->pNext;
-	}
-	return NULL;
-}
-
-template<typename T>
-LinkedListNode<T> *RemoveLinkedList(LinkedListNode<T> *pNode) {
-	LinkedListNode<T> *pPrev = pNode->pPrev;
-	LinkedListNode<T> *pNext = pNode->pNext;
-	if (pPrev != NULL)
-		pPrev->pNext = pNext;
-	if (pNext != NULL)
-		pNext->pPrev = pPrev;
-	delete pNode;
-	if (pPrev != NULL)
-		return pPrev;
-	return pNext;
-}
-
-template<typename T>
+template<typename K, typename V>
 class LinkedList {
 private:
-	LinkedListNode<T> *_pHead;
-	LinkedListNode<T> *_pCurrent;
-	LinkedListNode<T> *_pTail;
-	uint32_t _size;
+	map<K, LinkedListNode<K, V> *> _allNodes;
+	LinkedListNode<K, V> *_pHead;
+	LinkedListNode<K, V> *_pTail;
+	LinkedListNode<K, V> *_pCurrent;
+	bool _denyNext;
+	bool _denyPrev;
 public:
 
-	LinkedList() {
+	inline LinkedList() {
 		_pHead = NULL;
-		_pCurrent = NULL;
 		_pTail = NULL;
-		_size = 0;
-	}
-
-	virtual ~LinkedList() {
-		LinkedListNode<T> *pTemp = _pTail;
-		while (pTemp != NULL)
-			pTemp = RemoveLinkedList<T>(pTemp);
-		_pHead = NULL;
 		_pCurrent = NULL;
-		_pTail = NULL;
-		_size = 0;
+		_denyNext = false;
+		_denyPrev = false;
 	}
 
-	LinkedListNode<T> *Head() {
-		return _pHead;
+	inline ~LinkedList() {
+		Clear();
 	}
 
-	LinkedListNode<T> *Current() {
-		return _pCurrent;
+	inline bool HasKey(const K &key) {
+		return _allNodes.find(key) != _allNodes.end();
 	}
 
-	LinkedListNode<T> *Tail() {
-		return _pTail;
-	}
-
-	uint32_t Size() {
-		return _size;
-	}
-
-	LinkedListNode<T> *PushHead(T info) {
-		_pHead = AddLinkedList(_pHead, info, false);
-		_size++;
-		if (_pCurrent == NULL)
-			_pCurrent = _pHead;
-		if (_pTail == NULL)
-			_pTail = _pHead;
-		return _pHead;
-	}
-
-	LinkedListNode<T> *PushCurrent(T info, bool after) {
-		if (_pHead == NULL)
-			return PushHead(info);
-		_pCurrent = AddLinkedList(_pCurrent, info, after);
-		_size++;
-		_pHead = FirstLinkedList(_pHead);
-		_pTail = LastLinkedList(_pTail);
-		return _pCurrent;
-	}
-
-	LinkedListNode<T> *PushTail(T info) {
-		if (_pHead == NULL)
-			return PushHead(info);
-		_size++;
-		return (_pTail = AddLinkedList(_pTail, info, true));
-	}
-
-	LinkedListNode<T> *Next() {
-		return (_pCurrent != NULL && _pCurrent->pNext != NULL) ? (_pCurrent = _pCurrent->pNext) : NULL;
-	}
-
-	LinkedListNode<T> *Prev() {
-		return (_pCurrent != NULL && _pCurrent->pPrev != NULL) ? (_pCurrent = _pCurrent->pPrev) : NULL;
-	}
-
-	LinkedListNode<T> *Begin() {
-		return _pCurrent = _pHead;
-	}
-
-	LinkedListNode<T> *End() {
-		return _pCurrent = _pTail;
-	}
-
-	LinkedListNode<T> *Remove() {
-		if (_pCurrent == NULL)
+	inline LinkedListNode<K, V> * AddHead(const K &key, const V &value) {
+		if (MAP_HAS1(_allNodes, key)) {
+			ASSERT("Item already present inside the list");
 			return NULL;
-		_pCurrent = RemoveLinkedList(_pCurrent);
-		_pHead = FirstLinkedList(_pCurrent);
-		_pTail = LastLinkedList(_pCurrent);
-		_size--;
+		}
+		LinkedListNode<K, V> *pNode = new LinkedListNode<K, V>();
+		pNode->value = value;
+		pNode->key = key;
+		if (_pHead == NULL) {
+			pNode->pNext = pNode->pPrev = NULL;
+			_pHead = _pTail = pNode;
+		} else {
+			InsertBefore(_pHead, pNode);
+		}
+		_allNodes[key] = pNode;
+		return pNode;
+	}
+
+	inline LinkedListNode<K, V> * AddTail(const K &key, const V &value) {
+		if (MAP_HAS1(_allNodes, key)) {
+			ASSERT("Item already present inside the list");
+			return NULL;
+		}
+		LinkedListNode<K, V> *pNode = new LinkedListNode<K, V>();
+		pNode->value = value;
+		pNode->key = key;
+		if (_pTail == NULL) {
+			pNode->pNext = NULL;
+			pNode->pPrev = NULL;
+			_pHead = _pTail = pNode;
+		} else {
+			InsertAfter(_pTail, pNode);
+		}
+		_allNodes[key] = pNode;
+		return pNode;
+	}
+
+	void Clear() {
+		_pCurrent = NULL;
+		_denyNext = false;
+		_denyPrev = false;
+		while (_pHead != NULL)
+			Remove(_pHead);
+		_pHead = NULL;
+		_pTail = NULL;
+	}
+
+	inline size_t Size() {
+		return _allNodes.size();
+	}
+
+	inline void Remove(const K &key) {
+		if (!MAP_HAS1(_allNodes, key))
+			return;
+		Remove(_allNodes[key]);
+	}
+
+	inline void Remove(LinkedListNode<K, V> *pNode) {
+		if (pNode == NULL)
+			return;
+
+		if (!MAP_HAS1(_allNodes, pNode->key))
+			return;
+
+		if (pNode->pPrev == NULL)
+			_pHead = pNode->pNext;
+		else
+			pNode->pPrev->pNext = pNode->pNext;
+
+		if (pNode->pNext == NULL)
+			_pTail = pNode->pPrev;
+		else
+			pNode->pNext->pPrev = pNode->pPrev;
+
+		_denyNext = false;
+		_denyPrev = false;
+		if (_pCurrent == pNode) {
+			if (_pCurrent->pPrev != NULL) {
+				_pCurrent = _pCurrent->pPrev;
+				_denyPrev = (_pCurrent != NULL);
+			} else {
+				_pCurrent = _pCurrent->pNext;
+				_denyNext = (_pCurrent != NULL);
+			}
+		}
+		_allNodes.erase(pNode->key);
+		delete pNode;
+	}
+
+	inline LinkedListNode<K, V> *MoveHead() {
+		_denyNext = false;
+		_denyPrev = false;
+		return (_pCurrent = _pHead);
+	}
+
+	inline LinkedListNode<K, V> *MovePrev() {
+		if (_denyPrev) {
+			_denyPrev = false;
+			return _pCurrent;
+		}
+		return (_pCurrent = (_pCurrent != NULL) ? _pCurrent->pPrev : NULL);
+	}
+
+	inline LinkedListNode<K, V> *Current() {
 		return _pCurrent;
+	}
+
+	inline LinkedListNode<K, V> *MoveNext() {
+		if (_denyNext) {
+			_denyNext = false;
+			return _pCurrent;
+		}
+		return (_pCurrent = (_pCurrent != NULL) ? _pCurrent->pNext : NULL);
+	}
+
+	inline LinkedListNode<K, V> *MoveTail() {
+		_denyNext = false;
+		_denyPrev = false;
+		return (_pCurrent = _pTail);
+	}
+
+private:
+
+	inline void InsertAfter(LinkedListNode<K, V> *pPosition, LinkedListNode<K, V> *pNode) {
+		pNode->pPrev = pPosition;
+		pNode->pNext = pPosition->pNext;
+		if (pPosition->pNext == NULL)
+			_pTail = pNode;
+		else
+			pPosition->pNext->pPrev = pNode;
+		pPosition->pNext = pNode;
+	}
+
+	inline void InsertBefore(LinkedListNode<K, V> *pPosition, LinkedListNode<K, V> *pNode) {
+		pNode->pPrev = pPosition->pPrev;
+		pNode->pNext = pPosition;
+		if (pPosition->pPrev == NULL)
+			_pHead = pNode;
+		else
+			pPosition->pPrev->pNext = pNode;
+		pPosition->pPrev = pNode;
 	}
 };
-
-
-#endif	/* _LINKEDLIST_H */
-
-

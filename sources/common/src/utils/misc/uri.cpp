@@ -18,8 +18,7 @@
  */
 
 
-#include "utils/misc/uri.h"
-#include "utils/logging/logging.h"
+#include "common.h"
 
 static map<string, uint16_t> _schemeToPort;
 //Variant URI::_dummy;
@@ -30,14 +29,14 @@ static map<string, uint16_t> _schemeToPort;
 #define LOG_URI(...)
 #endif /* DEBUG_URI */
 
-bool parseURI(string stringUri, URI &uri) {
+bool parseURI(const string &inputUri, URI &uri) {
 	/*
 	 * schema://[username[:password]@]host[:port][/[path[?parameters]]]
 	 */
 	LOG_URI("------------------------");
 	LOG_URI("stringUri: `%s`", STR(stringUri));
 	string fullUri;
-	string fullUriWithAuth = stringUri;
+	string fullUriWithAuth = inputUri;
 	string scheme;
 	string authentication;
 	string username;
@@ -62,6 +61,7 @@ bool parseURI(string stringUri, URI &uri) {
 	uri.Reset();
 
 	//2. trim
+	string stringUri = inputUri;
 	trim(stringUri);
 	if (stringUri == "") {
 		FATAL("Empty uri");
@@ -74,7 +74,7 @@ bool parseURI(string stringUri, URI &uri) {
 		FATAL("Unable to determine scheme");
 		return false;
 	}
-	scheme = lowerCase(stringUri.substr(cursor, pos - cursor));
+	lowerCase(scheme = (stringUri.substr(cursor, pos - cursor)));
 	cursor = pos + 3;
 
 	// For now, return immediately if this is a file. Add initializations as necessary
@@ -92,6 +92,7 @@ bool parseURI(string stringUri, URI &uri) {
 		_schemeToPort["rtsp"] = 554;
 		_schemeToPort["rtmp"] = 1935;
 		_schemeToPort["rtmpe"] = 1935;
+		_schemeToPort["liveflv"] = 6666;
 	}
 	if (MAP_HAS1(_schemeToPort, scheme)) {
 		port = _schemeToPort[scheme];
@@ -131,6 +132,10 @@ bool parseURI(string stringUri, URI &uri) {
 			username = authentication;
 			password = "";
 		}
+	}
+	if (hasAuthentication && (username == "")) {
+		FATAL("Invalid username/password specified");
+		return false;
 	}
 	LOG_URI("fullUri: `%s`; fullUriWithAuth: `%s`", STR(fullUri), STR(fullUriWithAuth));
 	LOG_URI("username: `%s`; password: `%s`", STR(username), STR(password));
@@ -267,8 +272,8 @@ bool parseURI(string stringUri, URI &uri) {
 	uri.fullUri(fullUri);
 	uri.fullUriWithAuth(fullUriWithAuth);
 	uri.scheme(scheme);
-	uri.userName(username);
-	uri.password(password);
+	uri.userName(urlDecode(username));
+	uri.password(urlDecode(password));
 	uri.host(host);
 	uri.port(port);
 	uri.portSpecified(portSpecified);
@@ -344,7 +349,7 @@ bool URI::FromVariant(Variant & variant, URI &uri) {
 	return true;
 }
 
-bool URI::FromString(string stringUri, bool resolveHost, URI &uri) {
+bool URI::FromString(const string &stringUri, bool resolveHost, URI &uri) {
 	if (!parseURI(stringUri, uri)) {
 		uri.Reset();
 		return false;

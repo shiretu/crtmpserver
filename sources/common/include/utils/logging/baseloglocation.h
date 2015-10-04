@@ -17,9 +17,7 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#ifndef BASELOGLOCATION_H_
-#define BASELOGLOCATION_H_
+#pragma once
 
 #include "platform/platform.h"
 #include "utils/misc/variant.h"
@@ -48,11 +46,7 @@ public:
 	virtual bool Init();
 	virtual void Log(int32_t level, const char *pFileName, uint32_t lineNumber,
 			const char *pFunctionName, string &message) = 0;
-	virtual void SignalFork() = 0;
+	virtual void SignalFork(uint32_t forkId) = 0;
 private:
 	bool EvalLogLevel(int32_t level);
 };
-
-
-#endif /*BASELOGLOCATION_H_*/
-

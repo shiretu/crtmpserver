@@ -19,12 +19,11 @@
 
 
 #ifdef HAS_LUA
+#include "common.h"
 extern "C" {
 #include <lualib.h>
 #include <lauxlib.h>
 }
-#include "utils/lua/luautils.h"
-#include "utils/logging/logging.h"
 
 void * _lua_alloc(void *ud, void *ptr, size_t osize, size_t nsize) {
 	if (nsize == 0) {

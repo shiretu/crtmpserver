@@ -18,8 +18,7 @@
  */
 
 
-#ifndef _BITARRAY_H
-#define	_BITARRAY_H
+#pragma once
 
 #include "utils/buffering/iobuffer.h"
 
@@ -135,8 +134,3 @@ public:
 		return true;
 	}
 };
-
-
-#endif	/* _BITARRAY_H */
-
-

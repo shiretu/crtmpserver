@@ -21,14 +21,15 @@
 
 FileLogLocation::FileLogLocation(Variant &configuration)
 : BaseLogLocation(configuration) {
-	_fileStream = NULL;
-	_canLog = false;
-	_counter = 0;
+	_pFile = NULL;
+	_fileMaxLength = 0;
+	_fileCurrentLength = 0;
+	_filePathIndex = 1;
+	_fileName = "";
+	_fileMaxHistorySize = 0;
+
+	_forkId = 0;
 	_newLineCharacters = "\n";
-	_fileHistorySize = 0;
-	_fileLength = 0;
-	_currentLength = 0;
-	_fileIsClosed = true;
 }
 
 FileLogLocation::~FileLogLocation() {
@@ -36,8 +37,11 @@ FileLogLocation::~FileLogLocation() {
 }
 
 bool FileLogLocation::Init() {
+	//base class init
 	if (!BaseLogLocation::Init())
 		return false;
+
+	//gather the required info
 	if (!_configuration.HasKeyChain(V_STRING, false, 1,
 			CONF_LOG_APPENDER_FILE_NAME))
 		return false;
@@ -49,29 +53,21 @@ bool FileLogLocation::Init() {
 			CONF_LOG_APPENDER_NEW_LINE_CHARACTERS, false);
 	if (_configuration.HasKeyChain(_V_NUMERIC, false, 1,
 			CONF_LOG_APPENDER_FILE_HISTORY_SIZE))
-		_fileHistorySize = (uint32_t) _configuration.GetValue(
+		_fileMaxHistorySize = (uint32_t) _configuration.GetValue(
 			CONF_LOG_APPENDER_FILE_HISTORY_SIZE, false);
 	if (_configuration.HasKeyChain(_V_NUMERIC, false, 1,
 			CONF_LOG_APPENDER_FILE_LENGTH))
-		_fileLength = (uint32_t) _configuration.GetValue(
+		_fileMaxLength = (uint32_t) _configuration.GetValue(
 			CONF_LOG_APPENDER_FILE_LENGTH, false);
-	if (!OpenFile())
-		return false;
-	return true;
-}
 
-bool FileLogLocation::EvalLogLevel(int32_t level, const char *pFileName,
-		uint32_t lineNumber, const char *pFunctionName) {
-	if (!_canLog)
-		return false;
-	return BaseLogLocation::EvalLogLevel(level, pFileName, lineNumber, pFunctionName);
+	//open the file
+	return OpenFile();
 }
 
 void FileLogLocation::Log(int32_t level, const char *pFileName,
 		uint32_t lineNumber, const char *pFunctionName, string &message) {
-	if (_fileIsClosed) {
-		OpenFile();
-		if (_fileIsClosed)
+	if (_pFile == NULL) {
+		if (!OpenFile())
 			return;
 	}
 	string logEntry = format("%"PRIu64":%d:%s:%u:%s:%s",
@@ -82,57 +78,79 @@ void FileLogLocation::Log(int32_t level, const char *pFileName,
 		replace(logEntry, "\n", "\\n");
 	}
 	logEntry += _newLineCharacters;
-	_fileStream->WriteString(logEntry);
-	_fileStream->Flush();
-	if (_fileLength > 0) {
-		_currentLength += (uint32_t) logEntry.length();
-		if (_fileLength < _currentLength)
-			OpenFile();
+	_pFile->WriteString(logEntry);
+	_pFile->Flush();
+	if ((_fileMaxLength > 0)&&(_fileMaxHistorySize > 0)) {
+		_fileCurrentLength += (uint32_t) logEntry.length();
+		if (_fileCurrentLength >= _fileMaxLength)
+			CloseFile();
 	}
 }
 
-void FileLogLocation::SignalFork() {
-	_fileIsClosed = true;
-	_history.clear();
+void FileLogLocation::SignalFork(uint32_t forkId) {
+	_forkId = forkId;
+	CloseFile();
 }
 
 bool FileLogLocation::OpenFile() {
+	//close the current file, just to make sure
 	CloseFile();
-	double ts;
-	GETCLOCKS(ts, double);
-	ts = (ts / CLOCKS_PER_SECOND) * 1000;
-	string filename = format("%s.%"PRIu64".%"PRIu64".log", STR(_fileName), (uint64_t) GetPid(), (uint64_t) ts);
-	_fileStream = new File();
-	if (!_fileStream->Initialize(filename, FILE_OPEN_MODE_TRUNCATE)) {
+
+	//default the file name to the specified value
+	string fileName = format("%s.%02"PRIu32".log",
+					_fileName.c_str(),
+					_forkId
+					);
+
+	//roll the files if needed
+	if ((_fileMaxLength > 0)&&(_fileMaxHistorySize > 0)) {
+		for (ssize_t i = (_fileMaxHistorySize - 1); i >= 0; i--) {
+			string src = "";
+			if (i == 0)
+				src = fileName;
+			else
+				src = format("%s.%02"PRIu32".%08"PRIz"u.log",
+					_fileName.c_str(),
+					_forkId,
+					i
+					);
+			string dst = format("%s.%02"PRIu32".%08"PRIz"u.log",
+					_fileName.c_str(),
+					_forkId,
+					i + 1
+					);
+			rename(src.c_str(), dst.c_str());
+		}
+	}
+
+	//create and initialize the file
+	_pFile = new File();
+	if (!_pFile->Initialize(fileName, FILE_OPEN_MODE_TRUNCATE)) {
+		CloseFile();
 		return false;
 	}
-	string header = format("PID: %"PRIu64"; TIMESTAMP: %"PRIz"u%s%s%s",
+
+	//compute and write the header
+	string header = format("PID: %"PRIu64"; TIMESTAMP: %"PRIz"u; LIFE: %s%s%s%s",
 			(uint64_t) GetPid(),
 			time(NULL),
+			STR(Version::_lifeId),
 			STR(_newLineCharacters),
 			STR(Version::GetBanner()),
 			STR(_newLineCharacters));
-	if (!_fileStream->WriteString(header)) {
+	if (!_pFile->WriteString(header)) {
+		CloseFile();
 		return false;
 	}
-	if (_fileHistorySize > 0) {
-		ADD_VECTOR_END(_history, filename);
-		while (_history.size() > _fileHistorySize) {
-			deleteFile(_history[0]);
-			_history.erase(_history.begin());
-		}
-	}
-	_currentLength = 0;
-	_canLog = true;
-	_fileIsClosed = false;
+
+	//done
 	return true;
 }
 
 void FileLogLocation::CloseFile() {
-	if (_fileStream != NULL) {
-		delete _fileStream;
-		_fileStream = NULL;
+	if (_pFile != NULL) {
+		delete _pFile;
+		_pFile = NULL;
 	}
-	_fileIsClosed = true;
-	_canLog = false;
+	_fileCurrentLength = 0;
 }

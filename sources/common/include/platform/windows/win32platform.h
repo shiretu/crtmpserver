@@ -17,9 +17,17 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #ifdef WIN32
-#ifndef _WIN32PLATFORM_H
-#define _WIN32PLATFORM_H
+
+#include "platform/baseplatform.h"
+#include <WinSock2.h>
+#include <Ws2tcpip.h>
+#include <io.h>
+#include <Shlwapi.h>
+#include <process.h>
+#include <IPHlpApi.h>
 
 //define missing PRI_64 specifiers
 #ifndef PRId64
@@ -90,41 +98,93 @@
 #define PRIz "I"
 #endif /* PRIz */
 
-#include "platform/baseplatform.h"
-#include <assert.h>
-#include <time.h>
-#include <io.h>
-#include <Shlwapi.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <process.h>
+#ifndef ssize_t
+#define ssize_t   __int64
+#endif
 
-#include <string>
-#include <vector>
-#include <queue>
-#include <map>
-#include <fcntl.h>
-#include <sstream>
-#include <cctype>
-#include <algorithm>
-#include <stdint.h>
-using namespace std;
+#define IOV_MAX 512
 
-/*typedef unsigned char uint8_t;
-typedef unsigned short int uint16_t;
-typedef unsigned long int uint32_t;
-typedef unsigned long long int uint64_t;
-typedef char int8_t;
-typedef short int int16_t;
-typedef long int int32_t;
-typedef long long int int64_t;*/
+struct msghdr {
+	const void *msg_name; /* optional address */
+	socklen_t msg_namelen; /* size of address */
+	struct iovec *msg_iov; /* scatter/gather array */
+	size_t msg_iovlen; /* # elements in msg_iov */
+	void *msg_control; /* ancillary data, see below */
+	size_t msg_controllen; /* ancillary data buffer len */
+	int msg_flags; /* flags on received message */
+};
+
+struct if_data {
+	/* generic interface information */
+	u_char ifi_type; /* ethernet, tokenring, etc */
+	u_char ifi_addrlen; /* media address length */
+	u_char ifi_hdrlen; /* media header length */
+	u_long ifi_mtu; /* maximum transmission unit */
+	u_long ifi_metric; /* routing metric (external only) */
+	u_long ifi_baudrate; /* linespeed */
+	/* volatile statistics */
+	u_long ifi_ipackets; /* packets received on interface */
+	u_long ifi_ierrors; /* input errors on interface */
+	u_long ifi_opackets; /* packets sent on interface */
+	u_long ifi_oerrors; /* output errors on interface */
+	u_long ifi_collisions; /* collisions on csma interfaces */
+	u_long ifi_ibytes; /* total number of octets received */
+	u_long ifi_obytes; /* total number of octets sent */
+	u_long ifi_imcasts; /* packets received via multicast */
+	u_long ifi_omcasts; /* packets sent via multicast */
+	u_long ifi_iqdrops; /* dropped on input, this interface */
+	u_long ifi_noproto; /* destined for unsupported protocol */
+	struct timeval ifi_lastchange; /* last updated */
+};
+
+struct ifaddrs {
+	IP_ADAPTER_ADDRESSES *pRawItem;
+	IP_ADAPTER_ADDRESSES *pRawHead;
+	if_data _data;
+	struct ifaddrs *ifa_next; // Next item in list
+#define ifa_name pRawItem->AdapterName
+	//const char *ifa_name; // Name of interface
+	unsigned int ifa_flags; // Flags from SIOCGIFFLAGS
+	struct sockaddr *ifa_addr; // Address of interface
+	struct sockaddr *ifa_netmask; // Netmask of interface
+
+	union {
+		struct sockaddr *ifu_broadaddr;
+		/* Broadcast address of interface */
+		struct sockaddr *ifu_dstaddr;
+		/* Point-to-point destination address */
+	} ifa_ifu;
+#define ifa_broadaddr ifa_ifu.ifu_broadaddr
+#define ifa_dstaddr   ifa_ifu.ifu_dstaddr
+	void *ifa_data; /* Address-specific data */
+
+	ifaddrs() {
+		pRawItem = NULL;
+		pRawHead = NULL;
+		memset(&_data, 0, sizeof (_data));
+		ifa_next = NULL;
+		ifa_flags = 0;
+		ifa_addr = NULL;
+		ifa_netmask = NULL;
+		ifa_ifu.ifu_broadaddr = NULL;
+		ifa_ifu.ifu_dstaddr = NULL;
+		ifa_data = &_data;
+	}
+
+	virtual ~ifaddrs() {
+		if (ifa_netmask != NULL) {
+			delete ifa_netmask;
+			ifa_netmask = NULL;
+		}
+	}
+};
+#define        IFF_POINTOPOINT IFF_POINTTOPOINT
+#define        IFF_RUNNING     0x40
+
 #define atoll atol
 
-#ifdef COMPILE_STATIC
-#define DLLEXP /*COMPILE_STATIC*/
-#else
-#define DLLEXP __declspec(dllexport)
-#endif /* COMPILE_STATIC */
+#define DLLEXP
+#define EMS_RESTRICT
 
 #define __func__ __FUNCTION__
 #define COLOR_TYPE WORD
@@ -141,19 +201,7 @@ typedef long long int int64_t;*/
 #define MSG_NOSIGNAL 0
 #define READ_FD _read
 #define WRITE_FD _write
-#define CLOSE_SOCKET(fd) do{ if(((int)fd)>=0) closesocket(fd);fd=(SOCKET)-1;}while(0)
-#define LASTSOCKETERROR WSAGetLastError()
-#define SOCKERROR_EINPROGRESS			WSAEINPROGRESS
-#define SOCKERROR_EAGAIN				WSAEWOULDBLOCK
-#define SOCKERROR_ECONNRESET			WSAECONNRESET
-#define SOCKERROR_ENOBUFS				WSAENOBUFS
-#define SET_UNKNOWN 0
-#define SET_READ 1
-#define SET_WRITE 2
-#define SET_TIMER 3
-#define RESET_TIMER(timer,sec,usec)
-#define FD_READ_CHUNK 32768
-#define FD_WRITE_CHUNK FD_READ_CHUNK
+
 #define PATH_SEPARATOR '\\'
 #define LIBRARY_NAME_PATTERN "%s.dll"
 #define LIB_HANDLER HMODULE
@@ -161,13 +209,10 @@ typedef long long int int64_t;*/
 #define OPEN_LIBRARY_ERROR "OPEN_LIBRARY_ERROR NOT IMPLEMENTED YET"
 #define GET_PROC_ADDRESS(libHandler, procName) GetProcAddress((libHandler), (procName))
 #define FREE_LIBRARY(libHandler) FreeLibrary((libHandler))
-#define SRAND() srand((uint32_t)time(NULL));
 #define S_IRUSR S_IREAD
 #define S_IWUSR S_IWRITE
 #define S_IRGRP 0000
 #define S_IWGRP 0000
-#define Timestamp struct tm
-#define Timestamp_init {0, 0, 0, 0, 0, 0, 0, 0, 0}
 #define snprintf sprintf_s
 #define pid_t DWORD
 #define PIOFFT __int64
@@ -178,43 +223,12 @@ typedef long long int int64_t;*/
 
 #define gmtime_r(_p_time_t, _p_struct_tm) *(_p_struct_tm) = *gmtime(_p_time_t);
 
-#define CLOCKS_PER_SECOND 1000000L
-#define GETCLOCKS(result,type) \
-do { \
-    struct timeval ___timer___; \
-    gettimeofday(&___timer___,NULL); \
-    result=(type)___timer___.tv_sec*(type)CLOCKS_PER_SECOND+(type) ___timer___.tv_usec; \
-}while(0);
-
-#define GETMILLISECONDS(result) \
-do { \
-    struct timeval ___timer___; \
-    gettimeofday(&___timer___,NULL); \
-    result=(uint64_t)___timer___.tv_sec*1000+___timer___.tv_usec/1000; \
-}while(0);
-
-#define GETNTP(result) \
-do { \
-	struct timeval tv; \
-	gettimeofday(&tv,NULL); \
-	result=(((uint64_t)tv.tv_sec + 2208988800U)<<32)|((((uint32_t)tv.tv_usec) << 12) + (((uint32_t)tv.tv_usec) << 8) - ((((uint32_t)tv.tv_usec) * 1825) >> 5)); \
-}while (0);
-
-#define GETCUSTOMNTP(result,value) \
-do { \
-	struct timeval tv; \
-	tv.tv_sec=(long)(value/CLOCKS_PER_SECOND); \
-	tv.tv_usec=(long)(value-tv.tv_sec*CLOCKS_PER_SECOND); \
-	result=(((uint64_t)tv.tv_sec + 2208988800U)<<32)|((((uint32_t)tv.tv_usec) << 12) + (((uint32_t)tv.tv_usec) << 8) - ((((uint32_t)tv.tv_usec) * 1825) >> 5)); \
-}while (0);
-
-typedef void (*SignalFnc)(void);
-
-typedef struct _select_event {
-	uint8_t type;
-} select_event;
-
 #define FD_COPY(f, t)   (void)(*(t) = *(f))
+
+struct iovec {
+	void * iov_base;
+	size_t iov_len;
+};
 
 #define MSGHDR WSAMSG
 #define IOVEC WSABUF
@@ -231,53 +245,11 @@ typedef struct _select_event {
 
 #define ftell64 _ftelli64
 #define fseek64 _fseeki64
+#define lseek64 _lseeki64
 
-DLLEXP string GetEnvVariable(const char *pEnvVarName);
-DLLEXP void replace(string &target, string search, string replacement);
-DLLEXP bool fileExists(string path);
-DLLEXP string lowerCase(string value);
-DLLEXP string upperCase(string value);
-DLLEXP string changeCase(string &value, bool lowerCase);
-DLLEXP string tagToString(uint64_t tag);
-DLLEXP bool setMaxFdCount(uint32_t &current, uint32_t &max);
-DLLEXP bool enableCoreDumps();
-DLLEXP bool setFdJoinMulticast(SOCKET sock, string bindIp, uint16_t bindPort, string ssmIp);
-DLLEXP bool setFdCloseOnExec(int fd);
-DLLEXP bool setFdNonBlock(SOCKET fd);
-DLLEXP bool setFdNoSIGPIPE(SOCKET fd);
-DLLEXP bool setFdKeepAlive(SOCKET fd, bool isUdp);
-DLLEXP bool setFdNoNagle(SOCKET fd, bool isUdp);
-DLLEXP bool setFdReuseAddress(SOCKET fd);
-DLLEXP bool setFdTTL(SOCKET fd, uint8_t ttl);
-DLLEXP bool setFdMulticastTTL(SOCKET fd, uint8_t ttl);
-DLLEXP bool setFdTOS(SOCKET fd, uint8_t tos);
-DLLEXP bool setFdMaxSndRcvBuff(SOCKET fd);
-DLLEXP bool setFdOptions(SOCKET fd, bool isUdp);
-DLLEXP void killProcess(pid_t pid);
-DLLEXP bool deleteFile(string path);
-DLLEXP bool deleteFolder(string path, bool force);
-DLLEXP bool createFolder(string path, bool recursive);
-DLLEXP string getHostByName(string name);
-DLLEXP bool isNumeric(string value);
-DLLEXP void split(string str, string separator, vector<string> &result);
-DLLEXP uint64_t getTagMask(uint64_t tag);
-DLLEXP string generateRandomString(uint32_t length);
-DLLEXP void lTrim(string &value);
-DLLEXP void rTrim(string &value);
-DLLEXP void trim(string &value);
-DLLEXP int8_t getCPUCount();
-DLLEXP map<string, string> mapping(string str, string separator1, string separator2, bool trimStrings);
-DLLEXP void splitFileName(string fileName, string &name, string &extension, char separator = '.');
-DLLEXP double getFileModificationDate(string path);
-DLLEXP string normalizePath(string base, string file);
-DLLEXP bool listFolder(string path, vector<string> &result,
-		bool normalizeAllPaths = true, bool includeFolders = false,
-		bool recursive = true);
-DLLEXP bool moveFile(string src, string dst);
-DLLEXP bool isAbsolutePath(string &path);
-DLLEXP void installSignal(int sig, SignalFnc pSignalFnc);
-DLLEXP void installQuitSignal(SignalFnc pQuitSignalFnc);
-DLLEXP void installConfRereadSignal(SignalFnc pConfRereadSignalFnc);
+#define localtime_r(time_t_val, struct_tm_val) localtime_s(struct_tm_val,time_t_val)
+#define setenv(n,v,d) _putenv_s(n,v)
+#define unsetenv(n) _putenv_s(n,"")
 DLLEXP time_t timegm(struct tm *tm);
 DLLEXP char *strptime(const char *buf, const char *fmt, struct tm *timeptr);
 DLLEXP int strcasecmp(const char *s1, const char *s2);
@@ -287,10 +259,53 @@ DLLEXP int gettimeofday(struct timeval *tv, void* tz);
 DLLEXP void InitNetworking();
 DLLEXP HMODULE UnicodeLoadLibrary(string fileName);
 DLLEXP int inet_aton(const char *pStr, struct in_addr *pRes);
-#define getutctime() time(NULL)
-DLLEXP time_t getlocaltime();
-DLLEXP time_t gettimeoffset();
-DLLEXP void GetFinishedProcesses(vector<pid_t> &pids, bool &noMorePids);
-DLLEXP bool LaunchProcess(string fullBinaryPath, vector<string> &arguments, vector<string> &envVars, pid_t &pid);
-#endif /* _WIN32PLATFORM_H */
+DLLEXP void *memmem(const void *l, size_t l_len, const void *s, size_t s_len);
+#define strtoull _strtoui64
+DLLEXP int getifaddrs(struct ifaddrs **ppIfap);
+DLLEXP void freeifaddrs(struct ifaddrs *pIf);
+DLLEXP ssize_t sendmsg(SOCKET socket, const struct msghdr *message, int flags);
+
+struct overlapped_wrapper_t {
+	OVERLAPPED *_pOverlapped;
+	HANDLE *_pEvents;
+	size_t _count;
+	int _fd;
+	HANDLE _fdHandle;
+	overlapped_wrapper_t();
+	virtual ~overlapped_wrapper_t();
+	bool Init(size_t count);
+	void Free();
+};
+DLLEXP ssize_t writev_ex(overlapped_wrapper_t &ow, const struct iovec *iov, int iovcnt);
+DLLEXP int fsync_ex(overlapped_wrapper_t &ow);
+DLLEXP void usleep(uint64_t microSeconds);
+
+//socket abstractions
+#define SOCKET_TYPE SOCKET
+#define SOCKET_INVALID INVALID_SOCKET
+#define SOCKET_IS_INVALID(sock) ((sock)==INVALID_SOCKET)
+#define SOCKET_IS_VALID(sock) ((sock)!=INVALID_SOCKET)
+#define SOCKET_CLOSE(fd) do{ if(SOCKET_IS_VALID(fd)) { shutdown(fd, SD_SEND); closesocket(fd); } fd=SOCKET_INVALID; } while(0)
+#define SOCKET_LAST_ERROR			WSAGetLastError()
+#define SOCKET_ERROR_EINPROGRESS			WSAEINPROGRESS
+#define SOCKET_ERROR_EAGAIN				WSAEWOULDBLOCK
+#define SOCKET_ERROR_EWOULDBLOCK			WSAEWOULDBLOCK
+#define SOCKET_ERROR_ECONNRESET			WSAECONNRESET
+#define SOCKET_ERROR_ENOBUFS				WSAENOBUFS
+
+//threading: mutex
+#define THREADING_WINTHREAD
+#define MUTEX_TYPE CSW
+#define MUTEX_INIT(p1,p2) 0
+#define MUTEX_STATIC_INIT CSW()
+#define MUTEX_DESTROY(p1)
+#define MUTEX_LOCK(pCSW) (pCSW)->EnterCriticalSection()
+#define MUTEX_UNLOCK(pCSW) (pCSW)->LeaveCriticalSection()
+
+//threading: threads
+#define THREAD_TYPE HANDLE
+DLLEXP int THREAD_CREATE(THREAD_TYPE *pThread, void *pReserved, void *(*start_routine)(void *), void *pArguments);
+DLLEXP int THREAD_JOIN(THREAD_TYPE thread, void **ppReserved);
+DLLEXP void THREAD_EXIT(void *pReserved);
+
 #endif /* WIN32 */

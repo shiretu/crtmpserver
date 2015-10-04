@@ -17,55 +17,14 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _PLATFORM_H
-#define _PLATFORM_H
+#pragma once
 
 #include "platform/endianess/endianness.h"
-
-#ifdef OSX
-#include "platform/osx/osxplatform.h"
-#define Platform OSXPlatform
-#endif /* OSX */
-
-#ifdef LINUX
-#include "platform/linux/max.h"
-#include "platform/linux/linuxplatform.h"
-#define Platform LinuxPlatform
-#endif /* LINUX */
-
-#ifdef FREEBSD
-#include "platform/freebsd/freebsdplatform.h"
-#define Platform FreeBSDPlatform
-#endif /* FREEBSD */
-
-#ifdef SOLARIS
-#include "platform/solaris/solarisplatform.h"
-#define Platform SolarisPlatform
-#endif /* SOLARIS */
-
-#ifdef WIN32
-#include <WinSock2.h>
-#include <Ws2tcpip.h>
-#include "platform/windows/max.h"
+#include "platform/unix/bsd/osxplatform.h"
+#include "platform/unix/linux/linuxplatform.h"
+#include "platform/unix/bsd/freebsdplatform.h"
+#include "platform/unix/linux/solarisplatform.h"
 #include "platform/windows/win32platform.h"
-#define Platform Win32Platform
-#endif /* WIN32 */
-
-#ifdef ANDROID
-#include "platform/android/max.h"
-#include "platform/android/androidplatform.h"
-#define Platform AndroidPlatform
-#endif /* ANDROID */
-
-#ifdef ASSERT_OVERRIDE
-#define o_assert(x) \
-do { \
-	if((x)==0) \
-		exit(-1); \
-} while(0)
-#else
-#define o_assert(x) assert(x)
-#endif
-
-#endif /* _PLATFORM_H */
+#include "platform/windows/criticalsectionwrapper.h"
+#include "platform/unix/linux/androidplatform.h"
 

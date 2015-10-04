@@ -17,19 +17,16 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#ifndef _LOGGER_H
-#define _LOGGER_H
+#pragma once
 
 #include "common.h"
-#ifdef HAS_SAFE_LOGGER
-#include <pthread.h>
-#endif /* HAS_SAFE_LOGGER */
 
 class BaseLogLocation;
 
 class DLLEXP Version {
 public:
+	static string _lifeId;
+	static uint16_t _instance;
 	static string GetBuildNumber();
 	static uint64_t GetBuildDate();
 	static string GetBuildDateString();
@@ -47,15 +44,13 @@ public:
 
 class DLLEXP Logger {
 private:
+	static MUTEX_TYPE _lock;
 	static Logger *_pLogger; //! Pointer to the Logger class.
 	vector<BaseLogLocation *> _logLocations; //! Vector that stores the location of the log file.
 	bool _freeAppenders; //! Boolean that releases the logger.
-#ifdef HAS_SAFE_LOGGER
-public:
-	static pthread_mutex_t *_pMutex;
-#endif
-public:
+private:
 	Logger();
+public:
 	virtual ~Logger();
 
 	static void Init();
@@ -63,9 +58,6 @@ public:
 	static void Log(int32_t level, const char *pFileName, uint32_t lineNumber,
 			const char *pFunctionName, const char *pFormatString, ...);
 	static bool AddLogLocation(BaseLogLocation *pLogLocation);
-	static void SignalFork();
+	static void SignalFork(uint32_t forkId);
 	static void SetLevel(int32_t level);
 };
-
-#endif /* _LOGGER_H */
-

@@ -18,8 +18,7 @@
  */
 
 
-#ifndef _FILELOGLOCATION_H
-#define	_FILELOGLOCATION_H
+#pragma once
 
 #include "utils/logging/baseloglocation.h"
 
@@ -28,31 +27,24 @@ class File;
 class DLLEXP FileLogLocation
 : public BaseLogLocation {
 private:
-	File *_fileStream;
-	bool _canLog;
-	uint32_t _counter;
-	string _newLineCharacters;
+	File *_pFile;
+	uint32_t _fileMaxLength;
+	uint32_t _fileCurrentLength;
+	uint32_t _filePathIndex;
 	string _fileName;
-	uint32_t _fileHistorySize;
-	uint32_t _fileLength;
-	uint32_t _currentLength;
-	vector<string> _history;
-	bool _fileIsClosed;
+	uint32_t _fileMaxHistorySize;
+
+	uint32_t _forkId;
+	string _newLineCharacters;
 public:
 	FileLogLocation(Variant &configuration);
 	virtual ~FileLogLocation();
 
 	virtual bool Init();
-	virtual bool EvalLogLevel(int32_t level, const char *pFileName,
-			uint32_t lineNumber, const char *pFunctionName);
 	virtual void Log(int32_t level, const char *pFileName, uint32_t lineNumber,
 			const char *pFunctionName, string &message);
-	virtual void SignalFork();
+	virtual void SignalFork(uint32_t forkId);
 private:
 	bool OpenFile();
 	void CloseFile();
 };
-
-
-#endif	/* _FILELOGLOCATION_H */
-

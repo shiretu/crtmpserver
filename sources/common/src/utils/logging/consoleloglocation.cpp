@@ -18,7 +18,7 @@
  */
 
 
-#include "utils/logging/consoleloglocation.h"
+#include "common.h"
 
 ConsoleLogLocation::ConsoleLogLocation(Variant &configuration)
 : BaseLogLocation(configuration) {
@@ -80,6 +80,6 @@ void ConsoleLogLocation::Log(int32_t level, const char *pFileName,
 	fflush(stdout);
 }
 
-void ConsoleLogLocation::SignalFork() {
+void ConsoleLogLocation::SignalFork(uint32_t forkId) {
 
 }

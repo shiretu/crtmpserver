@@ -17,14 +17,14 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _UTILS_H
-#define _UTILS_H
+#pragma once
 
+#include "utils/stringfunctions.h"
+#include "utils/filesfunctions.h"
+#include "utils/socketfunctions.h"
+#include "utils/systemfunctions.h"
 #include "utils/buffering/buffering.h"
 #include "utils/logging/logging.h"
 #include "utils/lua/luautils.h"
-#include "utils/mempool/mempool.h"
+#include "utils/lua/basevmlua.h"
 #include "utils/misc/misc.h"
-
-#endif /* _UTILS_H */
-

@@ -18,15 +18,33 @@
  */
 
 
-#include "utils/buffering/iobuffer.h"
-#include "utils/logging/logging.h"
+#include "common.h"
+
+#define WF_IN	0
+#define WF_OUT	1
 
 #ifdef WITH_SANITY_INPUT_BUFFER
 #define SANITY_INPUT_BUFFER \
 o_assert(_consumed<=_published); \
 o_assert(_published<=_size);
+#define WRITE_WITNESS_GENERIC(f,t,b,l) \
+do { \
+	if ((f) != NULL) { \
+		if ((!(f)->WriteUI8(t)) \
+				|| (!(f)->WriteI32((l))) \
+				|| (!(f)->WriteBuffer((b), (l))) \
+				|| (!(f)->Flush())) { \
+			CloseInWitnessFile(); \
+			CloseOutWitnessFile(); \
+		} \
+	} \
+} while(0)
+#define WRITE_IN_WITNESS(b,l) WRITE_WITNESS_GENERIC(_pInWitnessFile,WF_IN,b,l)
+#define WRITE_OUT_WITNESS(b,l) WRITE_WITNESS_GENERIC(_pOutWitnessFile,WF_OUT,b,l)
 #else
 #define SANITY_INPUT_BUFFER
+#define WRITE_IN_WITNESS(b,l)
+#define WRITE_OUT_WITNESS(b,l)
 #endif
 
 //#define TRACK_ALLOCATIONS
@@ -183,15 +201,39 @@ IOBuffer::IOBuffer() {
 	_minChunkSize = 4096;
 	_dummy = sizeof (sockaddr_in);
 	_sendLimit = 0xffffffff;
+#ifdef WITH_SANITY_INPUT_BUFFER
+	_pInWitnessFile = NULL;
+	_pOutWitnessFile = NULL;
+#endif /* WITH_SANITY_INPUT_BUFFER */
 	SANITY_INPUT_BUFFER;
 	TRACK_IOBUFFER_CONSTRUCTOR(this);
 }
 
 IOBuffer::~IOBuffer() {
+	CloseInWitnessFile();
+	CloseOutWitnessFile();
 	SANITY_INPUT_BUFFER;
 	Cleanup();
 	SANITY_INPUT_BUFFER;
 	TRACK_IOBUFFER_DESTRUCTOR(this);
+}
+
+void IOBuffer::SetInWitnessFile(const string &path) {
+	CloseInWitnessFile();
+#ifdef WITH_SANITY_INPUT_BUFFER
+	_pInWitnessFile = new File();
+	if (!_pInWitnessFile->Initialize(path, FILE_OPEN_MODE_APPEND))
+		CloseInWitnessFile();
+#endif /* WITH_SANITY_INPUT_BUFFER */
+}
+
+void IOBuffer::SetOutWitnessFile(const string &path) {
+	CloseOutWitnessFile();
+#ifdef WITH_SANITY_INPUT_BUFFER
+	_pOutWitnessFile = new File();
+	if (!_pOutWitnessFile->Initialize(path, FILE_OPEN_MODE_APPEND))
+		CloseOutWitnessFile();
+#endif /* WITH_SANITY_INPUT_BUFFER */
 }
 
 void IOBuffer::Initialize(uint32_t expected) {
@@ -203,10 +245,10 @@ void IOBuffer::Initialize(uint32_t expected) {
 	EnsureSize(expected);
 }
 
-bool IOBuffer::ReadFromTCPFd(int32_t fd, uint32_t expected, int32_t &recvAmount, int &err) {
+bool IOBuffer::ReadFromTCPFd(SOCKET_TYPE fd, uint32_t expected, int32_t &recvAmount, int &err) {
 	SANITY_INPUT_BUFFER;
 	if (expected == 0) {
-		err = SOCKERROR_ECONNRESET;
+		err = SOCKET_ERROR_ECONNRESET;
 		SANITY_INPUT_BUFFER;
 		return false;
 	}
@@ -220,12 +262,13 @@ bool IOBuffer::ReadFromTCPFd(int32_t fd, uint32_t expected, int32_t &recvAmount,
 
 	recvAmount = recv(fd, (char *) (_pBuffer + _published), expected, MSG_NOSIGNAL);
 	if (recvAmount > 0) {
+		WRITE_IN_WITNESS(_pBuffer + _published, recvAmount);
 		_published += (uint32_t) recvAmount;
 		SANITY_INPUT_BUFFER;
 		return true;
 	} else {
-		err = recvAmount == 0 ? SOCKERROR_ECONNRESET : LASTSOCKETERROR;
-		if ((err != SOCKERROR_EAGAIN)&&(err != SOCKERROR_EINPROGRESS)) {
+		err = recvAmount == 0 ? SOCKET_ERROR_ECONNRESET : SOCKET_LAST_ERROR;
+		if ((err != SOCKET_ERROR_EAGAIN)&&(err != SOCKET_ERROR_EINPROGRESS)) {
 			SANITY_INPUT_BUFFER;
 			return false;
 		}
@@ -233,7 +276,7 @@ bool IOBuffer::ReadFromTCPFd(int32_t fd, uint32_t expected, int32_t &recvAmount,
 	}
 }
 
-bool IOBuffer::ReadFromUDPFd(int32_t fd, int32_t &recvAmount, sockaddr_in &peerAddress) {
+bool IOBuffer::ReadFromUDPFd(SOCKET_TYPE fd, int32_t &recvAmount, sockaddr_in &peerAddress) {
 	SANITY_INPUT_BUFFER;
 	if (_published + 65536 > _size) {
 		if (!EnsureSize(65536)) {
@@ -245,21 +288,21 @@ bool IOBuffer::ReadFromUDPFd(int32_t fd, int32_t &recvAmount, sockaddr_in &peerA
 	recvAmount = recvfrom(fd, (char *) (_pBuffer + _published), 65536,
 			MSG_NOSIGNAL, (sockaddr *) & peerAddress, &_dummy);
 	if (recvAmount > 0) {
+		WRITE_IN_WITNESS(_pBuffer + _published, recvAmount);
 		_published += (uint32_t) recvAmount;
 		SANITY_INPUT_BUFFER;
 		return true;
 	} else {
-		int err = LASTSOCKETERROR;
-#ifdef WIN32
-		if (err == SOCKERROR_ECONNRESET) {
-			WARN("Windows is stupid enough to issue a CONNRESET on a UDP socket. See http://support.microsoft.com/?kbid=263823 for details");
+		int err = SOCKET_LAST_ERROR;
+		if ((err != SOCKET_ERROR_EAGAIN)&&(err != SOCKET_ERROR_EINPROGRESS)&&(err != SOCKET_ERROR_EWOULDBLOCK)) {
+			FATAL("Unable to read data from UDP socket. Error was: %d", err); //IGNORE
+			SANITY_INPUT_BUFFER;
+			return false;
+		} else {
+			recvAmount = 0;
 			SANITY_INPUT_BUFFER;
 			return true;
 		}
-#endif /* WIN32 */
-		FATAL("Unable to read data from UDP socket. Error was: %d", err);
-		SANITY_INPUT_BUFFER;
-		return false;
 	}
 }
 
@@ -274,6 +317,7 @@ bool IOBuffer::ReadFromStdio(int32_t fd, uint32_t expected, int32_t &recvAmount)
 
 	recvAmount = READ_FD(fd, (char *) (_pBuffer + _published), expected);
 	if (recvAmount > 0) {
+		WRITE_IN_WITNESS(_pBuffer + _published, recvAmount);
 		_published += (uint32_t) recvAmount;
 		SANITY_INPUT_BUFFER;
 		return true;
@@ -299,6 +343,7 @@ bool IOBuffer::ReadFromFs(File &file, uint32_t size) {
 		SANITY_INPUT_BUFFER;
 		return false;
 	}
+	WRITE_IN_WITNESS(_pBuffer + _published, size);
 	_published += size;
 	SANITY_INPUT_BUFFER;
 	return true;
@@ -322,6 +367,7 @@ bool IOBuffer::ReadFromFs(MmapFile &file, uint32_t size) {
 		SANITY_INPUT_BUFFER;
 		return false;
 	}
+	WRITE_IN_WITNESS(_pBuffer + _published, size);
 	_published += size;
 	SANITY_INPUT_BUFFER;
 	return true;
@@ -335,10 +381,29 @@ bool IOBuffer::ReadFromBuffer(const uint8_t *pBuffer, const uint32_t size) {
 		return false;
 	}
 	memcpy(_pBuffer + _published, pBuffer, size);
+	WRITE_IN_WITNESS(_pBuffer + _published, size);
 	TRACK_IOBUFFER_MEMCPY(size, this);
 	_published += size;
 	SANITY_INPUT_BUFFER;
 	return true;
+}
+
+bool IOBuffer::ReadFromU16(uint16_t value, const bool networkOrder) {
+	if (networkOrder)
+		value = EHTONS(value);
+	return ReadFromBuffer((uint8_t *) & value, sizeof (value));
+}
+
+bool IOBuffer::ReadFromU32(uint32_t value, const bool networkOrder) {
+	if (networkOrder)
+		value = EHTONL(value);
+	return ReadFromBuffer((uint8_t *) & value, sizeof (value));
+}
+
+bool IOBuffer::ReadFromU64(uint64_t value, const bool networkOrder) {
+	if (networkOrder)
+		value = EHTONLL(value);
+	return ReadFromBuffer((uint8_t *) & value, sizeof (value));
 }
 
 void IOBuffer::ReadFromInputBuffer(IOBuffer *pInputBuffer, uint32_t start, uint32_t size) {
@@ -365,7 +430,7 @@ bool IOBuffer::ReadFromInputBufferWithIgnore(IOBuffer &src) {
 			&&(src._sendLimit == 0xffffffff)
 			) {
 		//this is the ideal case in which "this" (the destiantion) doesn't
-		//have anything inside it and bot the source and the destination
+		//have anything inside it and both the source and the destination
 		//don't have any send limit. We just swap the guts
 		uint8_t *_pTempBuffer = src._pBuffer;
 		src._pBuffer = _pBuffer;
@@ -382,6 +447,7 @@ bool IOBuffer::ReadFromInputBufferWithIgnore(IOBuffer &src) {
 		uint32_t _tempConsumed = src._consumed;
 		src._consumed = _consumed;
 		_consumed = _tempConsumed;
+		WRITE_IN_WITNESS(GETIBPOINTER(*this), GETAVAILABLEBYTESCOUNT(*this));
 
 		SANITY_INPUT_BUFFER;
 		TRACK_SMART_COPY(this, true);
@@ -411,7 +477,7 @@ bool IOBuffer::ReadFromInputBufferWithIgnore(IOBuffer &src) {
 	}
 }
 
-bool IOBuffer::ReadFromString(string binary) {
+bool IOBuffer::ReadFromString(const string &binary) {
 	SANITY_INPUT_BUFFER;
 	if (!ReadFromBuffer((uint8_t *) binary.data(), (uint32_t) binary.length())) {
 		SANITY_INPUT_BUFFER;
@@ -421,12 +487,17 @@ bool IOBuffer::ReadFromString(string binary) {
 	return true;
 }
 
-void IOBuffer::ReadFromByte(uint8_t byte) {
+bool IOBuffer::ReadFromByte(uint8_t byte) {
 	SANITY_INPUT_BUFFER;
-	EnsureSize(1);
+	if (!EnsureSize(1)) {
+		SANITY_INPUT_BUFFER;
+		return false;
+	}
 	_pBuffer[_published] = byte;
+	WRITE_IN_WITNESS(_pBuffer + _published, 1);
 	_published++;
 	SANITY_INPUT_BUFFER;
+	return true;
 }
 
 bool IOBuffer::ReadFromBIO(BIO *pBIO) {
@@ -447,20 +518,26 @@ bool IOBuffer::ReadFromBIO(BIO *pBIO) {
 	}
 	EnsureSize((uint32_t) bioAvailable);
 	int32_t written = BIO_read(pBIO, _pBuffer + _published, bioAvailable);
+	WRITE_IN_WITNESS(_pBuffer + _published, written);
 	_published += written;
 	SANITY_INPUT_BUFFER;
 	return true;
 }
 
-void IOBuffer::ReadFromRepeat(uint8_t byte, uint32_t size) {
+bool IOBuffer::ReadFromRepeat(uint8_t byte, uint32_t size) {
 	SANITY_INPUT_BUFFER;
-	EnsureSize(size);
+	if (!EnsureSize(size)) {
+		SANITY_INPUT_BUFFER;
+		return false;
+	}
 	memset(_pBuffer + _published, byte, size);
+	WRITE_IN_WITNESS(_pBuffer + _published, size);
 	_published += size;
 	SANITY_INPUT_BUFFER;
+	return true;
 }
 
-bool IOBuffer::WriteToTCPFd(int32_t fd, uint32_t size, int32_t &sentAmount, int &err) {
+bool IOBuffer::WriteToTCPFd(SOCKET_TYPE fd, uint32_t size, int32_t &sentAmount, int &err) {
 	SANITY_INPUT_BUFFER;
 	bool result = true;
 	if (_sendLimit != 0xffffffff) {
@@ -474,13 +551,14 @@ bool IOBuffer::WriteToTCPFd(int32_t fd, uint32_t size, int32_t &sentAmount, int 
 			MSG_NOSIGNAL);
 
 	if (sentAmount < 0) {
-		err = LASTSOCKETERROR;
-		if ((err != SOCKERROR_EAGAIN)&&(err != SOCKERROR_EINPROGRESS)) {
+		err = SOCKET_LAST_ERROR;
+		if ((err != SOCKET_ERROR_EAGAIN)&&(err != SOCKET_ERROR_EINPROGRESS)) {
 			FATAL("Unable to send %"PRIu32" bytes of data data. Size advertised by network layer was %"PRIu32". Permanent error (%d): %s",
 					_published - _consumed, size, err, strerror(err));
 			result = false;
 		}
 	} else {
+		WRITE_OUT_WITNESS(_pBuffer + _consumed, sentAmount);
 		_consumed += sentAmount;
 		if (_sendLimit != 0xffffffff)
 			_sendLimit -= sentAmount;
@@ -505,6 +583,7 @@ bool IOBuffer::WriteToStdio(int32_t fd, uint32_t size, int32_t &sentAmount) {
 				_published - _consumed, size, err, strerror(err));
 		result = false;
 	} else {
+		WRITE_OUT_WITNESS(_pBuffer + _consumed, sentAmount);
 		_consumed += sentAmount;
 	}
 	if (result)
@@ -633,7 +712,7 @@ string IOBuffer::DumpBuffer(const uint8_t *pBuffer, uint32_t length) {
 
 string IOBuffer::DumpBuffer(MSGHDR &message, uint32_t limit) {
 	IOBuffer temp;
-	for (MSGHDR_MSG_IOVLEN_TYPE i = 0; i < message.MSGHDR_MSG_IOVLEN; i++) {
+	for (MSGHDR_MSG_IOVLEN_TYPE i = 0; i < (MSGHDR_MSG_IOVLEN_TYPE) message.MSGHDR_MSG_IOVLEN; i++) {
 		temp.ReadFromBuffer((uint8_t *) message.MSGHDR_MSG_IOV[i].IOVEC_IOV_BASE,
 				message.MSGHDR_MSG_IOV[i].IOVEC_IOV_LEN);
 	}
@@ -645,6 +724,10 @@ string IOBuffer::ToString(uint32_t startIndex, uint32_t limit) {
 	string allowedCharacters = " 1234567890-=qwertyuiop[]asdfghjkl;'\\`zxcvbnm";
 	allowedCharacters += ",./!@#$%^&*()_+QWERTYUIOP{}ASDFGHJKL:\"|~ZXCVBNM<>?";
 	stringstream ss;
+#ifdef WITH_SANITY_INPUT_BUFFER
+	ss << "In Witness file: " << (_pInWitnessFile != NULL ? _pInWitnessFile->GetPath().c_str() : "") << endl;
+	ss << "Out Witness file: " << (_pOutWitnessFile != NULL ? _pOutWitnessFile->GetPath().c_str() : "") << endl;
+#endif /* WITH_SANITY_INPUT_BUFFER */
 	ss << "Size: " << _size << endl;
 	ss << "Published: " << _published << endl;
 	ss << "Consumed: " << _consumed << endl;
@@ -735,3 +818,22 @@ void IOBuffer::Recycle() {
 	SANITY_INPUT_BUFFER;
 }
 
+void IOBuffer::CloseInWitnessFile() {
+#ifdef WITH_SANITY_INPUT_BUFFER
+	if (_pInWitnessFile != NULL) {
+		_pInWitnessFile->Flush();
+		_pInWitnessFile->Close();
+		delete _pInWitnessFile;
+	}
+#endif /* WITH_SANITY_INPUT_BUFFER */
+}
+
+void IOBuffer::CloseOutWitnessFile() {
+#ifdef WITH_SANITY_INPUT_BUFFER
+	if (_pOutWitnessFile != NULL) {
+		_pOutWitnessFile->Flush();
+		_pOutWitnessFile->Close();
+		delete _pOutWitnessFile;
+	}
+#endif /* WITH_SANITY_INPUT_BUFFER */
+}

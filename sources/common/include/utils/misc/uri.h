@@ -17,8 +17,7 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _URI_H
-#define	_URI_H
+#pragma once
 
 #include "platform/platform.h"
 #include "utils/misc/variant.h"
@@ -49,8 +48,5 @@ public:
 	string derivedURI(string relativePath, bool includeParams);
 
 	static bool FromVariant(Variant & variant, URI &uri);
-	static bool FromString(string stringUri, bool resolveHost, URI &uri);
+	static bool FromString(const string &stringUri, bool resolveHost, URI &uri);
 };
-
-#endif	/* _URI_H */
-

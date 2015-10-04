@@ -17,8 +17,7 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "utils/misc/mmapfile.h"
-#include "utils/logging/logging.h"
+#include "common.h"
 
 #ifdef HAS_MMAP
 #define BS_NONE 1

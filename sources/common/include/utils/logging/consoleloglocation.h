@@ -18,8 +18,7 @@
  */
 
 
-#ifndef CONSOLELOGLOCATION_H_
-#define CONSOLELOGLOCATION_H_
+#pragma once
 
 #include "utils/logging/baseloglocation.h"
 
@@ -34,8 +33,5 @@ public:
 	virtual bool Init();
 	virtual void Log(int32_t level, const char *pFileName, uint32_t lineNumber,
 			const char *pFunctionName, string &message);
-	virtual void SignalFork();
+	virtual void SignalFork(uint32_t forkId);
 };
-
-#endif /*CONSOLELOGLOCATION_H_*/
-

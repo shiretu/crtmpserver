@@ -17,8 +17,28 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _BASEPLATFORM_H
-#define _BASEPLATFORM_H
+#pragma once
+
+#define __STDC_FORMAT_MACROS
+#define __STDC_LIMIT_MACROS
+#include <assert.h>
+#include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <math.h>
+
+#include <algorithm>
+#include <cctype>
+#include <list>
+#include <map>
+#include <queue>
+#include <sstream>
+#include <string>
+#include <vector>
+using namespace std;
 
 #define STR(x) (((string)(x)).c_str())
 #define MAP_HAS1(m,k) ((bool)((m).find((k))!=(m).end()))
@@ -59,11 +79,76 @@ if(MAP_HAS1((m),(k1))){ \
 
 #define TAG_KIND_OF(tag,kind) ((bool)(((tag)&getTagMask((kind)))==(kind)))
 
-class BasePlatform {
-public:
-	BasePlatform();
-	virtual ~BasePlatform();
-};
+#ifdef ASSERT_OVERRIDE
+#define o_assert(x) \
+do { \
+	if((x)==0) \
+		exit(-1); \
+} while(0)
+#else
+#define o_assert(x) assert(x)
+#endif
 
-#endif /* _BASEPLATFORM_H */
+#define MAX_SOCKET_SND_RCV_KERNEL_BUFFER (1024 * 1024 * 2)
+#define SET_UNKNOWN 0
+#define SET_READ 1
+#define SET_WRITE 2
+#define SET_TIMER 3
+#define FD_READ_CHUNK 32768
+#define FD_WRITE_CHUNK FD_READ_CHUNK
+#define RESET_TIMER(timer,sec,usec) timer.tv_sec=sec;timer.tv_usec=usec;
+#define SRAND() srand((uint32_t)time(NULL));
+#define CLOCKS_PER_SECOND 1000000L
+#define getutctime() time(NULL)
+#define GETCLOCKS(result,type) \
+do { \
+    struct timeval ___timer___; \
+    gettimeofday(&___timer___,NULL); \
+    result=(type)___timer___.tv_sec*(type)CLOCKS_PER_SECOND+(type) ___timer___.tv_usec; \
+}while(0);
 
+#ifdef clock_gettime
+#define GETMILLISECONDS(result) \
+do { \
+    struct timespec ___timer___; \
+    clock_gettime(CLOCK_MONOTONIC_FAST, &___timer___); \
+    result=(uint64_t)___timer___.tv_sec*1000+___timer___.tv_nsec/1000000; \
+}while(0);
+#else /* clock_gettime */
+#define GETMILLISECONDS(result) \
+do { \
+    struct timeval ___timer___; \
+    gettimeofday(&___timer___,NULL); \
+    result=(uint64_t)___timer___.tv_sec*1000+___timer___.tv_usec/1000; \
+}while(0);
+#endif /* clock_gettime */
+#define GETNTP(result) \
+do { \
+	struct timeval tv; \
+	gettimeofday(&tv,NULL); \
+	result=(((uint64_t)tv.tv_sec + 2208988800U)<<32)|((((uint32_t)tv.tv_usec) << 12) + (((uint32_t)tv.tv_usec) << 8) - ((((uint32_t)tv.tv_usec) * 1825) >> 5)); \
+}while (0)
+
+#define GETCUSTOMNTP(result,value) \
+do { \
+	struct timeval tv; \
+	tv.tv_sec=value/CLOCKS_PER_SECOND; \
+	tv.tv_usec=value-tv.tv_sec*CLOCKS_PER_SECOND; \
+	result=(((uint64_t)tv.tv_sec + 2208988800U)<<32)|((((uint32_t)tv.tv_usec) << 12) + (((uint32_t)tv.tv_usec) << 8) - ((((uint32_t)tv.tv_usec) * 1825) >> 5)); \
+}while (0)
+
+typedef void (*SignalFnc)(void);
+
+typedef struct _select_event {
+	uint8_t type;
+} select_event;
+
+static inline uint64_t getTagMask(uint64_t tag) {
+	uint64_t result = 0xffffffffffffffffULL;
+	for (int8_t i = 56; i >= 0; i -= 8) {
+		if (((tag >> i)&0xff) == 0)
+			break;
+		result = result >> 8;
+	}
+	return ~result;
+}

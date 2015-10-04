@@ -17,11 +17,8 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _BUFFERING_H
-#define	_BUFFERING_H
+#pragma once
 
+#include "utils/buffering/message.h"
 #include "utils/buffering/iobuffer.h"
 #include "utils/buffering/bitarray.h"
-
-#endif	/* _BUFFERING_H */
-

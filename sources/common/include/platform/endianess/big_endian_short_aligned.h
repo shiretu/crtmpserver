@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -18,12 +18,13 @@
  */
 
 
-#ifndef _BIG_ENDIAN_SHORT_ALIGNED_H
-#define	_BIG_ENDIAN_SHORT_ALIGNED_H
+#pragma once
 
 // For A Big Endian ARM system this should be htonll(x) (x)
+#ifndef htonll
 #define htonll(x)   (x)
 #define ntohll(x)   (x)
+#endif /* htonll */
 
 //adobe shit. Sometimes, Adobe's reprezentation of 0x0a0b0c0d
 //in "network-order" is like this: 0b 0c 0d 0a
@@ -60,7 +61,3 @@
 
 /* TODO: Do we need put_value methods for aligned access when not swapping bytes */
 /* TODO: Do we need put_htonll() or put_htona() */
-
-#endif	/* _BIG_ENDIAN_SHORT_ALIGNED_H */
-
-

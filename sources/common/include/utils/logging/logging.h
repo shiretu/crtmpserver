@@ -18,14 +18,14 @@
  */
 
 
-#ifndef _LOGGING_H
-#define _LOGGING_H
+#pragma once
 
 #include "defines.h"
 #include "utils/logging/baseloglocation.h"
 #include "utils/logging/consoleloglocation.h"
 #include "utils/logging/fileloglocation.h"
 #include "utils/logging/logcatloglocation.h"
+#include "utils/logging/sysloglocation.h"
 #include "utils/logging/logger.h"
 
 
@@ -70,6 +70,29 @@ do { \
 #endif /* SHORT_PATH_IN_LOGGER */
 #endif /* FILE_OVERRIDE */
 
+class TrackContextLogger {
+private:
+	string _file;
+	string _funcName;
+	int _line;
+public:
+
+	TrackContextLogger(const char *pFile, const char *pFuncName, int line) {
+		_file = pFile;
+		_funcName = pFuncName;
+		_line = line;
+		printf("%s:%d ***** BEGIN %s\n", _file.c_str(), _line, _funcName.c_str());
+	}
+
+	virtual ~TrackContextLogger() {
+		printf("%s:%d *****   END %s\n", _file.c_str(), _line, _funcName.c_str());
+	}
+};
+
+#define TRACK_CONTEXT_LOGGER() TrackContextLogger ______tcl(E__FILE__,__FUNC__OVERRIDE,__LINE__OVERRIDE)
+
+
+
 #define LOG(level,...) do{__VALIDATE_FROMAT_SPECIFIERS(__VA_ARGS__);Logger::Log(level, E__FILE__, __LINE__OVERRIDE, __FUNC__OVERRIDE, __VA_ARGS__);}while(0)
 #define FATAL(...) do{__VALIDATE_FROMAT_SPECIFIERS(__VA_ARGS__);Logger::Log(_FATAL_, E__FILE__, __LINE__OVERRIDE, __FUNC__OVERRIDE, __VA_ARGS__);}while(0)
 
@@ -82,4 +105,3 @@ do { \
 #define NYI WARN("%s not yet implemented",__FUNC__OVERRIDE);
 #define NYIR do{NYI;return false;}while(0)
 #define NYIA do{NYI;o_assert(false);abort();}while(0)
-#endif /* _LOGGING_H */

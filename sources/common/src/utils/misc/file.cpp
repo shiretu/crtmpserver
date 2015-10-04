@@ -17,10 +17,7 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-
-#include "utils/buffering/iobuffer.h"
-#include "utils/logging/logging.h"
+#include "common.h"
 
 File::File() {
 	_path = "";
@@ -38,11 +35,11 @@ void File::SuppressLogErrorsOnInit() {
 	_suppressLogErrorsOnInit = true;
 }
 
-bool File::Initialize(string path) {
+bool File::Initialize(const string &path) {
 	return Initialize(path, FILE_OPEN_MODE_READ);
 }
 
-bool File::Initialize(string path, FILE_OPEN_MODE mode) {
+bool File::Initialize(const string &path, FILE_OPEN_MODE mode) {
 	Close();
 	_path = path;
 	string openMode = "";
@@ -64,6 +61,7 @@ bool File::Initialize(string path, FILE_OPEN_MODE mode) {
 		}
 		case FILE_OPEN_MODE_APPEND:
 		{
+			_append = true;
 			openMode = "a+b";
 			break;
 		}
@@ -111,6 +109,14 @@ uint64_t File::Size() {
 		WARN("File not opened");
 		return 0;
 	}
+	if (_append)
+		return _size;
+	uint64_t current = (uint64_t) ftell64(_pFile);
+	if (!SeekEnd())
+		return 0;
+	_size = (uint64_t) ftell64(_pFile);
+	if (!SeekTo(current))
+		return 0;
 	return _size;
 }
 
@@ -130,7 +136,7 @@ bool File::IsEOF() {
 	return (feof(_pFile) != 0);
 }
 
-string File::GetPath() {
+const string &File::GetPath() {
 	return _path;
 }
 
@@ -471,8 +477,8 @@ bool File::WriteUI64(uint64_t value, bool networkOrder) {
 	return WriteI64((int64_t) value, networkOrder);
 }
 
-bool File::WriteString(string &value) {
-	return WriteBuffer((uint8_t *) STR(value), value.length());
+bool File::WriteString(const string &value) {
+	return WriteBuffer((uint8_t *) value.data(), value.length());
 }
 
 bool File::WriteBuffer(const uint8_t *pBuffer, uint64_t count) {

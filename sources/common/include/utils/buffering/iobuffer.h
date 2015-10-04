@@ -18,8 +18,7 @@
  */
 
 
-#ifndef _IOBUFFER_H
-#define _IOBUFFER_H
+#pragma once
 
 #include "platform/platform.h"
 #include "utils/misc/file.h"
@@ -50,10 +49,21 @@ public:
 	uint32_t _minChunkSize;
 	socklen_t _dummy;
 	uint32_t _sendLimit;
+#ifdef WITH_SANITY_INPUT_BUFFER
+	File *_pInWitnessFile;
+	File *_pOutWitnessFile;
+#endif /* WITH_SANITY_INPUT_BUFFER */
 public:
 	//constructor/destructor and initialization
 	IOBuffer();
 	virtual ~IOBuffer();
+
+	/*!
+	 * @brief Sets up an witness file for storring the traffic
+	 * @param path - the full path for the witness file
+	 */
+	void SetInWitnessFile(const string &path);
+	void SetOutWitnessFile(const string &path);
 
 	/*!
 		@brief initializes the buffer
@@ -67,7 +77,7 @@ public:
 		@param expected - Expected size of the receiving buffer
 		@param recvAmount - Size of data received
 	 */
-	bool ReadFromTCPFd(int32_t fd, uint32_t expected, int32_t &recvAmount, int &err);
+	bool ReadFromTCPFd(SOCKET_TYPE fd, uint32_t expected, int32_t &recvAmount, int &err);
 
 	/*!
 		@brief Read from UDP File Descriptor and saves it. This function is advisable for connectionless-oriented sockets.
@@ -75,7 +85,7 @@ public:
 		@param recvAmount - Size of data received
 		@param peerAddress - The source's address
 	 */
-	bool ReadFromUDPFd(int32_t fd, int32_t &recvAmount, sockaddr_in &peerAddress);
+	bool ReadFromUDPFd(SOCKET_TYPE fd, int32_t &recvAmount, sockaddr_in &peerAddress);
 
 	/*!
 		@brief Read from  Standard IO and saves it.
@@ -100,6 +110,10 @@ public:
 		@param size - Size of data to read.
 	 */
 	bool ReadFromBuffer(const uint8_t *pBuffer, const uint32_t size);
+
+	bool ReadFromU16(uint16_t value, const bool networkOrder);
+	bool ReadFromU32(uint32_t value, const bool networkOrder);
+	bool ReadFromU64(uint64_t value, const bool networkOrder);
 
 	/*!
 		@brief Read data from an input buffer starting at a designated point
@@ -127,13 +141,13 @@ public:
 		@brief Read data from buffer from a string
 		@param binary - The string that will be read
 	 */
-	bool ReadFromString(string binary);
+	bool ReadFromString(const string &binary);
 
 	/*!
 		@brief Read data from buffer byte data
 		@param byte
 	 */
-	void ReadFromByte(uint8_t byte);
+	bool ReadFromByte(uint8_t byte);
 
 	/*!
 		@brief Read data from a memory BIO
@@ -144,7 +158,7 @@ public:
 	/*!
 		@brief
 	 */
-	void ReadFromRepeat(uint8_t byte, uint32_t size);
+	bool ReadFromRepeat(uint8_t byte, uint32_t size);
 
 	//Read from this buffer and put to a destination
 	/*!
@@ -153,7 +167,7 @@ public:
 		@param size - Size of buffer
 		@param sentAmount - Size of data sent
 	 */
-	bool WriteToTCPFd(int32_t fd, uint32_t size, int32_t &sentAmount, int &err);
+	bool WriteToTCPFd(SOCKET_TYPE fd, uint32_t size, int32_t &sentAmount, int &err);
 
 	/*!
 		@brief Read data from standard IO and store it.
@@ -222,6 +236,7 @@ public:
 protected:
 	void Cleanup();
 	void Recycle();
+private:
+	void CloseInWitnessFile();
+	void CloseOutWitnessFile();
 };
-#endif //_IOBUFFER_H
-

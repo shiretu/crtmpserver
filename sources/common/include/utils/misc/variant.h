@@ -18,8 +18,7 @@
  */
 
 
-#ifndef _VARIANT_H
-#define	_VARIANT_H
+#pragma once
 
 #include "defines.h"
 #include "platform/platform.h"
@@ -99,7 +98,7 @@ private:
 		uint32_t ui32;
 		uint64_t ui64;
 		double d;
-		Timestamp *t;
+		struct tm *t;
 		string *s;
 		VariantMap *m;
 	} _value;
@@ -123,7 +122,7 @@ public:
 	Variant(const uint64_t &val);
 	Variant(const double &val);
 
-	Variant(const Timestamp &time);
+	Variant(const struct tm &time);
 	Variant(const uint16_t year, const uint8_t month, const uint8_t day);
 	Variant(const uint8_t hour, const uint8_t min, const uint8_t sec, const uint16_t m);
 	Variant(const uint16_t year, const uint8_t month, const uint8_t day,
@@ -150,7 +149,7 @@ public:
 	Variant & operator=(const uint64_t &val);
 	Variant & operator=(const double &val);
 
-	Variant & operator=(const Timestamp &val);
+	Variant & operator=(const struct tm &val);
 
 	Variant & operator=(const char *pVal);
 	Variant & operator=(const string &val);
@@ -166,7 +165,7 @@ public:
 	operator uint32_t();
 	operator uint64_t();
 	operator double();
-	operator Timestamp();
+	operator struct tm();
 	operator string();
 
 	Variant & operator[](const string &key);
@@ -232,7 +231,7 @@ public:
 	bool SerializeToXmlFile(string fileName);
 
 	static bool DeserializeFromJSON(string &raw, Variant &result, uint32_t &start);
-	bool SerializeToJSON(string &result);
+	bool SerializeToJSON(string &result, bool quotedKeys);
 
 	static bool DeserializeFromCmdLineArgs(uint32_t count, const char **pArguments,
 			Variant &result);
@@ -246,7 +245,7 @@ private:
 	static bool DeserializeFromXml(TiXmlElement *pNode, Variant &variant);
 	void InternalCopy(const Variant &val);
 	void NormalizeTs();
-	static void EscapeJSON(string &value);
+	static void EscapeJSON(string &value, bool quotedKeys);
 	static void UnEscapeJSON(string &value);
 	static bool ReadJSONWhiteSpace(string &raw, uint32_t &start);
 	static bool ReadJSONDelimiter(string &raw, uint32_t &start, char &c);
@@ -254,11 +253,8 @@ private:
 	static bool ReadJSONNumber(string &raw, Variant &result, uint32_t &start);
 	static bool ReadJSONObject(string &raw, Variant &result, uint32_t &start);
 	static bool ReadJSONArray(string &raw, Variant &result, uint32_t &start);
-	static bool ReadJSONBool(string &raw, Variant &result, uint32_t &start, string wanted);
+	static bool ReadJSONBool(string &raw, Variant &result, uint32_t &start, const char *pWanted, size_t wantedSize);
 	static bool ReadJSONNull(string &raw, Variant &result, uint32_t &start);
 };
 
-
-#endif	/* _VARIANT_H */
-
-
+#pragma once

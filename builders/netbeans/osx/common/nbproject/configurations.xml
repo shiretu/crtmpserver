@@ -1,144 +1,131 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configurationDescriptor version="89">
+<configurationDescriptor version="95">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
     <logicalFolder name="include" displayName="include" projectFiles="true">
       <logicalFolder name="platform" displayName="platform" projectFiles="true">
-        <logicalFolder name="android" displayName="android" projectFiles="true">
-          <itemPath>../../../../sources/common/include/platform/android/androidplatform.h</itemPath>
-          <itemPath>../../../../sources/common/include/platform/android/max.h</itemPath>
-        </logicalFolder>
-        <logicalFolder name="dfreebsd" displayName="dfreebsd" projectFiles="true">
-        </logicalFolder>
         <logicalFolder name="endianess" displayName="endianess" projectFiles="true">
-          <itemPath>../../../../sources/common/include/platform/endianess/big_endian_byte_aligned.h</itemPath>
-          <itemPath>../../../../sources/common/include/platform/endianess/big_endian_short_aligned.h</itemPath>
-          <itemPath>../../../../sources/common/include/platform/endianess/endianness.h</itemPath>
-          <itemPath>../../../../sources/common/include/platform/endianess/little_endian_byte_aligned.h</itemPath>
-          <itemPath>../../../../sources/common/include/platform/endianess/little_endian_short_aligned.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/platform/endianess/big_endian_byte_aligned.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/platform/endianess/big_endian_short_aligned.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/platform/endianess/endianness.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/platform/endianess/little_endian_byte_aligned.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/platform/endianess/little_endian_short_aligned.h</itemPath>
         </logicalFolder>
-        <logicalFolder name="freebsd" displayName="freebsd" projectFiles="true">
-          <itemPath>../../../../sources/common/include/platform/freebsd/freebsdplatform.h</itemPath>
-          <itemPath>../../../../sources/common/include/platform/freebsd/max.h</itemPath>
-        </logicalFolder>
-        <logicalFolder name="linux" displayName="linux" projectFiles="true">
-          <itemPath>../../../../sources/common/include/platform/linux/linuxplatform.h</itemPath>
-          <itemPath>../../../../sources/common/include/platform/linux/max.h</itemPath>
-        </logicalFolder>
-        <logicalFolder name="openbsd" displayName="openbsd" projectFiles="true">
-        </logicalFolder>
-        <logicalFolder name="osx" displayName="osx" projectFiles="true">
-          <itemPath>../../../../sources/common/include/platform/osx/osxplatform.h</itemPath>
-        </logicalFolder>
-        <logicalFolder name="solaris" displayName="solaris" projectFiles="true">
-          <itemPath>../../../../sources/common/include/platform/solaris/solarisplatform.h</itemPath>
+        <logicalFolder name="unix" displayName="unix" projectFiles="true">
+          <logicalFolder name="bsd" displayName="bsd" projectFiles="true">
+            <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/platform/unix/bsd/basebsdplatform.h</itemPath>
+            <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/platform/unix/bsd/freebsdplatform.h</itemPath>
+            <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/platform/unix/bsd/osxplatform.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="linux" displayName="linux" projectFiles="true">
+            <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/platform/unix/linux/androidplatform.h</itemPath>
+            <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/platform/unix/linux/baselinuxplatform.h</itemPath>
+            <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/platform/unix/linux/linuxplatform.h</itemPath>
+            <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/platform/unix/linux/solarisplatform.h</itemPath>
+          </logicalFolder>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/platform/unix/baseunixplatform.h</itemPath>
         </logicalFolder>
         <logicalFolder name="windows" displayName="windows" projectFiles="true">
-          <itemPath>../../../../sources/common/include/platform/windows/max.h</itemPath>
-          <itemPath>../../../../sources/common/include/platform/windows/win32platform.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/platform/windows/criticalsectionwrapper.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/platform/windows/win32platform.h</itemPath>
         </logicalFolder>
-        <itemPath>../../../../sources/common/include/platform/baseplatform.h</itemPath>
-        <itemPath>../../../../sources/common/include/platform/platform.h</itemPath>
+        <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/platform/baseplatform.h</itemPath>
+        <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/platform/platform.h</itemPath>
       </logicalFolder>
       <logicalFolder name="utils" displayName="utils" projectFiles="true">
         <logicalFolder name="buffering" displayName="buffering" projectFiles="true">
-          <itemPath>../../../../sources/common/include/utils/buffering/bitarray.h</itemPath>
-          <itemPath>../../../../sources/common/include/utils/buffering/buffering.h</itemPath>
-          <itemPath>../../../../sources/common/include/utils/buffering/iobuffer.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/utils/buffering/bitarray.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/utils/buffering/buffering.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/utils/buffering/iobuffer.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/utils/buffering/message.h</itemPath>
         </logicalFolder>
         <logicalFolder name="logging" displayName="logging" projectFiles="true">
-          <itemPath>../../../../sources/common/include/utils/logging/baseloglocation.h</itemPath>
-          <itemPath>../../../../sources/common/include/utils/logging/consoleloglocation.h</itemPath>
-          <itemPath>../../../../sources/common/include/utils/logging/fileloglocation.h</itemPath>
-          <itemPath>../../../../sources/common/include/utils/logging/formatter.h</itemPath>
-          <itemPath>../../../../sources/common/include/utils/logging/logcatloglocation.h</itemPath>
-          <itemPath>../../../../sources/common/include/utils/logging/logger.h</itemPath>
-          <itemPath>../../../../sources/common/include/utils/logging/logging.h</itemPath>
-          <itemPath>../../../../sources/common/include/utils/logging/syslogloglocation.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/utils/logging/baseloglocation.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/utils/logging/consoleloglocation.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/utils/logging/fileloglocation.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/utils/logging/logcatloglocation.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/utils/logging/logger.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/utils/logging/logging.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/utils/logging/sysloglocation.h</itemPath>
         </logicalFolder>
         <logicalFolder name="lua" displayName="lua" projectFiles="true">
-          <itemPath>../../../../sources/common/include/utils/lua/luautils.h</itemPath>
-        </logicalFolder>
-        <logicalFolder name="mempool" displayName="mempool" projectFiles="true">
-          <itemPath>../../../../sources/common/include/utils/mempool/mempool.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/utils/lua/basevmlua.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/utils/lua/luautils.h</itemPath>
         </logicalFolder>
         <logicalFolder name="misc" displayName="misc" projectFiles="true">
-          <itemPath>../../../../sources/common/include/utils/misc/crypto.h</itemPath>
-          <itemPath>../../../../sources/common/include/utils/misc/dhgroups.h</itemPath>
-          <itemPath>../../../../sources/common/include/utils/misc/file.h</itemPath>
-          <itemPath>../../../../sources/common/include/utils/misc/format.h</itemPath>
-          <itemPath>../../../../sources/common/include/utils/misc/linkedlist.h</itemPath>
-          <itemPath>../../../../sources/common/include/utils/misc/misc.h</itemPath>
-          <itemPath>../../../../sources/common/include/utils/misc/mmapfile.h</itemPath>
-          <itemPath>../../../../sources/common/include/utils/misc/timersmanager.h</itemPath>
-          <itemPath>../../../../sources/common/include/utils/misc/uri.h</itemPath>
-          <itemPath>../../../../sources/common/include/utils/misc/variant.h</itemPath>
-          <itemPath>../../../../sources/common/include/utils/misc/variantmap.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/basevm.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/crypto.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/file.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/linkedlist.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/locker.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/misc.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/mmapfile.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/process.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/timersmanager.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/uri.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/variant.h</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/variantmap.h</itemPath>
         </logicalFolder>
-        <itemPath>../../../../sources/common/include/utils/utils.h</itemPath>
+        <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/utils/filesfunctions.h</itemPath>
+        <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/utils/socketfunctions.h</itemPath>
+        <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/utils/stringfunctions.h</itemPath>
+        <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/utils/systemfunctions.h</itemPath>
+        <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/utils/utils.h</itemPath>
       </logicalFolder>
-      <itemPath>../../../../sources/common/include/common.h</itemPath>
-      <itemPath>../../../../sources/common/include/defines.h</itemPath>
-      <itemPath>../../../../sources/common/include/version.h</itemPath>
+      <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/.gitignore</itemPath>
+      <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/common.h</itemPath>
+      <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/defines.h</itemPath>
+      <itemPath>/Users/shiretu/work/crtmpserver/sources/common/include/version.h</itemPath>
     </logicalFolder>
     <logicalFolder name="src" displayName="src" projectFiles="true">
       <logicalFolder name="platform" displayName="platform" projectFiles="true">
-        <logicalFolder name="android" displayName="android" projectFiles="true">
-          <itemPath>../../../../sources/common/src/platform/android/androidplatform.cpp</itemPath>
-          <itemPath>../../../../sources/common/src/platform/android/timegm.cpp</itemPath>
-        </logicalFolder>
-        <logicalFolder name="dfreebsd" displayName="dfreebsd" projectFiles="true">
-        </logicalFolder>
-        <logicalFolder name="freebsd" displayName="freebsd" projectFiles="true">
-          <itemPath>../../../../sources/common/src/platform/freebsd/freebsdplatform.cpp</itemPath>
-        </logicalFolder>
-        <logicalFolder name="linux" displayName="linux" projectFiles="true">
-          <itemPath>../../../../sources/common/src/platform/linux/linuxplatform.cpp</itemPath>
-        </logicalFolder>
-        <logicalFolder name="openbsd" displayName="openbsd" projectFiles="true">
-        </logicalFolder>
-        <logicalFolder name="osx" displayName="osx" projectFiles="true">
-          <itemPath>../../../../sources/common/src/platform/osx/osxplatform.cpp</itemPath>
-        </logicalFolder>
-        <logicalFolder name="solaris" displayName="solaris" projectFiles="true">
-          <itemPath>../../../../sources/common/src/platform/solaris/solarisplatform.cpp</itemPath>
-          <itemPath>../../../../sources/common/src/platform/solaris/timegm.cpp</itemPath>
+        <logicalFolder name="unix" displayName="unix" projectFiles="true">
+          <logicalFolder name="bsd" displayName="bsd" projectFiles="true">
+            <itemPath>/Users/shiretu/work/crtmpserver/sources/common/src/platform/unix/bsd/basebsdplatform.cpp</itemPath>
+          </logicalFolder>
+          <logicalFolder name="linux" displayName="linux" projectFiles="true">
+            <itemPath>/Users/shiretu/work/crtmpserver/sources/common/src/platform/unix/linux/androidplatform.cpp</itemPath>
+            <itemPath>/Users/shiretu/work/crtmpserver/sources/common/src/platform/unix/linux/baselinuxplatform.cpp</itemPath>
+            <itemPath>/Users/shiretu/work/crtmpserver/sources/common/src/platform/unix/linux/solarisplatform.cpp</itemPath>
+          </logicalFolder>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/src/platform/unix/baseunixplatform.cpp</itemPath>
         </logicalFolder>
         <logicalFolder name="windows" displayName="windows" projectFiles="true">
-          <itemPath>../../../../sources/common/src/platform/windows/strncasecmp.cpp</itemPath>
-          <itemPath>../../../../sources/common/src/platform/windows/strptime.cpp</itemPath>
-          <itemPath>../../../../sources/common/src/platform/windows/timegm.cpp</itemPath>
-          <itemPath>../../../../sources/common/src/platform/windows/win32platform.cpp</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/src/platform/windows/memmem.cpp</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/src/platform/windows/strncasecmp.cpp</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/src/platform/windows/strptime.cpp</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/src/platform/windows/timegm.cpp</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/src/platform/windows/win32platform.cpp</itemPath>
         </logicalFolder>
-        <itemPath>../../../../sources/common/src/platform/baseplatform.cpp</itemPath>
+        <itemPath>/Users/shiretu/work/crtmpserver/sources/common/src/platform/baseplatform.cpp</itemPath>
       </logicalFolder>
       <logicalFolder name="utils" displayName="utils" projectFiles="true">
         <logicalFolder name="buffering" displayName="buffering" projectFiles="true">
-          <itemPath>../../../../sources/common/src/utils/buffering/iobuffer.cpp</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/src/utils/buffering/iobuffer.cpp</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/src/utils/buffering/message.cpp</itemPath>
         </logicalFolder>
         <logicalFolder name="logging" displayName="logging" projectFiles="true">
-          <itemPath>../../../../sources/common/src/utils/logging/baseloglocation.cpp</itemPath>
-          <itemPath>../../../../sources/common/src/utils/logging/consoleloglocation.cpp</itemPath>
-          <itemPath>../../../../sources/common/src/utils/logging/fileloglocation.cpp</itemPath>
-          <itemPath>../../../../sources/common/src/utils/logging/formatter.cpp</itemPath>
-          <itemPath>../../../../sources/common/src/utils/logging/logcatloglocation.cpp</itemPath>
-          <itemPath>../../../../sources/common/src/utils/logging/logger.cpp</itemPath>
-          <itemPath>../../../../sources/common/src/utils/logging/syslogloglocation.cpp</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/src/utils/logging/baseloglocation.cpp</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/src/utils/logging/consoleloglocation.cpp</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/src/utils/logging/fileloglocation.cpp</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/src/utils/logging/logcatloglocation.cpp</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/src/utils/logging/logger.cpp</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/src/utils/logging/sysloglocation.cpp</itemPath>
         </logicalFolder>
         <logicalFolder name="lua" displayName="lua" projectFiles="true">
-          <itemPath>../../../../sources/common/src/utils/lua/luautils.cpp</itemPath>
-        </logicalFolder>
-        <logicalFolder name="mempool" displayName="mempool" projectFiles="true">
-          <itemPath>../../../../sources/common/src/utils/mempool/mempool.cpp</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/src/utils/lua/basevmlua.cpp</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/src/utils/lua/luautils.cpp</itemPath>
         </logicalFolder>
         <logicalFolder name="misc" displayName="misc" projectFiles="true">
-          <itemPath>../../../../sources/common/src/utils/misc/crypto.cpp</itemPath>
-          <itemPath>../../../../sources/common/src/utils/misc/file.cpp</itemPath>
-          <itemPath>../../../../sources/common/src/utils/misc/format.cpp</itemPath>
-          <itemPath>../../../../sources/common/src/utils/misc/mmapfile.cpp</itemPath>
-          <itemPath>../../../../sources/common/src/utils/misc/timersmanager.cpp</itemPath>
-          <itemPath>../../../../sources/common/src/utils/misc/uri.cpp</itemPath>
-          <itemPath>../../../../sources/common/src/utils/misc/variant.cpp</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/src/utils/misc/basevm.cpp</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/src/utils/misc/crypto.cpp</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/src/utils/misc/file.cpp</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/src/utils/misc/mmapfile.cpp</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/src/utils/misc/process.cpp</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/src/utils/misc/timersmanager.cpp</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/src/utils/misc/uri.cpp</itemPath>
+          <itemPath>/Users/shiretu/work/crtmpserver/sources/common/src/utils/misc/variant.cpp</itemPath>
         </logicalFolder>
+        <itemPath>/Users/shiretu/work/crtmpserver/sources/common/src/utils/stringfunctions.cpp</itemPath>
       </logicalFolder>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
@@ -156,7 +143,6 @@
   <confs>
     <conf name="Debug" type="2">
       <toolsSet>
-        <remote-sources-mode>LOCAL_SOURCES</remote-sources-mode>
         <compilerSet>GNU|GNU</compilerSet>
         <dependencyChecking>true</dependencyChecking>
         <rebuildPropChanged>false</rebuildPropChanged>
@@ -179,372 +165,407 @@
           </preprocessorList>
         </ccTool>
       </compileType>
-      <item path="../../../../sources/common/include/common.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/.gitignore"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/defines.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/common.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/android/androidplatform.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/defines.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/android/max.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/baseplatform.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/baseplatform.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/endianess/big_endian_byte_aligned.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/endianess/big_endian_byte_aligned.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/endianess/big_endian_short_aligned.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/endianess/big_endian_short_aligned.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/endianess/endianness.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/endianess/endianness.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/endianess/little_endian_byte_aligned.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/endianess/little_endian_byte_aligned.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/endianess/little_endian_short_aligned.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/endianess/little_endian_short_aligned.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/platform.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/freebsd/freebsdplatform.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/unix/baseunixplatform.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/freebsd/max.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/unix/bsd/basebsdplatform.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/linux/linuxplatform.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/unix/bsd/freebsdplatform.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/linux/max.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/unix/bsd/osxplatform.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/osx/osxplatform.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/unix/linux/androidplatform.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/platform.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/unix/linux/baselinuxplatform.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/solaris/solarisplatform.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/unix/linux/linuxplatform.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/windows/max.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/unix/linux/solarisplatform.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/windows/win32platform.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/windows/criticalsectionwrapper.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/buffering/bitarray.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/windows/win32platform.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/buffering/buffering.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/buffering/bitarray.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/buffering/iobuffer.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/buffering/buffering.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/logging/baseloglocation.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/buffering/iobuffer.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/logging/consoleloglocation.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/buffering/message.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/logging/fileloglocation.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/filesfunctions.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/logging/formatter.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/logging/baseloglocation.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/logging/logcatloglocation.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/logging/consoleloglocation.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/logging/logger.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/logging/fileloglocation.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/logging/logging.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/logging/logcatloglocation.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/logging/syslogloglocation.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/logging/logger.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/lua/luautils.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/logging/logging.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/mempool/mempool.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/logging/sysloglocation.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/misc/crypto.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/lua/basevmlua.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/misc/dhgroups.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/lua/luautils.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/misc/file.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/basevm.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/misc/format.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/crypto.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/misc/linkedlist.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/file.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/misc/misc.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/linkedlist.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/misc/mmapfile.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/locker.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/misc/timersmanager.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/misc.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/misc/uri.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/mmapfile.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/misc/variant.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/process.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/misc/variantmap.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/timersmanager.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/utils.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/uri.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/version.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/variant.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/platform/android/androidplatform.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/variantmap.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/socketfunctions.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/stringfunctions.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/systemfunctions.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/utils.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/version.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/platform/baseplatform.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/platform/android/timegm.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/platform/unix/baseunixplatform.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/platform/baseplatform.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/platform/unix/bsd/basebsdplatform.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/platform/freebsd/freebsdplatform.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/platform/unix/linux/androidplatform.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/platform/linux/linuxplatform.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/platform/unix/linux/baselinuxplatform.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/platform/osx/osxplatform.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/platform/unix/linux/solarisplatform.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/platform/solaris/solarisplatform.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/platform/windows/memmem.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/platform/solaris/timegm.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/platform/windows/strncasecmp.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/platform/windows/strncasecmp.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/platform/windows/strptime.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/platform/windows/strptime.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/platform/windows/timegm.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/platform/windows/timegm.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/platform/windows/win32platform.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/platform/windows/win32platform.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/buffering/iobuffer.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/buffering/iobuffer.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/buffering/message.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/logging/baseloglocation.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/logging/baseloglocation.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/logging/consoleloglocation.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/logging/consoleloglocation.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/logging/fileloglocation.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/logging/fileloglocation.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/logging/formatter.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/logging/logcatloglocation.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/logging/logcatloglocation.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/logging/logger.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/logging/logger.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/logging/sysloglocation.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/logging/syslogloglocation.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/lua/basevmlua.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/lua/luautils.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/lua/luautils.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/mempool/mempool.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/misc/basevm.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/misc/crypto.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/misc/crypto.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/misc/file.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/misc/file.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/misc/format.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/misc/mmapfile.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/misc/mmapfile.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/misc/process.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/misc/timersmanager.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/misc/timersmanager.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/misc/uri.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/misc/uri.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/misc/variant.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/misc/variant.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/stringfunctions.cpp"
             ex="false"
             tool="1"
             flavor2="0">
@@ -552,7 +573,6 @@
     </conf>
     <conf name="Release" type="2">
       <toolsSet>
-        <remote-sources-mode>LOCAL_SOURCES</remote-sources-mode>
         <compilerSet>GNU|GNU</compilerSet>
         <dependencyChecking>true</dependencyChecking>
         <rebuildPropChanged>false</rebuildPropChanged>
@@ -580,372 +600,407 @@
           <developmentMode>5</developmentMode>
         </fortranCompilerTool>
       </compileType>
-      <item path="../../../../sources/common/include/common.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/.gitignore"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/defines.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/common.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/android/androidplatform.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/defines.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/android/max.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/baseplatform.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/baseplatform.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/endianess/big_endian_byte_aligned.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/endianess/big_endian_byte_aligned.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/endianess/big_endian_short_aligned.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/endianess/big_endian_short_aligned.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/endianess/endianness.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/endianess/endianness.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/endianess/little_endian_byte_aligned.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/endianess/little_endian_byte_aligned.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/endianess/little_endian_short_aligned.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/endianess/little_endian_short_aligned.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/platform.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/freebsd/freebsdplatform.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/unix/baseunixplatform.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/freebsd/max.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/unix/bsd/basebsdplatform.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/linux/linuxplatform.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/unix/bsd/freebsdplatform.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/linux/max.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/unix/bsd/osxplatform.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/osx/osxplatform.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/unix/linux/androidplatform.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/platform.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/unix/linux/baselinuxplatform.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/solaris/solarisplatform.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/unix/linux/linuxplatform.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/windows/max.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/unix/linux/solarisplatform.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/platform/windows/win32platform.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/windows/criticalsectionwrapper.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/buffering/bitarray.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/platform/windows/win32platform.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/buffering/buffering.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/buffering/bitarray.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/buffering/iobuffer.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/buffering/buffering.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/logging/baseloglocation.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/buffering/iobuffer.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/logging/consoleloglocation.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/buffering/message.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/logging/fileloglocation.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/filesfunctions.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/logging/formatter.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/logging/baseloglocation.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/logging/logcatloglocation.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/logging/consoleloglocation.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/logging/logger.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/logging/fileloglocation.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/logging/logging.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/logging/logcatloglocation.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/logging/syslogloglocation.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/logging/logger.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/lua/luautils.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/logging/logging.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/mempool/mempool.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/logging/sysloglocation.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/misc/crypto.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/lua/basevmlua.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/misc/dhgroups.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/lua/luautils.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/misc/file.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/basevm.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/misc/format.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/crypto.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/misc/linkedlist.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/file.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/misc/misc.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/linkedlist.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/misc/mmapfile.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/locker.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/misc/timersmanager.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/misc.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/misc/uri.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/mmapfile.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/misc/variant.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/process.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/misc/variantmap.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/timersmanager.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/utils/utils.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/uri.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/include/version.h"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/variant.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/platform/android/androidplatform.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/misc/variantmap.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/socketfunctions.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/stringfunctions.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/systemfunctions.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/utils/utils.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/include/version.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/platform/baseplatform.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/platform/android/timegm.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/platform/unix/baseunixplatform.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/platform/baseplatform.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/platform/unix/bsd/basebsdplatform.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/platform/freebsd/freebsdplatform.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/platform/unix/linux/androidplatform.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/platform/linux/linuxplatform.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/platform/unix/linux/baselinuxplatform.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/platform/osx/osxplatform.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/platform/unix/linux/solarisplatform.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/platform/solaris/solarisplatform.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/platform/windows/memmem.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/platform/solaris/timegm.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/platform/windows/strncasecmp.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/platform/windows/strncasecmp.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/platform/windows/strptime.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/platform/windows/strptime.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/platform/windows/timegm.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/platform/windows/timegm.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/platform/windows/win32platform.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/platform/windows/win32platform.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/buffering/iobuffer.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/buffering/iobuffer.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/buffering/message.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/logging/baseloglocation.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/logging/baseloglocation.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/logging/consoleloglocation.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/logging/consoleloglocation.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/logging/fileloglocation.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/logging/fileloglocation.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/logging/formatter.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/logging/logcatloglocation.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/logging/logcatloglocation.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/logging/logger.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/logging/logger.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/logging/sysloglocation.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/logging/syslogloglocation.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/lua/basevmlua.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/lua/luautils.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/lua/luautils.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/mempool/mempool.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/misc/basevm.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/misc/crypto.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/misc/crypto.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/misc/file.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/misc/file.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/misc/format.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/misc/mmapfile.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/misc/mmapfile.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/misc/process.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/misc/timersmanager.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/misc/timersmanager.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/misc/uri.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/misc/uri.cpp"
             ex="false"
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../../../sources/common/src/utils/misc/variant.cpp"
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/misc/variant.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="/Users/shiretu/work/crtmpserver/sources/common/src/utils/stringfunctions.cpp"
             ex="false"
             tool="1"
             flavor2="0">
