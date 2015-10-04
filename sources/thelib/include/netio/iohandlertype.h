@@ -17,8 +17,7 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _IOHANDLERTYPE_H
-#define	_IOHANDLERTYPE_H
+#pragma once
 
 typedef enum _IOHandlerType {
 	IOHT_ACCEPTOR,
@@ -29,5 +28,3 @@ typedef enum _IOHandlerType {
 	IOHT_TIMER,
 	IOHT_STDIO
 } IOHandlerType;
-
-#endif	/* _IOHANDLERTYPE_H */

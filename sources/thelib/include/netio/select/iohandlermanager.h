@@ -17,10 +17,9 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
 
 #ifdef NET_SELECT
-#ifndef _IOHANDLERMANAGER_H
-#define	_IOHANDLERMANAGER_H
 
 #include "common.h"
 #include "netio/fdstats.h"
@@ -37,7 +36,7 @@ class DLLEXP IOHandlerManager {
 	static select_event _currentEvent;
 	static struct timeval _timeout;
 	static TimersManager *_pTimersManager;
-	static map<int32_t, map<uint32_t, uint8_t> > _fdState;
+	static map<SOCKET_TYPE, map<uint32_t, uint8_t> > _fdState;
 	static bool _isShuttingDown;
 	static FdStats _fdStats;
 public:
@@ -80,9 +79,6 @@ public:
 		@discussion: When this function runs, it disables this IO handler's timer and prohibits read/write data and connection acceptance.
 	 */
 	static void UnRegisterIOHandler(IOHandler *pIOHandler);
-
-	static int CreateRawUDPSocket();
-	static void CloseRawUDPSocket(int socket);
 
 #ifdef GLOBALLY_ACCOUNT_BYTES
 	static void AddInBytesManaged(IOHandlerType type, uint64_t bytes);
@@ -154,11 +150,8 @@ public:
 	 */
 	static uint32_t DeleteDeadHandlers();
 private:
-	static bool UpdateFdSets(int32_t fd);
+	static bool UpdateFdSets(SOCKET_TYPE fd);
 	static bool ProcessTimer(TimerEvent &event);
 };
 
-#endif	/* _IOHANDLERMANAGER_H */
 #endif /* NET_SELECT */
-
-

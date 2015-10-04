@@ -17,9 +17,9 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #ifdef NET_EPOLL
-#ifndef _IOHANDLERMANAGER_H
-#define	_IOHANDLERMANAGER_H
 
 #include "common.h"
 #include "netio/epoll/iohandlermanagertoken.h"
@@ -56,8 +56,6 @@ public:
 	static void Shutdown();
 	static void RegisterIOHandler(IOHandler *pIOHandler);
 	static void UnRegisterIOHandler(IOHandler *pIOHandler);
-	static int CreateRawUDPSocket();
-	static void CloseRawUDPSocket(int socket);
 #ifdef GLOBALLY_ACCOUNT_BYTES
 	static void AddInBytesManaged(IOHandlerType type, uint64_t bytes);
 	static void AddOutBytesManaged(IOHandlerType type, uint64_t bytes);
@@ -84,8 +82,4 @@ private:
 #endif /* HAS_EPOLL_TIMERS */
 };
 
-
-#endif	/* _IOHANDLERMANAGER_H */
 #endif /* NET_EPOLL */
-
-

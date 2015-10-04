@@ -17,10 +17,9 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
 
 #ifdef NET_KQUEUE
-#ifndef _UDPCARRIER_H
-#define	_UDPCARRIER_H
 
 #include "netio/kqueue/iohandler.h"
 
@@ -36,7 +35,7 @@ private:
 	Variant _parameters;
 	int32_t _ioAmount;
 private:
-	UDPCarrier(int32_t fd);
+	UDPCarrier(SOCKET_TYPE fd);
 public:
 	virtual ~UDPCarrier();
 
@@ -63,7 +62,4 @@ private:
 
 };
 
-
-#endif	/* _UDPCARRIER_H */
 #endif /* NET_KQUEUE */
-

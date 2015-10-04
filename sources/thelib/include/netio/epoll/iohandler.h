@@ -17,34 +17,35 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #ifdef NET_EPOLL
-#ifndef _IOHANDLER_H
-#define	_IOHANDLER_H
 
 #include "common.h"
 #include "netio/epoll/iohandlermanagertoken.h"
 #include "netio/iohandlertype.h"
 
 class BaseProtocol;
+//class EventLogger;
 
 class IOHandler {
 protected:
 	static uint32_t _idGenerator;
 	uint32_t _id;
-	int32_t _inboundFd;
-	int32_t _outboundFd;
+	SOCKET_TYPE _inboundFd;
+	SOCKET_TYPE _outboundFd;
 	BaseProtocol *_pProtocol;
 	IOHandlerType _type;
 private:
 	IOHandlerManagerToken *_pToken;
 public:
-	IOHandler(int32_t inboundFd, int32_t outboundFd, IOHandlerType type);
+	IOHandler(SOCKET_TYPE inboundFd, SOCKET_TYPE outboundFd, IOHandlerType type);
 	virtual ~IOHandler();
 	void SetIOHandlerManagerToken(IOHandlerManagerToken *pToken);
 	IOHandlerManagerToken * GetIOHandlerManagerToken();
 	uint32_t GetId();
-	int32_t GetInboundFd();
-	int32_t GetOutboundFd();
+	SOCKET_TYPE GetInboundFd();
+	SOCKET_TYPE GetOutboundFd();
 	IOHandlerType GetType();
 	void SetProtocol(BaseProtocol *pPotocol);
 	BaseProtocol *GetProtocol();
@@ -54,7 +55,4 @@ public:
 	virtual void GetStats(Variant &info, uint32_t namespaceId = 0) = 0;
 };
 
-
-#endif	/* _IOHANDLER_H */
 #endif /* NET_EPOLL */
-

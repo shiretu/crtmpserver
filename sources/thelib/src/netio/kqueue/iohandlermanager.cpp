@@ -62,7 +62,7 @@ void IOHandlerManager::FreeToken(IOHandler *pIOHandler) {
 	ADD_VECTOR_END((*_pRecycledTokens), pToken);
 }
 
-bool IOHandlerManager::RegisterEvent(int32_t fd, int16_t filter, uint16_t flags,
+bool IOHandlerManager::RegisterEvent(SOCKET_TYPE fd, int16_t filter, uint16_t flags,
 		uint32_t fflags, uint32_t data, IOHandlerManagerToken *pToken, bool ignoreError) {
 	if (_pendingEventsCount >= _eventsSize) {
 		ResizeEvents();
@@ -169,24 +169,6 @@ void IOHandlerManager::UnRegisterIOHandler(IOHandler *pIOHandler) {
 	}
 }
 
-int IOHandlerManager::CreateRawUDPSocket() {
-	int result = socket(AF_INET, SOCK_DGRAM, 0);
-	if ((result >= 0)&&(setFdCloseOnExec(result))) {
-		_fdStats.RegisterRawUdp();
-	} else {
-		int err = errno;
-		FATAL("Unable to create raw udp socket. Error code was: (%d) %s",
-				err, strerror(err));
-	}
-	return result;
-}
-
-void IOHandlerManager::CloseRawUDPSocket(int socket) {
-	if (socket > 0) {
-		_fdStats.UnRegisterRawUdp();
-	}
-	CLOSE_SOCKET(socket);
-}
 #ifdef GLOBALLY_ACCOUNT_BYTES
 
 void IOHandlerManager::AddInBytesManaged(IOHandlerType type, uint64_t bytes) {
@@ -209,7 +191,7 @@ void IOHandlerManager::AddOutBytesRawUdp(uint64_t bytes) {
 bool IOHandlerManager::EnableReadData(IOHandler *pIOHandler) {
 	return RegisterEvent(pIOHandler->GetInboundFd(), EVFILT_READ,
 			EV_ADD | EV_ENABLE, 0, 0,
-			pIOHandler->GetIOHandlerManagerToken());
+			pIOHandler->GetIOHandlerManagerToken(), false);
 }
 
 bool IOHandlerManager::DisableReadData(IOHandler *pIOHandler, bool ignoreError) {
@@ -221,7 +203,7 @@ bool IOHandlerManager::DisableReadData(IOHandler *pIOHandler, bool ignoreError) 
 bool IOHandlerManager::EnableWriteData(IOHandler *pIOHandler) {
 	return RegisterEvent(pIOHandler->GetOutboundFd(), EVFILT_WRITE,
 			EV_ADD | EV_ENABLE, 0, 0,
-			pIOHandler->GetIOHandlerManagerToken());
+			pIOHandler->GetIOHandlerManagerToken(), false);
 }
 
 bool IOHandlerManager::DisableWriteData(IOHandler *pIOHandler, bool ignoreError) {
@@ -233,7 +215,7 @@ bool IOHandlerManager::DisableWriteData(IOHandler *pIOHandler, bool ignoreError)
 bool IOHandlerManager::EnableAcceptConnections(IOHandler *pIOHandler) {
 	return RegisterEvent(pIOHandler->GetInboundFd(), EVFILT_READ,
 			EV_ADD | EV_ENABLE, 0, 0,
-			pIOHandler->GetIOHandlerManagerToken());
+			pIOHandler->GetIOHandlerManagerToken(), false);
 }
 
 bool IOHandlerManager::DisableAcceptConnections(IOHandler *pIOHandler, bool ignoreError) {
@@ -246,7 +228,8 @@ bool IOHandlerManager::EnableTimer(IOHandler *pIOHandler, uint32_t seconds) {
 #ifdef HAS_KQUEUE_TIMERS
 	return RegisterEvent(pIOHandler->GetId(), EVFILT_TIMER,
 			EV_ADD | EV_ENABLE, NOTE_USECONDS,
-			seconds*KQUEUE_TIMER_MULTIPLIER, pIOHandler->GetIOHandlerManagerToken());
+			seconds*KQUEUE_TIMER_MULTIPLIER,
+			pIOHandler->GetIOHandlerManagerToken(), false);
 #else /* HAS_KQUEUE_TIMERS */
 	TimerEvent event = {0, 0, 0, 0};
 	event.id = pIOHandler->GetId();
@@ -261,7 +244,8 @@ bool IOHandlerManager::EnableHighGranularityTimer(IOHandler *pIOHandler, uint32_
 #ifdef HAS_KQUEUE_TIMERS
 	return RegisterEvent(pIOHandler->GetId(), EVFILT_TIMER,
 			EV_ADD | EV_ENABLE, NOTE_USECONDS,
-			milliseconds * (KQUEUE_TIMER_MULTIPLIER / 1000), pIOHandler->GetIOHandlerManagerToken());
+			milliseconds * (KQUEUE_TIMER_MULTIPLIER / 1000),
+			pIOHandler->GetIOHandlerManagerToken(), false);
 #else /* HAS_KQUEUE_TIMERS */
 	TimerEvent event = {0, 0, 0, 0};
 	event.id = pIOHandler->GetId();

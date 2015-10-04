@@ -17,9 +17,9 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #ifdef NET_KQUEUE
-#ifndef _TCPCARRIER_H
-#define	_TCPCARRIER_H
 
 #include "netio/kqueue/iohandler.h"
 
@@ -40,7 +40,7 @@ private:
 	int _lastRecvError;
 	int _lastSendError;
 public:
-	TCPCarrier(int32_t fd);
+	TCPCarrier(SOCKET_TYPE fd);
 	virtual ~TCPCarrier();
 	virtual bool OnEvent(struct kevent &event);
 	virtual bool SignalOutputData();
@@ -56,8 +56,4 @@ private:
 	bool GetEndpointsInfo();
 };
 
-
-#endif	/* _TCPCARRIER_H */
 #endif /* NET_KQUEUE */
-
-

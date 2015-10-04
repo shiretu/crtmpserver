@@ -23,8 +23,9 @@
 #include "netio/kqueue/udpcarrier.h"
 #include "netio/kqueue/iohandlermanager.h"
 #include "protocols/baseprotocol.h"
+#include "eventlogger/eventlogger.h"
 
-UDPCarrier::UDPCarrier(int32_t fd)
+UDPCarrier::UDPCarrier(SOCKET_TYPE fd)
 : IOHandler(fd, fd, IOHT_UDP_CARRIER) {
 	memset(&_peerAddress, 0, sizeof (sockaddr_in));
 	memset(&_nearAddress, 0, sizeof (sockaddr_in));
@@ -36,12 +37,15 @@ UDPCarrier::UDPCarrier(int32_t fd)
 
 	Variant stats;
 	GetStats(stats);
+	EventLogger::GetDefaultLogger()->LogCarrierCreated(stats);
 }
 
 UDPCarrier::~UDPCarrier() {
 	Variant stats;
 	GetStats(stats);
-	CLOSE_SOCKET(_inboundFd);
+	EventLogger::GetDefaultLogger()->LogCarrierClosed(stats);
+
+	SOCKET_CLOSE(_inboundFd);
 }
 
 bool UDPCarrier::OnEvent(struct kevent &event) {
@@ -77,6 +81,7 @@ bool UDPCarrier::SignalOutputData() {
 }
 
 void UDPCarrier::GetStats(Variant &info, uint32_t namespaceId) {
+	info["id"] = (((uint64_t) namespaceId) << 32) | GetId();
 	if (!GetEndpointsInfo()) {
 		FATAL("Unable to get endpoints info");
 		info = "unable to get endpoints info";
@@ -128,8 +133,8 @@ UDPCarrier* UDPCarrier::Create(string bindIp, uint16_t bindPort, uint16_t ttl,
 		uint16_t tos, string ssmIp) {
 
 	//1. Create the socket
-	int sock = socket(AF_INET, SOCK_DGRAM, 0);
-	if ((sock < 0) || (!setFdCloseOnExec(sock))) {
+	SOCKET_TYPE sock = socket(AF_INET, SOCK_DGRAM, 0);
+	if (SOCKET_IS_INVALID(sock) || (!setFdCloseOnExec(sock))) {
 		int err = errno;
 		FATAL("Unable to create socket: (%d) %s", err, strerror(err));
 		return NULL;
@@ -138,14 +143,14 @@ UDPCarrier* UDPCarrier::Create(string bindIp, uint16_t bindPort, uint16_t ttl,
 	//2. fd options
 	if (!setFdOptions(sock, true)) {
 		FATAL("Unable to set fd options");
-		CLOSE_SOCKET(sock);
+		SOCKET_CLOSE(sock);
 		return NULL;
 	}
 
 	if (tos <= 255) {
 		if (!setFdTOS(sock, (uint8_t) tos)) {
 			FATAL("Unable to set tos");
-			CLOSE_SOCKET(sock);
+			SOCKET_CLOSE(sock);
 			return NULL;
 		}
 	}
@@ -163,7 +168,7 @@ UDPCarrier* UDPCarrier::Create(string bindIp, uint16_t bindPort, uint16_t ttl,
 	bindAddress.sin_port = EHTONS(bindPort); //----MARKED-SHORT----
 	if (bindAddress.sin_addr.s_addr == INADDR_NONE) {
 		FATAL("Unable to bind on address %s:%hu", STR(bindIp), bindPort);
-		CLOSE_SOCKET(sock);
+		SOCKET_CLOSE(sock);
 		return NULL;
 	}
 	uint32_t testVal = EHTONL(bindAddress.sin_addr.s_addr);
@@ -180,7 +185,7 @@ UDPCarrier* UDPCarrier::Create(string bindIp, uint16_t bindPort, uint16_t ttl,
 		if (ttl <= 255) {
 			if (!setFdMulticastTTL(sock, (uint8_t) ttl)) {
 				FATAL("Unable to set ttl");
-				CLOSE_SOCKET(sock);
+				SOCKET_CLOSE(sock);
 				return NULL;
 			}
 		}
@@ -188,7 +193,7 @@ UDPCarrier* UDPCarrier::Create(string bindIp, uint16_t bindPort, uint16_t ttl,
 		if (ttl <= 255) {
 			if (!setFdTTL(sock, (uint8_t) ttl)) {
 				FATAL("Unable to set ttl");
-				CLOSE_SOCKET(sock);
+				SOCKET_CLOSE(sock);
 				return NULL;
 			}
 		}
@@ -197,13 +202,13 @@ UDPCarrier* UDPCarrier::Create(string bindIp, uint16_t bindPort, uint16_t ttl,
 		int err = errno;
 		FATAL("Unable to bind on address: udp://%s:%"PRIu16"; Error was: (%d) %s",
 				STR(bindIp), bindPort, err, strerror(err));
-		CLOSE_SOCKET(sock);
+		SOCKET_CLOSE(sock);
 		return NULL;
 	}
 	if ((testVal > 0xe0000000) && (testVal < 0xefffffff)) {
 		if (!setFdJoinMulticast(sock, bindIp, bindPort, ssmIp)) {
 			FATAL("Adding multicast failed");
-			CLOSE_SOCKET(sock);
+			SOCKET_CLOSE(sock);
 			return NULL;
 		}
 	}

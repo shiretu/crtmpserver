@@ -17,8 +17,7 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _FDSTATS_H
-#define	_FDSTATS_H
+#pragma once
 
 #include "common.h"
 #include "netio/iohandlertype.h"
@@ -247,5 +246,3 @@ private:
 		_max = _max < current ? current : _max;
 	}
 };
-
-#endif	/* _FDSTATS_H */

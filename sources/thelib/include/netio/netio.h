@@ -18,8 +18,7 @@
  */
 
 
-#ifndef _NETIO_H
-#define	_NETIO_H
+#pragma once
 
 #include "netio/iohandlertype.h"
 #include "netio/fdstats.h"
@@ -67,6 +66,17 @@
 #define NETWORK_REACTOR "select"
 #endif
 
-#endif	/* _NETIO_H */
-
-
+#ifdef NET_IOCP
+#include "netio/iocp/iohandler.h"
+#include "netio/iocp/iohandlermanager.h"
+#include "netio/iocp/iotimer.h"
+#include "netio/iocp/tcpacceptor.h"
+#include "netio/iocp/tcpcarrier.h"
+#include "netio/iocp/udpcarrier.h"
+#include "netio/iocp/tcpconnector.h"
+#ifdef HAS_IOCP_TIMER
+#define NETWORK_REACTOR "iocp with native timers"
+#else /* HAS_IOCP_TIMER */
+#define NETWORK_REACTOR "iocp without native timers"
+#endif /* HAS_IOCP_TIMER */
+#endif

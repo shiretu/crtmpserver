@@ -17,9 +17,9 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #ifdef NET_SELECT
-#ifndef _IOTIMER_H
-#define	_IOTIMER_H
 
 #include "netio/select/iohandler.h"
 
@@ -38,7 +38,4 @@ public:
 	virtual void GetStats(Variant &info, uint32_t namespaceId = 0);
 };
 
-#endif	/* _TIMERIO_H */
 #endif /* NET_SELECT */
-
-

@@ -22,6 +22,7 @@
 #include "netio/epoll/tcpcarrier.h"
 #include "netio/epoll/iohandlermanager.h"
 #include "protocols/baseprotocol.h"
+#include "eventlogger/eventlogger.h"
 
 #define ENABLE_WRITE_DATA \
 if (!_writeDataEnabled) { \
@@ -42,7 +43,7 @@ if (_writeDataEnabled) { \
 	} \
 }
 
-TCPCarrier::TCPCarrier(int32_t fd)
+TCPCarrier::TCPCarrier(SOCKET_TYPE fd)
 : IOHandler(fd, fd, IOHT_TCP_CARRIER) {
 	IOHandlerManager::EnableReadData(this);
 	_writeDataEnabled = false;
@@ -64,12 +65,14 @@ TCPCarrier::TCPCarrier(int32_t fd)
 
 	Variant stats;
 	GetStats(stats);
+	EventLogger::GetDefaultLogger()->LogCarrierCreated(stats);
 }
 
 TCPCarrier::~TCPCarrier() {
 	Variant stats;
 	GetStats(stats);
-	CLOSE_SOCKET(_inboundFd);
+	EventLogger::GetDefaultLogger()->LogCarrierClosed(stats);
+	SOCKET_CLOSE(_inboundFd);
 }
 
 bool TCPCarrier::OnEvent(struct epoll_event &event) {
@@ -124,6 +127,7 @@ bool TCPCarrier::SignalOutputData() {
 }
 
 void TCPCarrier::GetStats(Variant &info, uint32_t namespaceId) {
+	info["id"] = (((uint64_t) namespaceId) << 32) | GetId();
 	if (!GetEndpointsInfo()) {
 		FATAL("Unable to get endpoints info");
 		info = "unable to get endpoints info";
@@ -203,5 +207,3 @@ bool TCPCarrier::GetEndpointsInfo() {
 }
 
 #endif /* NET_EPOLL */
-
-

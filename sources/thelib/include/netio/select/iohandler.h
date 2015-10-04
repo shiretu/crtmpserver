@@ -17,9 +17,9 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #ifdef NET_SELECT
-#ifndef _IOHANDLER_H
-#define	_IOHANDLER_H
 
 #include "common.h"
 #include "netio/iohandlertype.h"
@@ -33,12 +33,12 @@ class DLLEXP IOHandler {
 protected:
 	static uint32_t _idGenerator;
 	uint32_t _id;
-	int32_t _inboundFd;
-	int32_t _outboundFd;
+	SOCKET_TYPE _inboundFd;
+	SOCKET_TYPE _outboundFd;
 	BaseProtocol *_pProtocol;
 	IOHandlerType _type;
 public:
-	IOHandler(int32_t inboundFd, int32_t outboundFd, IOHandlerType type);
+	IOHandler(SOCKET_TYPE inboundFd, SOCKET_TYPE outboundFd, IOHandlerType type);
 	virtual ~IOHandler();
 
 	/*!
@@ -49,12 +49,12 @@ public:
 	/*!
 		@brief Returns the id of the inbound file descriptor
 	 */
-	int32_t GetInboundFd();
+	SOCKET_TYPE GetInboundFd();
 
 	/*!
 		@brief Returns the id of the outbound file descriptor
 	 */
-	int32_t GetOutboundFd();
+	SOCKET_TYPE GetOutboundFd();
 
 	/*!
 		@brief Returns the IOHandler type
@@ -82,7 +82,4 @@ public:
 	virtual void GetStats(Variant &info, uint32_t namespaceId = 0) = 0;
 };
 
-
-#endif	/* _IOHANDLER_H */
 #endif /* NET_SELECT */
-

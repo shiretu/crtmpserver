@@ -131,25 +131,6 @@ void IOHandlerManager::UnRegisterIOHandler(IOHandler *pIOHandler) {
 	}
 }
 
-int IOHandlerManager::CreateRawUDPSocket() {
-	int result = socket(AF_INET, SOCK_DGRAM, 0);
-	if ((result >= 0)&&(setFdCloseOnExec(result))) {
-		_fdStats.RegisterRawUdp();
-	} else {
-		int err = errno;
-		FATAL("Unable to create raw udp socket. Error code was: (%d) %s",
-				err, strerror(err));
-	}
-	return result;
-}
-
-void IOHandlerManager::CloseRawUDPSocket(int socket) {
-	if (socket > 0) {
-		_fdStats.UnRegisterRawUdp();
-	}
-	CLOSE_SOCKET(socket);
-}
-
 #ifdef GLOBALLY_ACCOUNT_BYTES
 
 void IOHandlerManager::AddInBytesManaged(IOHandlerType type, uint64_t bytes) {

@@ -17,10 +17,6 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "protocols/rtmp/amf0serializer.h"
-
-
-
 #ifdef NET_EPOLL
 #include "netio/epoll/tcpacceptor.h"
 #include "netio/epoll/iohandlermanager.h"
@@ -50,12 +46,12 @@ TCPAcceptor::TCPAcceptor(string ipAddress, uint16_t port, Variant parameters,
 }
 
 TCPAcceptor::~TCPAcceptor() {
-	CLOSE_SOCKET(_inboundFd);
+	SOCKET_CLOSE(_inboundFd);
 }
 
 bool TCPAcceptor::Bind() {
-	_inboundFd = _outboundFd = (int) socket(PF_INET, SOCK_STREAM, 0); //NOINHERIT
-	if (_inboundFd < 0) {
+	_inboundFd = _outboundFd = socket(PF_INET, SOCK_STREAM, 0); //NOINHERIT
+	if (SOCKET_IS_INVALID(_inboundFd)) {
 		int err = errno;
 		FATAL("Unable to create socket: (%d) %s", err, strerror(err));
 		return false;
@@ -128,17 +124,17 @@ bool TCPAcceptor::Accept() {
 	sockaddr address;
 	memset(&address, 0, sizeof (sockaddr));
 	socklen_t len = sizeof (sockaddr);
-	int32_t fd;
+	SOCKET_TYPE fd;
 
 	//1. Accept the connection
 	fd = accept(_inboundFd, &address, &len);
-	if ((fd < 0) || (!setFdCloseOnExec(fd))) {
+	if (SOCKET_IS_INVALID(fd) || (!setFdCloseOnExec(fd))) {
 		int err = errno;
 		FATAL("Unable to accept client connection: (%d) %s", err, strerror(err));
 		return false;
 	}
 	if (!_enabled) {
-		CLOSE_SOCKET(fd);
+		SOCKET_CLOSE(fd);
 		_droppedCount++;
 		WARN("Acceptor is not enabled. Client dropped: %s:%"PRIu16" -> %s:%"PRIu16,
 				inet_ntoa(((sockaddr_in *) & address)->sin_addr),
@@ -150,7 +146,7 @@ bool TCPAcceptor::Accept() {
 
 	if (!setFdOptions(fd, false)) {
 		FATAL("Unable to set socket options");
-		CLOSE_SOCKET(fd);
+		SOCKET_CLOSE(fd);
 		return false;
 	}
 
@@ -158,7 +154,7 @@ bool TCPAcceptor::Accept() {
 	BaseProtocol *pProtocol = ProtocolFactoryManager::CreateProtocolChain(_protocolChain, _parameters);
 	if (pProtocol == NULL) {
 		FATAL("Unable to create protocol chain");
-		CLOSE_SOCKET(fd);
+		SOCKET_CLOSE(fd);
 		return false;
 	}
 
@@ -166,17 +162,13 @@ bool TCPAcceptor::Accept() {
 	TCPCarrier *pTCPCarrier = new TCPCarrier(fd);
 	pTCPCarrier->SetProtocol(pProtocol->GetFarEndpoint());
 	pProtocol->GetFarEndpoint()->SetIOHandler(pTCPCarrier);
+	if (_parameters.HasKeyChain(V_STRING, false, 1, "witnessFile"))
+		pProtocol->GetNearEndpoint()->SetWitnessFile((string) _parameters.GetValue("witnessFile", false));
 
 	//6. Register the protocol stack with an application
 	if (_pApplication != NULL) {
 		pProtocol = pProtocol->GetNearEndpoint();
 		pProtocol->SetApplication(_pApplication);
-
-		//		EventLogger *pEvtLog = _pApplication->GetEventLogger();
-		//		if (pEvtLog != NULL) {
-		//			pEvtLog->LogInboundConnectionStart(_ipAddress, _port, STR(*(pProtocol->GetFarEndpoint())));
-		//			pTCPCarrier->SetEventLogger(pEvtLog);
-		//		}
 	}
 
 	if (pProtocol->GetNearEndpoint()->GetOutputBuffer() != NULL)
@@ -197,8 +189,8 @@ bool TCPAcceptor::Drop() {
 
 
 	//1. Accept the connection
-	int32_t fd = accept(_inboundFd, &address, &len);
-	if ((fd < 0) || (!setFdCloseOnExec(fd))) {
+	SOCKET_TYPE fd = accept(_inboundFd, &address, &len);
+	if (SOCKET_IS_INVALID(fd) || (!setFdCloseOnExec(fd))) {
 		int err = errno;
 		if (err != EWOULDBLOCK)
 			WARN("Accept failed. Error code was: (%d) %s", err, strerror(err));
@@ -206,7 +198,7 @@ bool TCPAcceptor::Drop() {
 	}
 
 	//2. Drop it now
-	CLOSE_SOCKET(fd);
+	SOCKET_CLOSE(fd);
 	_droppedCount++;
 
 	INFO("Client explicitly dropped: %s:%"PRIu16" -> %s:%"PRIu16,

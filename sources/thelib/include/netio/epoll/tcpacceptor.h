@@ -17,10 +17,9 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifdef NET_EPOLL
-#ifndef _TCPACCEPTOR_H
-#define	_TCPACCEPTOR_H
+#pragma once
 
+#ifdef NET_EPOLL
 
 #include "netio/epoll/iohandler.h"
 
@@ -60,8 +59,4 @@ private:
 	bool IsAlive();
 };
 
-
-#endif	/* _TCPACCEPTOR_H */
 #endif /* NET_EPOLL */
-
-

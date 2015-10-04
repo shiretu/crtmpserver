@@ -31,7 +31,7 @@ fd_set IOHandlerManager::_readFds;
 fd_set IOHandlerManager::_writeFds;
 fd_set IOHandlerManager::_readFdsCopy;
 fd_set IOHandlerManager::_writeFdsCopy;
-map<int32_t, map<uint32_t, uint8_t> > IOHandlerManager::_fdState;
+map<SOCKET_TYPE, map<uint32_t, uint8_t> > IOHandlerManager::_fdState;
 struct timeval IOHandlerManager::_timeout = {1, 0};
 TimersManager *IOHandlerManager::_pTimersManager = NULL;
 select_event IOHandlerManager::_currentEvent = {0};
@@ -110,24 +110,6 @@ void IOHandlerManager::UnRegisterIOHandler(IOHandler *pIOHandler) {
 		DEBUG("Handlers count changed: %"PRIz"u->%"PRIz"u %s", before, before - 1,
 				STR(IOHandler::IOHTToString(pIOHandler->GetType())));
 	}
-}
-
-int IOHandlerManager::CreateRawUDPSocket() {
-	int result = socket(AF_INET, SOCK_DGRAM, 0);
-	if ((result >= 0)&&(setFdCloseOnExec(result))) {
-		_fdStats.RegisterRawUdp();
-	} else {
-		int err = LASTSOCKETERROR;
-		FATAL("Unable to create raw udp socket. Error code was: %d", err);
-	}
-	return result;
-}
-
-void IOHandlerManager::CloseRawUDPSocket(int socket) {
-	if (socket > 0) {
-		_fdStats.UnRegisterRawUdp();
-	}
-	CLOSE_SOCKET(socket);
 }
 
 #ifdef GLOBALLY_ACCOUNT_BYTES
@@ -240,9 +222,10 @@ bool IOHandlerManager::Pulse() {
 
 	//3. do the select
 	RESET_TIMER(_timeout, 1, 0);
-	int32_t count = select(MAP_KEY(--_fdState.end()) + 1, &_readFdsCopy, &_writeFdsCopy, NULL, &_timeout);
+	int count = select(MAP_KEY(--_fdState.end()) + 1, &_readFdsCopy, &_writeFdsCopy, NULL, &_timeout);
 	if (count < 0) {
-		int err = LASTSOCKETERROR;
+		int err = SOCKET_LAST_ERROR;
+#error sometimes EBADF is the error code. That is beacuse improper test for stale/corpse files descriptors inside the fd_set
 		if (err == EINTR)
 			return true;
 		FATAL("Unable to do select: %d", err);
@@ -275,7 +258,7 @@ bool IOHandlerManager::Pulse() {
 	return true;
 }
 
-bool IOHandlerManager::UpdateFdSets(int32_t fd) {
+bool IOHandlerManager::UpdateFdSets(SOCKET_TYPE fd) {
 	if (fd == 0)
 		return true;
 	uint8_t state = 0;

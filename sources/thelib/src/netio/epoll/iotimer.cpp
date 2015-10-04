@@ -45,7 +45,7 @@ IOTimer::IOTimer()
 IOTimer::~IOTimer() {
 	IOHandlerManager::DisableTimer(this, true);
 #ifdef HAS_EPOLL_TIMERS
-	CLOSE_SOCKET(_inboundFd);
+	close(_inboundFd);
 #endif /* HAS_EPOLL_TIMERS */
 }
 
@@ -80,7 +80,7 @@ bool IOTimer::EnqueueForHighGranularityTimeEvent(uint32_t milliseconds) {
 }
 
 void IOTimer::GetStats(Variant &info, uint32_t namespaceId) {
-
+	info["id"] = (((uint64_t) namespaceId) << 32) | GetId();
 }
 
 #endif /* NET_EPOLL */

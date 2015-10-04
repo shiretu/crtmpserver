@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (c) 2010,
  *  Gavriloaie Eugen-Andrei (shiretu@gmail.com)
  *
@@ -17,16 +17,13 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #ifdef NET_KQUEUE
-#ifndef _IOHANDLERMANAGERTOKEN_H
-#define	_IOHANDLERMANAGERTOKEN_H
 
 typedef struct _IOHandlerManagerToken {
 	void *pPayload;
 	bool validPayload;
 } IOHandlerManagerToken;
 
-#endif	/* _IOHANDLERMANAGERTOKEN_H */
 #endif /* NET_KQUEUE */
-
-

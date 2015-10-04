@@ -17,9 +17,9 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #ifdef NET_EPOLL
-#ifndef _IOTIMER_H
-#define	_IOTIMER_H
 
 #include "netio/epoll/iohandler.h"
 
@@ -28,7 +28,7 @@ class IOTimer
 private:
 #ifndef HAS_EPOLL_TIMERS
 	static int32_t _idGenerator;
-#else /*  */
+#else /* HAS_EPOLL_TIMERS */
 	uint64_t _count;
 #endif /* HAS_EPOLL_TIMERS */
 public:
@@ -42,7 +42,4 @@ public:
 	virtual void GetStats(Variant &info, uint32_t namespaceId = 0);
 };
 
-#endif	/* _TIMERIO_H */
 #endif /* NET_EPOLL */
-
-

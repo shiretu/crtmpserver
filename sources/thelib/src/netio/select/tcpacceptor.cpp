@@ -47,13 +47,13 @@ TCPAcceptor::TCPAcceptor(string ipAddress, uint16_t port, Variant parameters,
 }
 
 TCPAcceptor::~TCPAcceptor() {
-	CLOSE_SOCKET(_inboundFd);
+	SOCKET_CLOSE(_inboundFd);
 }
 
 bool TCPAcceptor::Bind() {
 	_inboundFd = _outboundFd = (int) socket(PF_INET, SOCK_STREAM, 0); //NOINHERIT
 	if (_inboundFd < 0) {
-		int err = LASTSOCKETERROR;
+		int err = SOCKET_LAST_ERROR;
 		FATAL("Unable to create socket: %d", err);
 		return false;
 	}
@@ -64,7 +64,7 @@ bool TCPAcceptor::Bind() {
 	}
 
 	if (bind(_inboundFd, (sockaddr *) & _address, sizeof (sockaddr)) != 0) {
-		int err = LASTSOCKETERROR;
+		int err = SOCKET_LAST_ERROR;
 		FATAL("Unable to bind on address: tcp://%s:%hu; Error was: %d",
 				inet_ntoa(((sockaddr_in *) & _address)->sin_addr),
 				ENTOHS(((sockaddr_in *) & _address)->sin_port),
@@ -121,17 +121,17 @@ bool TCPAcceptor::Accept() {
 	sockaddr address;
 	memset(&address, 0, sizeof (sockaddr));
 	socklen_t len = sizeof (sockaddr);
-	int32_t fd;
+	SOCKET_TYPE fd;
 
 	//1. Accept the connection
 	fd = accept(_inboundFd, &address, &len);
-	if ((fd < 0) || (!setFdCloseOnExec(fd))) {
-		int err = LASTSOCKETERROR;
+	if (SOCKET_IS_INVALID(fd) || (!setFdCloseOnExec(fd))) {
+		int err = SOCKET_LAST_ERROR;
 		FATAL("Unable to accept client connection: %d", err);
 		return false;
 	}
 	if (!_enabled) {
-		CLOSE_SOCKET(fd);
+		SOCKET_CLOSE(fd);
 		_droppedCount++;
 		WARN("Acceptor is not enabled. Client dropped: %s:%"PRIu16" -> %s:%"PRIu16,
 				inet_ntoa(((sockaddr_in *) & address)->sin_addr),
@@ -143,7 +143,7 @@ bool TCPAcceptor::Accept() {
 
 	if (!setFdOptions(fd, false)) {
 		FATAL("Unable to set socket options");
-		CLOSE_SOCKET(fd);
+		SOCKET_CLOSE(fd);
 		return false;
 	}
 
@@ -152,7 +152,7 @@ bool TCPAcceptor::Accept() {
 			_protocolChain, _parameters);
 	if (pProtocol == NULL) {
 		FATAL("Unable to create protocol chain");
-		CLOSE_SOCKET(fd);
+		SOCKET_CLOSE(fd);
 		return false;
 	}
 
@@ -160,6 +160,8 @@ bool TCPAcceptor::Accept() {
 	TCPCarrier *pTCPCarrier = new TCPCarrier(fd);
 	pTCPCarrier->SetProtocol(pProtocol->GetFarEndpoint());
 	pProtocol->GetFarEndpoint()->SetIOHandler(pTCPCarrier);
+	if (_parameters.HasKeyChain(V_STRING, false, 1, "witnessFile"))
+		pProtocol->GetNearEndpoint()->SetWitnessFile((string) _parameters.GetValue("witnessFile", false));
 
 	//6. Register the protocol stack with an application
 	if (_pApplication != NULL) {
@@ -185,15 +187,15 @@ bool TCPAcceptor::Drop() {
 
 
 	//1. Accept the connection
-	int32_t fd = accept(_inboundFd, &address, &len);
-	if ((fd < 0) || (!setFdCloseOnExec(fd))) {
-		int err = LASTSOCKETERROR;
+	SOCKET_TYPE fd = accept(_inboundFd, & address, &len);
+	if (SOCKET_IS_INVALID(fd) || (!setFdCloseOnExec(fd))) {
+		int err = SOCKET_LAST_ERROR;
 		WARN("Accept failed. Error code was: %d", err);
 		return false;
 	}
 
 	//2. Drop it now
-	CLOSE_SOCKET(fd);
+	SOCKET_CLOSE(fd);
 	_droppedCount++;
 
 	INFO("Client explicitly dropped: %s:%"PRIu16" -> %s:%"PRIu16,

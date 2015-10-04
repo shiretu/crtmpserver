@@ -17,10 +17,9 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifdef NET_KQUEUE
-#ifndef _TCPCONNECTOR_H
-#define	_TCPCONNECTOR_H
+#pragma once
 
+#ifdef NET_KQUEUE
 
 #include "netio/kqueue/iohandler.h"
 #include "protocols/baseprotocol.h"
@@ -40,7 +39,7 @@ private:
 	bool _success;
 public:
 
-	TCPConnector(int32_t fd, string ip, uint16_t port,
+	TCPConnector(SOCKET_TYPE fd, string ip, uint16_t port,
 			vector<uint64_t>& protocolChain, const Variant& customParameters)
 	: IOHandler(fd, fd, IOHT_TCP_CONNECTOR) {
 		_ip = ip;
@@ -56,7 +55,7 @@ public:
 			T::SignalProtocolCreated(NULL, _customParameters);
 		}
 		if (_closeSocket) {
-			CLOSE_SOCKET(_inboundFd);
+			SOCKET_CLOSE(_inboundFd);
 		}
 	}
 
@@ -88,6 +87,20 @@ public:
 		TCPCarrier *pTCPCarrier = new TCPCarrier(_inboundFd);
 		pTCPCarrier->SetProtocol(pProtocol->GetFarEndpoint());
 		pProtocol->GetFarEndpoint()->SetIOHandler(pTCPCarrier);
+		if (_customParameters.HasKeyChain(V_STRING, false, 1, "witnessFile"))
+			pProtocol->GetNearEndpoint()->SetWitnessFile((string) _customParameters.GetValue("witnessFile", false));
+		else if (_customParameters.HasKeyChain(V_STRING, false, 3, "customParameters", "externalStreamConfig", "_witnessFile"))
+			pProtocol->GetNearEndpoint()->SetWitnessFile((string)
+				(_customParameters.GetValue("customParameters", false)
+				.GetValue("externalStreamConfig", false)
+				.GetValue("_witnessFile", false))
+				);
+		else if (_customParameters.HasKeyChain(V_STRING, false, 3, "customParameters", "localStreamConfig", "_witnessFile"))
+			pProtocol->GetNearEndpoint()->SetWitnessFile((string)
+				(_customParameters.GetValue("customParameters", false)
+				.GetValue("localStreamConfig", false)
+				.GetValue("_witnessFile", false))
+				);
 
 		if (!T::SignalProtocolCreated(pProtocol, _customParameters)) {
 			FATAL("Unable to signal protocol created");
@@ -106,16 +119,16 @@ public:
 	static bool Connect(string ip, uint16_t port,
 			vector<uint64_t>& protocolChain, Variant customParameters) {
 
-		int32_t fd = (int32_t) socket(PF_INET, SOCK_STREAM, 0);
-		if ((fd < 0) || (!setFdCloseOnExec(fd))) {
+		SOCKET_TYPE fd = socket(PF_INET, SOCK_STREAM, 0);
+		if (SOCKET_IS_INVALID(fd)) {
 			T::SignalProtocolCreated(NULL, customParameters);
 			int err = errno;
 			FATAL("Unable to create fd: (%d) %s", err, strerror(err));
 			return 0;
 		}
 
-		if (!setFdOptions(fd, false)) {
-			CLOSE_SOCKET(fd);
+		if ((!setFdOptions(fd, false)) || (!setFdCloseOnExec(fd))) {
+			SOCKET_CLOSE(fd);
 			T::SignalProtocolCreated(NULL, customParameters);
 			FATAL("Unable to set socket options");
 			return false;
@@ -168,8 +181,4 @@ public:
 	}
 };
 
-
-#endif	/* _TCPCONNECTOR_H */
 #endif /* NET_KQUEUE */
-
-

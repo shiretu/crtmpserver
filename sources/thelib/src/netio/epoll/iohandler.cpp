@@ -24,7 +24,7 @@
 
 uint32_t IOHandler::_idGenerator = 0;
 
-IOHandler::IOHandler(int32_t inboundFd, int32_t outboundFd, IOHandlerType type) {
+IOHandler::IOHandler(SOCKET_TYPE inboundFd, SOCKET_TYPE outboundFd, IOHandlerType type) {
 	_pProtocol = NULL;
 	_type = type;
 	_id = ++_idGenerator;
@@ -55,11 +55,11 @@ uint32_t IOHandler::GetId() {
 	return _id;
 }
 
-int32_t IOHandler::GetInboundFd() {
+SOCKET_TYPE IOHandler::GetInboundFd() {
 	return _inboundFd;
 }
 
-int32_t IOHandler::GetOutboundFd() {
+SOCKET_TYPE IOHandler::GetOutboundFd() {
 	return _outboundFd;
 }
 
@@ -95,5 +95,3 @@ string IOHandler::IOHTToString(IOHandlerType type) {
 }
 
 #endif /* NET_EPOLL */
-
-

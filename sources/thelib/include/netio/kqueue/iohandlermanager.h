@@ -17,9 +17,9 @@
  *  along with crtmpserver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #ifdef NET_KQUEUE
-#ifndef _IOHANDLERMANAGER_H
-#define	_IOHANDLERMANAGER_H
 
 #include "common.h"
 #include "netio/kqueue/iohandlermanagertoken.h"
@@ -49,9 +49,9 @@ private:
 private:
 	static void SetupToken(IOHandler *pIOHandler);
 	static void FreeToken(IOHandler *pIOHandler);
-	static bool RegisterEvent(int32_t fd, int16_t filter,
+	static bool RegisterEvent(SOCKET_TYPE fd, int16_t filter,
 			uint16_t flags, uint32_t fflags, uint32_t data,
-			IOHandlerManagerToken *pToken, bool ignoreError = false);
+			IOHandlerManagerToken *pToken, bool ignoreError);
 public:
 	static map<uint32_t, IOHandler *> & GetActiveHandlers();
 	static map<uint32_t, IOHandler *> & GetDeadHandlers();
@@ -63,8 +63,6 @@ public:
 	static void Shutdown();
 	static void RegisterIOHandler(IOHandler *pIOHandler);
 	static void UnRegisterIOHandler(IOHandler *pIOHandler);
-	static int CreateRawUDPSocket();
-	static void CloseRawUDPSocket(int socket);
 #ifdef GLOBALLY_ACCOUNT_BYTES
 	static void AddInBytesManaged(IOHandlerType type, uint64_t bytes);
 	static void AddOutBytesManaged(IOHandlerType type, uint64_t bytes);
@@ -90,8 +88,4 @@ private:
 	static inline void ResizeEvents();
 };
 
-
-#endif	/* _IOHANDLERMANAGER_H */
 #endif /* NET_KQUEUE */
-
-
