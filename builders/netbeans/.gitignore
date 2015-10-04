@@ -1,0 +1,7 @@
+private
+*.bash
+*.mk
+.dep.inc
+build
+dist
+
