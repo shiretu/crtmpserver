@@ -2096,8 +2096,8 @@ string BaseRTSPAppProtocolHandler::GetAudioTrack(RTSPProtocol *pFrom,
 		}
 		result += "m=audio 0 RTP/AVP 96\r\n";
 		result += "a=recvonly\r\n";
-		result += format("a=rtpmap:96 mpeg4-generic/%"PRIu32"/2\r\n",
-				pInfo->_samplingRate);
+		result += format("a=rtpmap:96 mpeg4-generic/%"PRIu32"/%u\r\n",
+				pInfo->_samplingRate, pInfo->_channelsCount);
 		pFrom->GetCustomParameters()["rtpInfo"]["audio"]["frequency"] = (uint32_t) pInfo->_samplingRate;
 		//FINEST("result: %s", STR(result));
 		result += "a=control:trackID="
