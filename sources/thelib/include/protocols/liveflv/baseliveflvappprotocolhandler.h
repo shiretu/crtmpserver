@@ -29,14 +29,23 @@ class InboundLiveFLVProtocol;
 
 class DLLEXP BaseLiveFLVAppProtocolHandler
 : public BaseAppProtocolHandler {
+protected:
+	Variant _users;
+	string _usersFile;
+	double _lastUsersFileUpdate;
 private:
 	map<uint32_t, InboundLiveFLVProtocol *> _protocols;
 public:
 	BaseLiveFLVAppProtocolHandler(Variant &configuration);
 	virtual ~BaseLiveFLVAppProtocolHandler();
 
+	virtual bool ParseAuthenticationNode(Variant &node, Variant &result);
+	virtual bool AuthenticateUser(string user, string password);
+
 	virtual void RegisterProtocol(BaseProtocol *pProtocol);
 	virtual void UnRegisterProtocol(BaseProtocol *pProtocol);
+private:
+	bool ParseUsersFile();
 };
 
 #endif	/* _BASELIVEFLVAPPPROTOCOLHANDLER_H */

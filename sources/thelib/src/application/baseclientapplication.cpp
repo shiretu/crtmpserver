@@ -211,6 +211,13 @@ BaseAppProtocolHandler *BaseClientApplication::GetProtocolHandler(string &scheme
 		pResult = GetProtocolHandler(PT_INBOUND_RTP);
 	}
 #endif /* HAS_PROTOCOL_RTP */
+#ifdef HAS_PROTOCOL_LIVEFLV
+	else if (scheme == "liveflv") {
+		pResult = GetProtocolHandler(PT_INBOUND_LIVE_FLV);
+		if (pResult == NULL)
+			pResult = GetProtocolHandler(PT_OUTBOUND_LIVE_FLV);
+	}
+#endif /* HAS_PROTOCOL_LIVEFLV */
 	else {
 		WARN("scheme %s not recognized", STR(scheme));
 	}
