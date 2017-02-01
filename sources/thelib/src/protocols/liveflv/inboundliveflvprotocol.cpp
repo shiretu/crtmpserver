@@ -20,6 +20,7 @@
 #ifdef HAS_PROTOCOL_LIVEFLV
 
 #include "protocols/liveflv/inboundliveflvprotocol.h"
+#include "protocols/liveflv/baseliveflvappprotocolhandler.h"
 #include "application/baseclientapplication.h"
 #include "protocols/protocoltypes.h"
 #include "netio/netio.h"
@@ -177,6 +178,8 @@ bool InboundLiveFLVProtocol::SignalInputData(IOBuffer &buffer) {
 				//3. Read the rest of the parameters
 				Variant parameters;
 				string streamName = "";
+				string userName = "";
+				string password = "";
 				while (GETAVAILABLEBYTESCOUNT(metaBuffer) > 0) {
 					Variant v;
 					if (!amf0.Read(metaBuffer, v)) {
@@ -188,7 +191,26 @@ bool InboundLiveFLVProtocol::SignalInputData(IOBuffer &buffer) {
 							streamName = (string) v["streamName"];
 						}
 					}
+					if (v.HasKey("userName")) {
+						if (v["userName"] == V_STRING) {
+							userName = (string) v["userName"];
+						}
+					}
+					if (v.HasKey("password")) {
+						if (v["password"] == V_STRING) {
+							password = (string) v["password"];
+						}
+					}
 					parameters.PushToArray(v);
+				}
+
+				if (userName != "") {
+					INFO("Trying to auth user '%s'", STR(userName));
+				}
+				BaseAppProtocolHandler *pHandler=GetApplication()->GetProtocolHandler(PT_INBOUND_LIVE_FLV);
+				if (!((BaseLiveFLVAppProtocolHandler *) pHandler)->AuthenticateUser(userName, password)) {
+					FATAL("Auth failed");
+					return false;
 				}
 
 				if (_pStream == NULL) {
